@@ -1,11 +1,33 @@
-const Home = () =>{
+import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../contexts/AuthContext";
 
-    return (
+const Home = () => {
+  const { user, setUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  console.log("Home: user =", user);
+
+  // Handle logout
+  const handleLogout = () => {
+    setUser(null);
+    sessionStorage.removeItem("user");
+    navigate("/login");
+  };
+
+  const getDisplayInitial = () => {
+    if (!user?.name) return null;
+    if (user.name.includes("@")) {
+      return user.name.split("@")[0]?.charAt(0)?.toUpperCase();
+    }
+    return user.name.charAt(0)?.toUpperCase();
+  };
+
+  return (
     <div className="flex h-screen bg-black text-white">
       {/* Left Sidebar */}
-      <div className="w-16 border-r border-zinc-800 flex flex-col items-center py-4">
-        
-      </div>
+      <div className="w-16 border-r border-zinc-800 flex flex-col items-center py-4"></div>
+
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -49,8 +71,31 @@ const Home = () =>{
               </svg>
               <span>Upgrade</span>
             </button>
-            <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex">
-              <i class="fa-solid fa-user mx-auto my-auto"></i>   
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 bg-transparent text-sm border border-zinc-700 rounded-full px-3 py-1 hover:bg-zinc-700 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-red-400"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span>Logout</span>
+            </button>
+            <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex items-center justify-center">
+              {getDisplayInitial() || <i className="fa-solid fa-user"></i>}
+
             </div>
           </div>
         </div>
@@ -234,7 +279,9 @@ const Home = () =>{
           </div>
 
           {/* Footer */}
-          <div className="mt-auto py-4 text-xs text-zinc-500">invideo AI can make mistakes. Check important info.</div>
+          <div className="mt-auto py-4 text-xs text-zinc-500">
+            invideo AI can make mistakes. Check important info.
+          </div>
         </div>
       </div>
 
@@ -258,7 +305,8 @@ const Home = () =>{
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default Home;
+
