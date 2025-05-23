@@ -28,6 +28,7 @@ const Home = () => {
       {/* Left Sidebar */}
       <div className="w-16 border-r border-zinc-800 flex flex-col items-center py-4"></div>
 
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Navigation */}
@@ -94,6 +95,7 @@ const Home = () => {
             </button>
             <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex items-center justify-center">
               {getDisplayInitial() || <i className="fa-solid fa-user"></i>}
+
             </div>
           </div>
         </div>
@@ -307,3 +309,4 @@ const Home = () => {
 };
 
 export default Home;
+
