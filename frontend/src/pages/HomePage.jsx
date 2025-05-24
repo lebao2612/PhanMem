@@ -1,8 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
+import images from "../assets/images";
+import { handlePressMenu, countInputWord } from "../scripts/home";
 
 const Home = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
   const { user, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -24,41 +28,35 @@ const Home = () => {
   };
 
   return (
-    <div className="flex h-screen bg-black text-white">
-      {/* Left Sidebar */}
-      <div className="w-16 border-r border-zinc-800 flex flex-col items-center py-4"></div>
+    <div className="relative flex h-screen bg-black text-white">
+      {/* Overlay */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          onClick={handlePressMenu(menuOpen, setMenuOpen)}
+        ></div>
+      )}
 
+      {/* Left Sidebar */}
+      <div className={`w-16 border-r border-zinc-800 flex flex-col items-center py-4 ${menuOpen ? 'z-50' : ''}`}>
+        <button
+          className="fa-solid fa-bars hover:bg-zinc-400 cursor-pointer p-2 rounded-sm"
+          onClick={handlePressMenu(menuOpen, setMenuOpen)}
+        ></button>
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${menuOpen ? 'blur-sm' : ''}`}>
         {/* Top Navigation */}
-        <div className="h-16 border-b border-zinc-800 flex items-center justify-between px-4">
-          <div className="flex items-center gap-2">         
-            <img src={images.logoAI} alt="logo" className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center"/>
+        <div className="h-16 border-b border-zinc-800 flex justify-between px-4">
+          <div className="flex items-center gap-2">
+            <img src={images.logoAI} alt="logo" className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center" />
             <span className="font-semibold text-lg">AIGen</span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1 bg-transparent text-sm border border-zinc-700 rounded-full px-3 py-1">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-yellow-400"
-              >
-                <path d="M5 9h14M9 17h6" />
-                <path d="M5 5h4M16 5h4M3 12a9 9 0 0 0 5 8 9 9 0 0 0 8 0 9 9 0 0 0 5-8 9 9 0 0 0-5-8 9 9 0 0 0-8 0 9 9 0 0 0-5 8Z" />
-              </svg>
-              <span>Upgrade</span>
-            </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1 bg-transparent text-sm border border-zinc-700 rounded-full px-3 py-1 hover:bg-zinc-700 transition-colors"
+              className="flex items-center gap-1 bg-transparent text-sm border border-zinc-700 rounded-full px-3 py-1 hover:bg-zinc-700 transition-colors cursor-pointer"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -80,10 +78,8 @@ const Home = () => {
             </button>
             <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex items-center justify-center">
               {getDisplayInitial() || <i className="fa-solid fa-user"></i>}
-
             </div>
           </div>
-          
         </div>
 
         {/* Main Content Area */}
@@ -92,7 +88,7 @@ const Home = () => {
           <div className="mb-6">
             <button className="flex items-center gap-2 bg-zinc-800/50 hover:bg-zinc-800 text-sm rounded-md px-3 py-1.5 transition-colors">
               <span>v3.0</span>
-              <i class="fa-solid fa-angle-down"></i>
+              <i className="fa-solid fa-angle-down"></i>
             </button>
           </div>
 
@@ -102,10 +98,11 @@ const Home = () => {
               <textarea
                 placeholder="Give me a topic, premise and detailed instructions in any language"
                 className="w-full h-full min-h-[200px] bg-transparent border-none outline-none resize-none text-zinc-400 placeholder:text-zinc-500"
+                onChange={countInputWord(setWordCount)}
               />
             </div>
             <div className="flex items-center justify-between p-4 border-t border-zinc-800">
-              <div className="text-xs text-zinc-500">0/32000</div>
+              <div className="text-xs text-zinc-500"> {wordCount}/32000 </div>
               <button className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white rounded-md px-4 py-2 flex items-center gap-2 transition-colors">
                 <span>Generate a video</span>
               </button>
@@ -201,27 +198,37 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Chat Button */}
-      <div className="fixed bottom-6 right-6">
-        <button className="bg-zinc-800 hover:bg-zinc-700 rounded-full p-3 transition-colors">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-zinc-300"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-        </button>
+      {/* Side Menu */}
+      <div
+        className={`fixed top-0 left-0 z-50 h-full bg-neutral-900 flex transition-transform duration-300 ease-in-out ${
+          menuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="border border-zinc-800 items-center">
+          <div className="p-4 flex gap-8 items-center">
+            <button
+              className="fa-solid fa-bars hover:bg-zinc-400 cursor-pointer p-2 rounded-sm"
+              onClick={handlePressMenu(menuOpen, setMenuOpen)}
+            ></button>
+            <div className="flex items-center gap-2 px-4">
+              <img src={images.logoAI} alt="logo" className="h-8 w-8 rounded-full bg-blue-500" />
+              <span className="font-semibold text-lg">AIGen</span>
+            </div>
+          </div>
+          <ul className="gap-2 flex flex-col px-4 mt-2">
+            <li className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm">
+              <i className="fa-solid fa-square-poll-horizontal mr-2 text-2xl"></i>
+              Dashboard
+            </li>
+            <li className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm">
+              <i className="fa-solid fa-gears mr-2 text-2xl"></i>
+              Settings
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
 };
 
 export default Home;
-
