@@ -1,9 +1,9 @@
-import "./App.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./contexts/AuthContext";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { publicRoutes, privateRoutes } from "./routes";
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 const clientId =
   "921617590005-bo9iapdh1iv5ukcut56mk21j7orsihpr.apps.googleusercontent.com";
