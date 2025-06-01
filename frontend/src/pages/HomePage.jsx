@@ -1,86 +1,21 @@
 import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
-import { AuthContext } from "../contexts/AuthContext";
+//import { AuthContext } from "../contexts/AuthContext";
 import images from "../assets/images";
 import { handlePressMenu, countInputWord } from "../scripts/home";
+import Header from "../components/Header";
+import LeftSideBar from "../components/LeftSideBar";
 
 const Home = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [wordCount, setWordCount] = useState(0);
-  const { user, setUser } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  console.log("Home: user =", user);
-
-  // Handle logout
-  const handleLogout = () => {
-    setUser(null);
-    sessionStorage.removeItem("user");
-    navigate("/login");
-  };
-
-  const getDisplayInitial = () => {
-    if (!user?.name) return null;
-    if (user.name.includes("@")) {
-      return user.name.split("@")[0]?.charAt(0)?.toUpperCase();
-    }
-    return user.name.charAt(0)?.toUpperCase();
-  };
 
   return (
     <div className="relative flex h-screen bg-black text-white">
-      {/* Overlay */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={handlePressMenu(menuOpen, setMenuOpen)}
-        ></div>
-      )}
-
-      {/* Left Sidebar */}
-      <div className={`w-16 border-r border-zinc-800 flex flex-col items-center py-4 ${menuOpen ? 'z-50' : ''}`}>
-        <button
-          className="fa-solid fa-bars hover:bg-zinc-400 cursor-pointer p-2 rounded-sm"
-          onClick={handlePressMenu(menuOpen, setMenuOpen)}
-        ></button>
-      </div>
+      <LeftSideBar />
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${menuOpen ? 'blur-sm' : ''}`}>
-        {/* Top Navigation */}
-        <div className="h-16 border-b border-zinc-800 flex justify-between px-4">
-          <div className="flex items-center gap-2">
-            <img src={images.logoAI} alt="logo" className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center" />
-            <span className="font-semibold text-lg">AIGen</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 bg-transparent text-sm border border-zinc-700 rounded-full px-3 py-1 hover:bg-zinc-700 transition-colors cursor-pointer"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-red-400"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              <span>Logout</span>
-            </button>
-            <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex items-center justify-center">
-              {getDisplayInitial() || <i className="fa-solid fa-user"></i>}
-            </div>
-          </div>
-        </div>
+      <div className={"flex-1 flex flex-col transition-all duration-300"}>
+        <Header />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col items-center justify-start pt-8 px-4 overflow-y-auto">
@@ -195,36 +130,6 @@ const Home = () => {
           <div className="mt-auto py-4 text-xs text-zinc-500">
             invideo AI can make mistakes. Check important info.
           </div>
-        </div>
-      </div>
-
-      {/* Side Menu */}
-      <div
-        className={`fixed top-0 left-0 z-50 h-full bg-neutral-900 flex transition-transform duration-300 ease-in-out ${
-          menuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="border border-zinc-800 items-center">
-          <div className="p-4 flex gap-8 items-center">
-            <button
-              className="fa-solid fa-bars hover:bg-zinc-400 cursor-pointer p-2 rounded-sm"
-              onClick={handlePressMenu(menuOpen, setMenuOpen)}
-            ></button>
-            <div className="flex items-center gap-2 px-4">
-              <img src={images.logoAI} alt="logo" className="h-8 w-8 rounded-full bg-blue-500" />
-              <span className="font-semibold text-lg">AIGen</span>
-            </div>
-          </div>
-          <ul className="gap-2 flex flex-col px-4 mt-2">
-            <li className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm">
-              <i className="fa-solid fa-square-poll-horizontal mr-2 text-2xl"></i>
-              Dashboard
-            </li>
-            <li className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm">
-              <i className="fa-solid fa-gears mr-2 text-2xl"></i>
-              Settings
-            </li>
-          </ul>
         </div>
       </div>
     </div>
