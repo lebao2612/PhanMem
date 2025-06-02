@@ -1,10 +1,9 @@
-"use client";
-
 import { useRef, useEffect, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import RightSideLogin from "../components/RightSideLogin";
 import GoogleLoginButton from "../components/GoogleLoginButton";
+import images from "../assets/images";
 
 function Login() {
   const { user, setUser } = useContext(AuthContext);
@@ -29,15 +28,18 @@ function Login() {
     }
   }, [user, navigate]);
 
-  const handleGoogleLoginSuccess = (userData) => {
-    const userEmail = userData.email;
-    if (user?.name !== userEmail) {
-      setUser({ name: userEmail });
-      sessionStorage.setItem("user", JSON.stringify({ name: userEmail }));
+  // Handle Google login success
+  const handleGoogleLoginSuccess = (dataFromBackend) => {
+    console.log("Google login backend response:", dataFromBackend);
+    // dataFromBackend có thể chứa user info hoặc token riêng của backend
+    // Lưu user info vào context/sessionStorage
+    if (dataFromBackend && dataFromBackend.user) {
+      setUser(dataFromBackend.user);
+      sessionStorage.setItem("user", JSON.stringify(dataFromBackend.user));
     }
-    console.log("User email:", userEmail);
   };
 
+  // Handle Google login error
   const handleGoogleLoginError = (error) => {
     alert("Login failed. Please try again.");
     console.error("Login failed:", error);
@@ -82,17 +84,17 @@ function Login() {
       <div className="w-4/10 flex flex-col justify-center px-12">
         <div className="flex items-center mb-8">
           <img
-            className="w-6 h-6 rounded-full mr-2"
-            src="https://assets.wheelhouse.com/media/_solution_logo_04102024_26667162.png"
-            alt="invideo AI logo"
+            className="w-10 h-10 rounded-full mr-2"
+            src={images.logoAI}
+            alt="AIGen logo"
           />
-          <p className="text-lg font-semibold">invideo AI</p>
+          <p className="text-4xl font-semibold pl-2 pb-1.5">AIGen</p>
         </div>
 
         <h1 className="text-4xl font-bold mb-6">
           Chào mừng đến với{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-            invideo AI
+            AIGen
           </span>
         </h1>
         <div className="w-full flex flex-col items-center">
@@ -106,7 +108,6 @@ function Login() {
           onSubmit={handleLogin}
           className="w-full flex flex-col items-center"
         >
-          {/* Hidden dummy inputs to confuse browsers */}
           <input type="text" style={{ display: "none" }} />
           <input type="password" style={{ display: "none" }} />
 
