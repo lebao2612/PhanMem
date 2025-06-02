@@ -1,18 +1,48 @@
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { AuthProvider } from "./contexts/AuthContext";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/HomePage"
-import "@fontsource/montserrat";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { publicRoutes, privateRoutes } from "./routes";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
+const clientId =
+  "921617590005-bo9iapdh1iv5ukcut56mk21j7orsihpr.apps.googleusercontent.com";
 
 function App() {
+  // const [count, setCount] = useState(0);
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </Router>
-  )
+    <>
+      <GoogleOAuthProvider clientId={clientId}>
+        <AuthProvider>
+          <Router>
+            <Routes>
+              {publicRoutes.map((route, index) => {
+                const Page = route.component;
+                return (
+                  <Route key={index} path={route.path} element={<Page />} />
+                );
+              })}
+              {privateRoutes.map((route, index) => {
+                const Page = route.component;
+                return (
+                  <Route
+                    key={index}
+                    path={route.path}
+                    element={
+                      <ProtectedRoute>
+                        <Page />
+                      </ProtectedRoute>
+                    }
+                  />
+                );
+              })}
+            </Routes>
+          </Router>
+        </AuthProvider>
+      </GoogleOAuthProvider>
+    </>
+  );
 }
 
-export default App
+export default App;
