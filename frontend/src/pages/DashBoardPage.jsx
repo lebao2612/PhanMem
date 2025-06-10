@@ -9,15 +9,30 @@ const Dashboard = () => {
 
     const options = ["Tất cả", "Youtube", "Facebook", "Tiktok"]
     
-    const videos = [
-        {name: "test1", date: "26-12-2004", tag: "Youtube", videoID: "dQw4w9WgXcQ"},
-        {name: "test2", date: "26-12-2004", tag: "Youtube", videoID: "dQw4w9WgXcQ"},
-        {name: "test3 asf asjfh fasfj", date: "26-12-2004", tag: "Facebook", videoID: "dQw4w9WgXcQ"},
-        {name: "test4", date: "26-12-2004", tag: "Facebook", videoID: "dQw4w9WgXcQ"},
-        {name: "test5", date: "26-12-2004", tag: "Tiktok", videoID: "dQw4w9WgXcQ"},
-        {name: "test6", date: "26-12-2004", tag: "Tiktok", videoID: "dQw4w9WgXcQ"},
-        {name: "test7", date: "26-12-2004", tag: "", videoID: "dQw4w9WgXcQ"},
-    ]
+    // const videos = [
+    //     {name: "test1", date: "26-12-2004", tag: "Youtube", videoID: "dQw4w9WgXcQ"},
+    //     {name: "test2", date: "26-12-2004", tag: "Youtube", videoID: "dQw4w9WgXcQ"},
+    //     {name: "test3 asf asjfh fasfj", date: "26-12-2004", tag: "Facebook", videoID: "dQw4w9WgXcQ"},
+    //     {name: "test4", date: "26-12-2004", tag: "Facebook", videoID: "dQw4w9WgXcQ"},
+    //     {name: "test5", date: "26-12-2004", tag: "Tiktok", videoID: "dQw4w9WgXcQ"},
+    //     {name: "test6", date: "26-12-2004", tag: "Tiktok", videoID: "dQw4w9WgXcQ"},
+    //     {name: "test7", date: "26-12-2004", tag: "", videoID: "dQw4w9WgXcQ"},
+    // ]
+
+    const [videos, setVideos] = useState([]);
+
+    useEffect(() => {
+        fetch("http://localhost:5000/api/videos") // Hoặc endpoint thật của bạn
+            .then(res => res.json())
+            .then(data => {
+                setVideos(data);
+                setFilteredVideo(data); // Đặt dữ liệu ban đầu luôn là toàn bộ video
+            })
+            .catch(err => console.error("Lỗi khi gọi API:", err));
+    }, []);
+
+    console.log(videos)
+
     
     const [selectedOption, setSelectedOption] = useState("Tất cả")
     const [filteredVideo, setFilteredVideo] = useState(videos)
@@ -33,7 +48,7 @@ const Dashboard = () => {
             setFilteredVideo(videos);
         }
         else{
-            setFilteredVideo(videos.filter(video => video.tag === selectedOption))
+            setFilteredVideo(videos.filter(video => video.tag === selectedOption.toLowerCase()))
         }
     }
 
@@ -42,7 +57,7 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="relative flex bg-black text-white">
+        <div className="relative flex bg-black text-white min-h-screen">
             <LeftSideBar />
 
             {/* Main Content */}
@@ -114,29 +129,32 @@ const Dashboard = () => {
 
                 <div className="grid grid-cols-4 gap-4 px-5 py-10 ">
                     {filteredVideo.map((video, index) => (
-                        <div 
-                            key={index} 
-                            className="bg-zinc-800 p-4 rounded-lg shadow transform transition-transform duration-200 hover:scale-105 hover:bg-zinc-700 cursor-pointer"
+                        <div
+                            key={index}
+                            className="bg-zinc-800 p-4 rounded-lg shadow transform transition-transform duration-200 hover:scale-105 hover:bg-zinc-700 cursor-pointer flex flex-col h-full"
                             onClick={() => {
                                 setSelectedVideo(video)
                                 console.log(video)
                             }}
-                            
                         >
-                                <img src={images.thumbV} />
-                                <h3 className="text-lg font-bold">{video.name}</h3>
-                                <p className="text-sm text-neutral-400">Ngày: {video.date}</p>
-                                <p className="text-sm text-neutral-400">Tag: {video.tag}</p>
-                                <a 
-                                    href="https://www.youtube.com/watch?v=BcLDmO-cOaM"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e)=> e.stopPropagation()}
-                                    className="text-blue-400 underline text-sm"
-                                >
-                                    <i className="fa-solid fa-link mr-1"></i>
-                                    Xem trên {video.tag}
-                                </a>
+                            <img src={images.thumbV || "/placeholder.svg"} className="w-full object-cover rounded mb-3" />
+                            <div className="flex flex-col flex-grow">
+                                <h3 className="text-lg font-bold mb-2 line-clamp-2 min-h-[3.5rem]">{video.name}</h3>
+                                <div className="mt-auto space-y-1">
+                                    <p className="text-sm text-neutral-400">Ngày: {video.createAt}</p>
+                                    <p className="text-sm text-neutral-400">Tag: {video.tag}</p>
+                                    <a
+                                        href="https://www.youtube.com/watch?v=BcLDmO-cOaM"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-blue-400 underline text-sm inline-block mt-2"
+                                    >
+                                        <i className="fa-solid fa-link mr-1"></i>
+                                        Xem trên {video.tag}
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -168,15 +186,19 @@ const Dashboard = () => {
                         {/* Video Section */}
                         <div className="flex-1 p-6 pb-4 lg:pb-6">
                             <div className="relative rounded-xl overflow-hidden shadow-lg">
-                                <iframe
-                                width="100%"
-                                height="400"
-                                src={`https://www.youtube.com/embed/${selectedVideo.videoID}`}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                className="w-full aspect-video"
-                                title={selectedVideo.name}
-                                />
+                                <video
+                                    width="100%"
+                                    height="400"
+                                    controls
+                                    preload="metadata"
+                                    className="w-full aspect-video rounded-lg"
+                                    poster="/placeholder.svg?height=400&width=600"
+                                >
+                                    <source src={selectedVideo.videoURL || selectedVideo.videoID} type="video/mp4" />
+                                    <source src={selectedVideo.videoURL || selectedVideo.videoID} type="video/webm" />
+                                    <source src={selectedVideo.videoURL || selectedVideo.videoID} type="video/ogg" />
+                                    Trình duyệt của bạn không hỗ trợ thẻ video.
+                                </video>
                             </div>
                         </div>
 
@@ -197,7 +219,7 @@ const Dashboard = () => {
                                         </div>
                                         <div>
                                             <p className="text-xs text-zinc-400 uppercase tracking-wide font-medium">Ngày phát hành</p>
-                                            <p className="text-sm font-medium">{selectedVideo.date}</p>
+                                            <p className="text-sm font-medium">{selectedVideo.createAt}</p>
                                         </div>
                                     </div>
 
@@ -208,7 +230,7 @@ const Dashboard = () => {
                                         <div>
                                             <p className="text-xs text-zinc-400 uppercase tracking-wide font-medium">Xuất bản</p>
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                                                {selectedVideo.tag !== "" ? selectedVideo.tag :"None"}
+                                                {selectedVideo.tag !== "" ? selectedVideo.tag.toUpperCase() :"None"}
                                             </span>
                                         </div>
                                     </div>
