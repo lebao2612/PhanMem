@@ -8,35 +8,23 @@ const GoogleLoginButton = ({
 }) => {
   const handleLoginGG = async (credentialResponse) => {
     try {
-      // Lấy thông tin người dùng từ Google
-      const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-        headers: {
-          Authorization: `Bearer ${credentialResponse.access_token}`,
-        },
-      });
-      const userData = await res.json();
-      console.log("Dữ liệu người dùng từ GG:", userData);
-
-      // Gửi token lên backend của bạn
-      const backendRes = await fetch("http://localhost:3000/api/auth/google", {
+      // Gửi access_token về backend
+      const res = await fetch("/api/auth/login/google", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          accessToken: credentialResponse.access_token,
-          profile: userData,
+          access_token: credentialResponse.access_token,
         }),
       });
 
-      const data = await backendRes.json();
-
-      if (!backendRes.ok) {
-        throw new Error("Xác thực Google không thành công");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err?.error || "Đăng nhập Google thất bại");
       }
 
-      sessionStorage.setItem("access_token", data.token);
-
+      const data = await res.json(); // { token, user }
       onSuccess(data);
     } catch (error) {
       if (onError) {
@@ -60,8 +48,6 @@ const GoogleLoginButton = ({
   const loginAccess = useGoogleLogin({
     onSuccess: handleLoginGG,
     onError: handleErrorGG,
-    useOneTap: true,
-    scope: "profile email",
   });
 
   return (
