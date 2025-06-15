@@ -5,3 +5,4 @@ mongoengine
 requests
 flask-cors
 bcrypt
+PyJWT
