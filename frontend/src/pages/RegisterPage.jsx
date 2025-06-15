@@ -10,39 +10,47 @@ function Register() {
   const { user, setUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const hasNavigated = useRef(false);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState(null);
 
-  const validateUsername = (username) => {
-    const alphanumericRegex = /^[a-zA-Z0-9]+$/;
-    return alphanumericRegex.test(username);
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
-  useEffect(() => {
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser && !user) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, [setUser, user]);
+  // useEffect(() => {
+  //   const storedUser = sessionStorage.getItem("user");
+  //   if (storedUser && !user) {
+  //     setUser(JSON.parse(storedUser));
+  //   }
+  // }, [setUser, user]);
 
-  useEffect(() => {
-    console.log("Register useEffect: user =", user);
-    if (user && !hasNavigated.current) {
-      hasNavigated.current = true;
-      navigate("/home");
-    }
-  }, [user, navigate]);
+  // useEffect(() => {
+  //   console.log("Register useEffect: user =", user);
+  //   if (user && !hasNavigated.current) {
+  //     hasNavigated.current = true;
+  //     navigate("/home");
+  //   }
+  // }, [user, navigate]);
 
-  const handleGoogleLoginSuccess = (userData) => {
-    const userEmail = userData.email;
-    if (user?.name !== userEmail) {
-      setUser({ name: userEmail });
-      sessionStorage.setItem("user", JSON.stringify({ name: userEmail }));
-    }
-    console.log("User email:", userEmail);
+  const handleGoogleLoginSuccess = (data) => {
+    const user = data.user;
+    const token = data.token;
+
+    const userInfo = {
+      name: user.fullname || user.email,
+      email: user.email,
+    };
+
+    setUser(userInfo);
+    sessionStorage.setItem("token", token);
+    sessionStorage.setItem("user", JSON.stringify(userInfo));
+
+    console.log("Đăng ký bằng Google thành công:", userInfo);
+    navigate("/home");
   };
 
   const handleGoogleLoginError = (error) => {
@@ -54,8 +62,8 @@ function Register() {
     e.preventDefault();
     setError(null);
 
-    if (!validateUsername(username)) {
-      setError("Tên tài khoản chỉ được chứa chữ cái và số");
+    if (!validateEmail(email)) {
+      setError("Email không hợp lệ");
       return;
     }
 
@@ -65,12 +73,12 @@ function Register() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/register", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password, name }),
+        body: JSON.stringify({ email, password, name }),
       });
 
       const data = await response.json();
@@ -79,12 +87,14 @@ function Register() {
         throw new Error(data.message || "Đăng ký thất bại");
       }
 
-      setUser({ username: data.user.username, name: data.user.name });
-      sessionStorage.setItem(
-        "user",
-        JSON.stringify({ username: data.user.username, name: data.user.name })
-      );
-      console.log("Đăng ký thành công:", data.user);
+      // const userInfo = {
+      //   name: data.user.name,
+      //   email: data.user.email,
+      // };
+      // setUser(userInfo);
+      // sessionStorage.setItem("user", JSON.stringify(userInfo));
+      console.log("Đăng ký thành công:", data.message);
+      navigate("/login");
     } catch (error) {
       setError(error.message);
       console.error("Lỗi đăng ký:", error.message);
@@ -124,28 +134,27 @@ function Register() {
           onSubmit={handleRegister}
           className="w-full flex flex-col items-center"
         >
-          {/* Hidden dummy inputs to confuse browsers */}
           <input type="text" style={{ display: "none" }} />
           <input type="password" style={{ display: "none" }} />
 
           <input
             type="text"
-            placeholder="Tên tài khoản"
+            placeholder="Email"
             className={inputClassName}
-            value={username}
+            value={email}
             onChange={(e) => {
               const value = e.target.value;
-              setUsername(value);
+              setEmail(value);
               if (
-                error === "Tên tài khoản chỉ được chứa chữ cái và số" &&
-                validateUsername(value)
+                error === "Email không hợp lệ" &&
+                validateEmail(value)
               ) {
                 setError(null);
               }
             }}
             required
             autoComplete="nope"
-            name="reg-username"
+            name="reg-email"
             readOnly
             onFocus={(e) => e.target.removeAttribute("readonly")}
           />
