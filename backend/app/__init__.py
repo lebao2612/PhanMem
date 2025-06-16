@@ -2,9 +2,10 @@ from flask import Flask
 from flask_cors import CORS
 from app.routes import video_bp, auth_bp
 from app.database.connection import MongoDBConnection
-from config.config import Config
+from config import Config
 
-mongo = MongoDBConnection(Config.MONGODB_URI) # Khởi tạo instance MongoDBConnection
+ # Khởi tạo instance MongoDBConnection
+mongo = MongoDBConnection(Config.MONGODB_URI)
 
 # Khởi tạo Flask app
 def create_app() -> Flask:
