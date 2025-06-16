@@ -65,10 +65,7 @@ class AuthService:
                 algorithm="HS256"
             )
 
-            user_dict = user.to_mongo().to_dict()
-            user_dict["_id"] = str(user_dict["_id"])
-
-            return {"token": token, "user": user_dict}, None
+            return {"token": token, "user": user.to_dict()}, None
 
         except Exception as e:
             return None, str(e)
@@ -96,7 +93,5 @@ class AuthService:
             current_app.config["JWT_SECRET_KEY"],
             algorithm="HS256"
         )
-        user_dict = user.to_mongo().to_dict()
-        user_dict["_id"] = str(user_dict["_id"])
 
-        return {"token": token, "user": user_dict}, None
+        return {"token": token, "user": user.to_dict()}, None
