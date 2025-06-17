@@ -1,71 +1,74 @@
 import { useState, useEffect } from "react";
 
 function Review({ onClose }) {
+
+  const mockVideo = {videoURL: "https://www.w3schools.com/html/mov_bbb.mp4", user: ""}
+
   const [platform, setPlatform] = useState("YouTube");
   const [videoData, setVideoData] = useState({ video: "", user: "" });
-  const [loadingVideo, setLoadingVideo] = useState(true);
+  const [loadingVideo, setLoadingVideo] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  useEffect(() => {
-    fetch("http://localhost:3000/api/video")
-      .then((res) => res.json())
-      .then((data) => {
-        setVideoData(data);
-      })
-      .catch(console.error)
-      .finally(() => setLoadingVideo(false));
-  }, []);
+  // useEffect(() => {
+  //   fetch("http://localhost:3000/api/video")
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       setVideoData(data);
+  //     })
+  //     .catch(console.error)
+  //     .finally(() => setLoadingVideo(false));
+  // }, []);
 
   const stopPropagation = (e) => e.stopPropagation();
 
-  function handleAutoCaption() {
-    fetch("http://localhost:3000/api/info")
-      .then((res) => res.json())
-      .then((data) => {
-        setTitle(data.title || "");
-        setDescription(data.description || "");
-      })
-      .catch(console.error);
-  }
+  // function handleAutoCaption() {
+  //   fetch("http://localhost:3000/api/info")
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       setTitle(data.title || "");
+  //       setDescription(data.description || "");
+  //     })
+  //     .catch(console.error);
+  // }
 
-  function handleDownload() {
-    if (!videoData.video) {
-      alert("Không có video để tải.");
-      return;
-    }
+  // function handleDownload() {
+  //   if (!videoData.video) {
+  //     alert("Không có video để tải.");
+  //     return;
+  //   }
 
-    setIsDownloading(true);
+  //   setIsDownloading(true);
 
-    fetch(videoData.video)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
+  //   fetch(videoData.video)
+  //     .then((res) => res.blob())
+  //     .then((blob) => {
+  //       const url = window.URL.createObjectURL(blob);
+  //       const a = document.createElement("a");
+  //       a.href = url;
 
-        const cleanTitle = (title || "video")
-          .replace(/[^a-zA-Z0-9_\- ]/g, "")
-          .replace(/\s+/g, "_");
+  //       const cleanTitle = (title || "video")
+  //         .replace(/[^a-zA-Z0-9_\- ]/g, "")
+  //         .replace(/\s+/g, "_");
 
-        a.download = `${cleanTitle}.mp4`;
+  //       a.download = `${cleanTitle}.mp4`;
 
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+  //       document.body.appendChild(a);
+  //       a.click();
+  //       document.body.removeChild(a);
 
-        window.URL.revokeObjectURL(url);
-      })
-      .catch((err) => {
-        console.error("Download failed", err);
-        alert("Tải video thất bại. Kiểm tra lại link.");
-      })
-      .finally(() => {
-        setIsDownloading(false);
-      });
-  }
+  //       window.URL.revokeObjectURL(url);
+  //     })
+  //     .catch((err) => {
+  //       console.error("Download failed", err);
+  //       alert("Tải video thất bại. Kiểm tra lại link.");
+  //     })
+  //     .finally(() => {
+  //       setIsDownloading(false);
+  //     });
+  // }
 
   const shareLabel = {
     YouTube: "Chia sẻ lên YouTube",
@@ -83,8 +86,6 @@ function Review({ onClose }) {
     platform === name
       ? "text-red-600 border-b-2 border-red-600 font-medium"
       : "text-gray-500 hover:text-black";
-
-  const isYouTubeLink = (url) => /youtu(?:\.be|be\.com)/.test(url);
 
   return (
     <div
@@ -112,20 +113,20 @@ function Review({ onClose }) {
           <div className="flex items-center justify-center border rounded-md h-64 bg-black overflow-hidden">
             {loadingVideo ? (
               <div className="animate-spin h-10 w-10 border-4 border-white border-t-transparent rounded-full"></div>
-            ) : isYouTubeLink(videoData.video) ? (
-              <iframe
-                src={videoData.video.replace(
-                  "youtu.be/",
-                  "www.youtube.com/embed/"
-                )}
-                className="w-full h-full"
-                allowFullScreen
-              />
             ) : (
-              <video controls className="w-full h-full object-contain">
-                <source src={videoData.video} type="video/mp4" />
-                Trình duyệt không hỗ trợ video.
-              </video>
+              <video
+                width="100%"
+                height="400"
+                controls
+                preload="metadata"
+                className="w-full aspect-video rounded-lg"
+                poster="/placeholder.svg?height=400&width=600"
+            >
+                <source src={mockVideo.videoURL || mockVideo.videoID} type="video/mp4" />
+                <source src={mockVideo.videoURL || mockVideo.videoID} type="video/webm" />
+                <source src={mockVideo.videoURL || mockVideo.videoID} type="video/ogg" />
+                Trình duyệt của bạn không hỗ trợ thẻ video.
+            </video>
             )}
           </div>
 
@@ -179,7 +180,7 @@ function Review({ onClose }) {
                 {shareLabel[platform]}
               </button>
               <button
-                onClick={handleDownload}
+                //onClick={handleDownload}
                 disabled={isDownloading}
                 className={`flex-1 py-2 rounded font-medium flex items-center justify-center ${
                   isDownloading
@@ -225,7 +226,7 @@ function Review({ onClose }) {
             Tạo nội dung cho các nền tảng
           </div>
           <button
-            onClick={handleAutoCaption}
+            //onClick={handleAutoCaption}
             className="px-4 py-2 bg-gray-200 text-sm rounded hover:bg-gray-300"
           >
             Tạo caption tự động
