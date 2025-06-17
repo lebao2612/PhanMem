@@ -13,8 +13,6 @@ def create_app() -> Flask:
     CORS(app)
     app.config.from_object(Config)
 
-    # Tạo instance MongoDB và kết nối
-    mongo = MongoDBConnection(Config.MONGODB_URI)
     if mongo.connect():
         app.extensions['mongo'] = mongo
     else:
