@@ -1,19 +1,14 @@
 from typing import Optional, List
 from datetime import datetime, timezone
 from app.repository import VideoRepository
-from app.models import Video, User
+from app.models import Video, User, MediaInfo
 from app.dtos import VideoDTO
-from .service_error import ServiceError
+from app.integrations import *
+from app.exceptions import HandledException
 
 class VideoService:
     @staticmethod
-    def create_video(
-        title: str,
-        topic: str,
-        script: str,
-        creator: User,
-        tags: Optional[List[str]] = None
-    ) -> VideoDTO:
+    def create_video(title: str, topic: str, script: str, creator: User, tags: Optional[List[str]] = None) -> VideoDTO:
         video = Video(
             title=title,
             topic=topic,
@@ -31,7 +26,7 @@ class VideoService:
     def get_video_by_id(video_id: str) -> VideoDTO:
         video = VideoRepository.find_by_id(video_id)
         if not video:
-            raise ServiceError("Video không tồn tại", 404)
+            raise HandledException("Video không tồn tại", 404)
         return VideoDTO.from_model(video)
 
     @staticmethod
@@ -50,7 +45,7 @@ class VideoService:
     ) -> VideoDTO:
         video = VideoRepository.find_by_id(video_id)
         if not video:
-            raise ServiceError("Video không tồn tại", 404)
+            raise HandledException("Video không tồn tại", 404)
         updated = VideoRepository.update_fields(video, update_data, allowed_fields)
         return VideoDTO.from_model(updated)
 
@@ -58,24 +53,20 @@ class VideoService:
     def delete_video(video_id: str) -> bool:
         video = VideoRepository.find_by_id(video_id)
         if not video:
-            raise ServiceError("Video không tồn tại", 404)
+            raise HandledException("Video không tồn tại", 404)
         VideoRepository.delete(video)
         return True
 
     @staticmethod
-    def increment_view(video_id: str) -> None:
+    def update_views(video_id: str, views: int) -> None:
         video = VideoRepository.find_by_id(video_id)
         if not video:
-            raise ServiceError("Video không tồn tại", 404)
-        video.views += 1
-        video.updated_at = datetime.now(timezone.utc)
-        VideoRepository.save(video)
+            raise HandledException("Video không tồn tại", 404)
+        VideoRepository.update_views(video, views)
 
     @staticmethod
-    def increment_like(video_id: str) -> None:
+    def update_likes(video_id: str, likes: int) -> None:
         video = VideoRepository.find_by_id(video_id)
         if not video:
-            raise ServiceError("Video không tồn tại", 404)
-        video.likes += 1
-        video.updated_at = datetime.now(timezone.utc)
-        VideoRepository.save(video)
+            raise HandledException("Video không tồn tại", 404)
+        VideoRepository.update_likes(video, likes)

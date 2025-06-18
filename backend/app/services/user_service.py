@@ -1,14 +1,14 @@
 from typing import Optional, List
 from app.repository import UserRepository
 from app.dtos import UserDTO
-from .service_error import ServiceError
+from app.exceptions import HandledException
 
 class UserService:
     @staticmethod
     def get_user_by_id(user_id: str) -> UserDTO:
         user = UserRepository.find_by_id(user_id)
         if not user:
-            raise ServiceError("Người dùng không tồn tại", 404)
+            raise HandledException("Người dùng không tồn tại", 404)
         return UserDTO.from_model(user)
 
     @staticmethod
@@ -20,7 +20,7 @@ class UserService:
     def update_user(user_id: str, data: dict, allowed_fields: List[str]) -> UserDTO:
         user = UserRepository.find_by_id(user_id)
         if not user:
-            raise ServiceError("Người dùng không tồn tại", 404)
+            raise HandledException("Người dùng không tồn tại", 404)
         user = UserRepository.update_fields(user, data, allowed_fields)
         return UserDTO.from_model(user)
 
@@ -28,7 +28,7 @@ class UserService:
     def delete_user(user_id: str) -> bool:
         user = UserRepository.find_by_id(user_id)
         if not user:
-            raise ServiceError("Người dùng không tồn tại", 404)
+            raise HandledException("Người dùng không tồn tại", 404)
         UserRepository.delete(user)
         return True
 
@@ -36,7 +36,7 @@ class UserService:
     def change_password(user_id: str, new_password: str) -> bool:
         user = UserRepository.find_by_id(user_id)
         if not user:
-            raise ServiceError("Người dùng không tồn tại", 404)
+            raise HandledException("Người dùng không tồn tại", 404)
         UserRepository.change_password(user, new_password)
         return True
 
@@ -44,6 +44,6 @@ class UserService:
     def promote_to_admin(user_id: str) -> bool:
         user = UserRepository.find_by_id(user_id)
         if not user:
-            raise ServiceError("Người dùng không tồn tại", 404)
+            raise HandledException("Người dùng không tồn tại", 404)
         UserRepository.promote_to_admin(user)
         return True

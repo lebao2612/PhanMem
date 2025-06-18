@@ -1,13 +1,13 @@
 import logging
 from flask import jsonify
-from app.services import ServiceError
+from app.exceptions import HandledException
 
 # Cấu hình logging
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def register_error_handlers(app):
-    @app.errorhandler(ServiceError)
+    @app.errorhandler(HandledException)
     def handle_service_error(error):
         return jsonify({
             "error": error.message,

@@ -26,13 +26,6 @@ def update_user(user_id):
     user = UserService.update_user(user_id, data, allowed_fields)
     return jsonify(user.to_dict()), 200
 
-@user_bp.route("/<user_id>", methods=["DELETE"])
-@token_required
-@role_required(["ADMIN"])
-def delete_user(user_id):
-    UserService.delete_user(user_id)
-    return jsonify({"message": "Xóa người dùng thành công"}), 200
-
 @user_bp.route("/<user_id>/password", methods=["PUT"])
 @token_required
 def change_password(user_id):
@@ -47,3 +40,10 @@ def change_password(user_id):
 def promote_to_admin(user_id):
     UserService.promote_to_admin(user_id)
     return jsonify({"message": "Nâng quyền admin thành công"}), 200
+
+@user_bp.route("/<user_id>", methods=["DELETE"])
+@token_required
+@role_required(["ADMIN"])
+def delete_user(user_id):
+    UserService.delete_user(user_id)
+    return jsonify({"message": "Xóa người dùng thành công"}), 200

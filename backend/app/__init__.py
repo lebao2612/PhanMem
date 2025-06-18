@@ -22,6 +22,7 @@ def create_app() -> Flask:
     app.register_blueprint(video_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
+    app.register_blueprint(generator_bp)
 
     # Register global error handlers
     register_error_handlers(app)

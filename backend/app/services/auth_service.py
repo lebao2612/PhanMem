@@ -1,14 +1,14 @@
 import requests
 from app.repository import UserRepository
 from app.dtos import AuthDTO
+from app.exceptions import HandledException
 from .jwt_service import JWTService
-from .service_error import ServiceError
 
 class AuthService:
     @staticmethod
     def register_email(email: str, password: str, name: str) -> bool:
         if UserRepository.is_email_taken(email):
-            raise ServiceError("Email đã được sử dụng", 409)
+            raise HandledException("Email đã được sử dụng", 409)
         user = UserRepository.create_user_with_email(email, password, name)
         return True if user else False
 
@@ -16,11 +16,11 @@ class AuthService:
     def login_email(email: str, password: str) -> AuthDTO:
         user = UserRepository.find_by_email(email)
         if not user:
-            raise ServiceError("Email không tồn tại", 404)
+            raise HandledException("Email không tồn tại", 404)
         if user.googleId:
-            raise ServiceError("Tài khoản này sử dụng đăng nhập Google", 403)
+            raise HandledException("Tài khoản này sử dụng đăng nhập Google", 403)
         if not user.check_password(password):
-            raise ServiceError("Mật khẩu sai", 401)
+            raise HandledException("Mật khẩu sai", 401)
         UserRepository.update_last_login(user)
         token = JWTService.generate_token(user)
         return AuthDTO.from_model(token, user)
@@ -33,7 +33,7 @@ class AuthService:
                 headers={"Authorization": f"Bearer {access_token}"}
             )
             if res.status_code != 200:
-                raise ServiceError("Token Google không hợp lệ", 401)
+                raise HandledException("Token Google không hợp lệ", 401)
             user_data = res.json()
             email = user_data.get("email")
             google_id = user_data.get("sub")
@@ -41,15 +41,15 @@ class AuthService:
             picture = user_data.get("picture")
             
             if not email or not google_id:
-                raise ServiceError("Thiếu thông tin từ Google", 400)
+                raise HandledException("Thiếu thông tin từ Google", 400)
             user = UserRepository.find_by_email(email)
             if user:
                 if user.googleId and user.googleId != google_id:
-                    raise ServiceError("Email đã liên kết với tài khoản Google khác", 409)
+                    raise HandledException("Email đã liên kết với tài khoản Google khác", 409)
                 UserRepository.update_last_login(user)
             else:
                 user = UserRepository.create_user_with_google(email, google_id, name, picture)
             token = JWTService.generate_token(user)
             return AuthDTO.from_model(token, user)
         except requests.RequestException:
-            raise ServiceError("Lỗi kết nối với Google", 500)
+            raise HandledException("Lỗi kết nối với Google", 500)
