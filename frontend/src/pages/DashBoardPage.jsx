@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import LeftSideBar from "../components/LeftSideBar";
 import { FaYoutube, FaFacebook, FaTiktok, FaFilm, FaCamera, FaEye } from 'react-icons/fa';
-import { X, Calendar, Tag, Play } from "lucide-react"
+import { X, Calendar, Tag, Download, Upload } from "lucide-react"
 import images from "../assets/images";
 
 const Dashboard = () => {
@@ -171,7 +171,7 @@ const Dashboard = () => {
             {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in zoom-in-95 fade-in duration-300">
                 <div className="relative bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl shadow-2xl border border-zinc-700/50 max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                {/* Close Button */}
+                    {/* Close Button */}
                     <button
                         variant="ghost"
                         size="icon"
@@ -184,8 +184,8 @@ const Dashboard = () => {
                     {/* Content */}
                     <div className="flex flex-col lg:flex-row">
                         {/* Video Section */}
-                        <div className="flex-1 p-6 pb-4 lg:pb-6">
-                            <div className="relative rounded-xl overflow-hidden shadow-lg">
+                        <div className="flex-1 w-full p-6 pb-4 lg:pb-6 flex justify-center items-center">
+                            <div className="relative w-full rounded-xl overflow-hidden shadow-lg">
                                 <video
                                     width="100%"
                                     height="400"
@@ -242,6 +242,22 @@ const Dashboard = () => {
                                         Khám phá thế giới tự nhiên qua những thước phim tuyệt đẹp với chất lượng 4K sắc nét.
                                     </p>
                                 </div>
+
+                                {/* Action Buttons */}
+                                <div className="pt-4 border-t border-zinc-700/50">
+                                    <div className="flex flex-col gap-3">
+                                        <button className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
+                                            <Download className="w-4 h-4" />
+                                            Download Video
+                                        </button>
+
+                                        <button className="flex items-center justify-center gap-2 w-full border border-zinc-600 text-zinc-300 hover:bg-zinc-700/50 hover:text-white font-medium py-3 px-4 rounded-lg transition-all duration-200">
+                                            <Upload className="w-4 h-4" />
+                                            Upload Video
+                                        </button>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
