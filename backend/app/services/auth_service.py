@@ -1,97 +1,55 @@
-import jwt
 import requests
-from datetime import datetime, timedelta, timezone
-from flask import current_app
-from app.models.user import User
+from app.repository import UserRepository
+from app.dtos import AuthDTO
+from .jwt_service import JWTService
+from .service_error import ServiceError
 
 class AuthService:
     @staticmethod
-    def register_email(email, password, name):
-        if User.objects(email=email).first():
-            return None, "Email already exists"
-        
-        user = User(email=email, name=name, emailVerified=True)
-        user.set_password(password)
-        user.save()
-
-        return {"message": "Registered successfully"}, None
+    def register_email(email: str, password: str, name: str) -> bool:
+        if UserRepository.is_email_taken(email):
+            raise ServiceError("Email đã được sử dụng", 409)
+        user = UserRepository.create_user_with_email(email, password, name)
+        return True if user else False
 
     @staticmethod
-    def login_with_google(access_token):
+    def login_email(email: str, password: str) -> AuthDTO:
+        user = UserRepository.find_by_email(email)
+        if not user:
+            raise ServiceError("Email không tồn tại", 404)
+        if user.googleId:
+            raise ServiceError("Tài khoản này sử dụng đăng nhập Google", 403)
+        if not user.check_password(password):
+            raise ServiceError("Mật khẩu sai", 401)
+        UserRepository.update_last_login(user)
+        token = JWTService.generate_token(user)
+        return AuthDTO.from_model(token, user)
+
+    @staticmethod
+    def login_with_google(access_token: str) -> AuthDTO:
         try:
-            # Gọi Google API để lấy user info
             res = requests.get(
                 "https://www.googleapis.com/oauth2/v3/userinfo",
                 headers={"Authorization": f"Bearer {access_token}"}
             )
             if res.status_code != 200:
-                return None, "Invalid Google access token"
-
+                raise ServiceError("Token Google không hợp lệ", 401)
             user_data = res.json()
             email = user_data.get("email")
             google_id = user_data.get("sub")
             name = user_data.get("name")
             picture = user_data.get("picture")
-
+            
             if not email or not google_id:
-                return None, "Missing required Google data"
-
-            user = User.objects(email=email).first()
+                raise ServiceError("Thiếu thông tin từ Google", 400)
+            user = UserRepository.find_by_email(email)
             if user:
                 if user.googleId and user.googleId != google_id:
-                    return None, "Email linked to another Google account"
-                user.lastLogin = datetime.now(timezone.utc)
-                user.save()
+                    raise ServiceError("Email đã liên kết với tài khoản Google khác", 409)
+                UserRepository.update_last_login(user)
             else:
-                user = User(
-                    googleId=google_id,
-                    email=email,
-                    name=name,
-                    picture=picture,
-                    emailVerified=True,
-                    lastLogin=datetime.now(timezone.utc)
-                )
-                user.save()
-
-            # Tạo JWT
-            token = jwt.encode(
-                {
-                    "user_id": str(user.id),
-                    "email": user.email,
-                    "roles": user.roles,
-                    "exp": datetime.now(timezone.utc) + timedelta(hours=24)
-                },
-                current_app.config["JWT_SECRET_KEY"],
-                algorithm="HS256"
-            )
-
-            return {"token": token, "user": user.to_dict()}, None
-
-        except Exception as e:
-            return None, str(e)
-
-    @staticmethod
-    def login_email(email, password):
-        user = User.objects(email=email).first()
-        if not user:
-            return None, "User not found"
-        if user.googleId:
-            return None, "Use Google login for this account"
-        if not user.check_password(password):
-            return None, "Invalid password"
-
-        user.lastLogin = datetime.now(timezone.utc)
-        user.save()
-
-        token = jwt.encode(
-            {
-                "user_id": str(user.id),
-                "email": user.email,
-                "roles": user.roles,
-                "exp": datetime.now(timezone.utc) + timedelta(hours=24)
-            },
-            current_app.config["JWT_SECRET_KEY"],
-            algorithm="HS256"
-        )
-
-        return {"token": token, "user": user.to_dict()}, None
+                user = UserRepository.create_user_with_google(email, google_id, name, picture)
+            token = JWTService.generate_token(user)
+            return AuthDTO.from_model(token, user)
+        except requests.RequestException:
+            raise ServiceError("Lỗi kết nối với Google", 500)
