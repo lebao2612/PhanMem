@@ -1,5 +1,5 @@
 from app.models import User
-from .email_verify_DTO import EmailVerificationDTO
+from .email_verify_dto import EmailVerificationDTO
 
 class UserDTO:
     def __init__(
@@ -28,7 +28,7 @@ class UserDTO:
             googleId=user.googleId,
             email=user.email,
             name=user.name,
-            picture=user.picture,
+            picture=user.picture.url if user.picture else None,
             roles=user.roles,
             emailVerified=user.emailVerified,
             emailVerification=email_verification_dto,
@@ -43,7 +43,7 @@ class UserDTO:
             "googleId": self.googleId,
             "email": self.email,
             "name": self.name,
-            "picture": self.picture,
+            "picture": self.picture,  # Chỉ chứa url
             "roles": self.roles,
             "emailVerified": self.emailVerified,
             "emailVerification": self.emailVerification.to_dict() if self.emailVerification else None,

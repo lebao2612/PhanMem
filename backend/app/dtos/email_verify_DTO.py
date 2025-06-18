@@ -1,4 +1,5 @@
-from app.models.email_verify import EmailVerification
+from app.models import EmailVerification
+
 
 class EmailVerificationDTO:
     def __init__(self, code, expiresAt, verified):
