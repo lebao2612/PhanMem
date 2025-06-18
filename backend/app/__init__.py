@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
-from app.routes import video_bp, auth_bp
-from app.database.connection import MongoDBConnection
+from app.api import *
+from app.database import MongoDBConnection
 from config import Config
 
  # Khởi tạo instance MongoDBConnection
@@ -18,7 +18,12 @@ def create_app() -> Flask:
     else:
         print("❌ Failed to connect MongoDB during app init")
 
+    # Register blueprints
     app.register_blueprint(video_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(user_bp)
+
+    # Register global error handlers
+    register_error_handlers(app)
 
     return app
