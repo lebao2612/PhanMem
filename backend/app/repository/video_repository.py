@@ -53,13 +53,16 @@ class VideoRepository:
         video.save()
 
     @staticmethod
-    def increment_views(video: Video) -> None:
-        video.update(inc__views=1)
+    def update_views(video: Video, views: int) -> None:
+        video.views = views
+        video.updated_at = datetime.now(timezone.utc)
+        video.save()
 
     @staticmethod
-    def like_video(video: Video) -> None:
-        video.update(inc__likes=1)
-
+    def update_likes(video: Video, likes: int) -> None:
+        video.likes = likes
+        video.save()
+        
     @staticmethod
     def delete_video(video: Video) -> None:
         video.delete()
