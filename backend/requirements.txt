@@ -1,3 +1,4 @@
+# python -m pip install -r requirements.txt
 Flask
 flask-pymongo
 python-dotenv
@@ -7,3 +8,8 @@ flask-cors
 bcrypt
 PyJWT
 cloudinary
+fastapi
+pydantic
+google-auth
+google-auth-oauthlib
+google-api-python-client

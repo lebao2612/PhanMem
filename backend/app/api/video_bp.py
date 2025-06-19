@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, g
-from app.services import VideoService
+from app.services import VideoService, VideoUpload, handle_upload
 from .middlewares import token_required, role_required
+
 
 video_bp = Blueprint("video", __name__, url_prefix="/api/videos")
 
@@ -91,3 +92,22 @@ def update_like(video_id):
 def delete_video(video_id):
     VideoService.delete_video(video_id)
     return jsonify({"message": "Xóa video thành công"}), 200
+
+@video_bp.route("/upload-video", methods=["POST", "OPTIONS"])
+def upload_video():
+    if request.method == "OPTIONS":
+        return '', 200
+
+    try:
+        video_data = request.get_json()
+
+        # ✅ Chuyển dict thành object VideoUpload (giống FastAPI)
+        upload_obj = VideoUpload(**video_data)
+
+        result = handle_upload(upload_obj)
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({"error": str(e)}), 500
