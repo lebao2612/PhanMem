@@ -10,7 +10,6 @@ export const AuthProvider = ({ children }) => {
 
   const authFetch = async (url, options = {}) => {
     const token = sessionStorage.getItem("token");
-    console.log("Token:", token);
     const headers = {
       ...(options.headers || {}),
       Authorization: `Bearer ${token}`,

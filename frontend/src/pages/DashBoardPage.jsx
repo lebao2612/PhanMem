@@ -17,7 +17,7 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchVideos = async () => {
             try {
-                const res = await authFetch("/api/videos/");
+                const res = await authFetch("/api/videos/me?limit=20&skip=0");
                 setVideos(res);
                 setFilteredVideo(res);
             } catch (err) {
