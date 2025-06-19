@@ -1,3 +1,3 @@
 from .user import *
 from .email_verify import *
-from .videos import *
+from .video import *
