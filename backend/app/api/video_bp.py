@@ -4,7 +4,7 @@ from .middlewares import token_required
 
 video_bp = Blueprint("video", __name__, url_prefix="/api/videos")
 
-@video_bp.route("/", methods=["GET"])
+@video_bp.route("/", methods=["GET"], strict_slashes=False)
 @token_required
 def list_videos():
     creator_id = str(g.current_user.id)

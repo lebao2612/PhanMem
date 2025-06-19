@@ -20,7 +20,8 @@ class JWTService:
     @staticmethod
     def decode_token(token):
         try:
-            return jwt.decode(token, current_app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
+            data = jwt.decode(token, current_app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
+            return data, None
         except jwt.ExpiredSignatureError:
             return None, "Token expired"
         except jwt.InvalidTokenError:
