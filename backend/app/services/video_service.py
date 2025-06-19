@@ -30,8 +30,8 @@ class VideoService:
         return VideoDTO.from_model(video)
 
     @staticmethod
-    def list_videos_by_creator(creator_id: str, skip: int = 0, limit: int = 20) -> List[VideoDTO]:
-        videos = VideoRepository.find_by_creator(creator_id, skip, limit)
+    def query_videos(filters) -> List[VideoDTO]:
+        videos = VideoRepository.query(filters)
         return [VideoDTO.from_model(v) for v in videos]
 
     @staticmethod

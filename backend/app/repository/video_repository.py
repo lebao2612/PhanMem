@@ -19,23 +19,45 @@ class VideoRepository:
             return None
 
     @staticmethod
-    def find_by_creator(user_id: str, skip: int = 0, limit: int = 20) -> List[Video]:
-        return list(Video.objects(creator=user_id).skip(skip).limit(limit))
+    def query(filters: dict) -> List[Video]:
+        query = Video.objects
 
-    @staticmethod
-    def list_all(skip: int = 0, limit: int = 20) -> List[Video]:
-        return list(Video.objects.skip(skip).limit(limit))
+        # Lọc theo creator
+        if filters.get("creator_id"):
+            query = query.filter(creator=filters["creator_id"])
 
-    @staticmethod
-    def search_by_topic_or_title(keyword: str, limit: int = 20) -> List[Video]:
-        return list(Video.objects.filter(
-            __raw__={
+        # Search theo keyword (áp dụng trên title, topic, tags)
+        keyword = filters.get("keyword")
+        if keyword:
+            query = query.filter(__raw__={
                 "$or": [
                     {"title": {"$regex": keyword, "$options": "i"}},
-                    {"topic": {"$regex": keyword, "$options": "i"}}
+                    {"topic": {"$regex": keyword, "$options": "i"}},
+                    {"tags": {"$regex": keyword, "$options": "i"}}
                 ]
-            }
-        ).limit(limit))
+            })
+
+        # Lọc riêng từng trường
+        if filters.get("title"):
+            query = query.filter(title__icontains=filters["title"])
+        if filters.get("topic"):
+            query = query.filter(topic__icontains=filters["topic"])
+        if filters.get("tags"):
+            tags = filters["tags"]
+            if isinstance(tags, str):
+                tags = [tag.strip() for tag in tags.split(",")]
+            query = query.filter(tags__in=tags)
+
+        # Sắp xếp
+        sort_by = filters.get("sort", "-created_at")
+        query = query.order_by(sort_by)
+
+        # Pagination
+        skip = int(filters.get("skip", 0))
+        limit = int(filters.get("limit", 20))
+        query = query.skip(skip).limit(limit)
+
+        return list(query)
 
     @staticmethod
     def update_fields(video: Video, update_data: dict, allowed_fields: List[str]) -> Video:

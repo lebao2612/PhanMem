@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Header from "../components/Header";
 import LeftSideBar from "../components/LeftSideBar";
 import { FaYoutube, FaFacebook, FaTiktok, FaFilm, FaCamera, FaEye } from 'react-icons/fa';
 import { X, Calendar, Tag, Download, Upload } from 'lucide-react'
 import images from "../assets/images";
+import { AuthContext } from "../contexts/AuthContext";
 import UploadVideo from "../components/UploadVideo";
 
 const Dashboard = () => {
-
     const options = ["Tất cả", "Youtube", "Facebook", "Tiktok"]
+    const { authFetch } = useContext(AuthContext);
+    const [videos, setVideos] = useState([]);
+    const [filteredVideo, setFilteredVideo] = useState([]);
     
     const videos = [
         {name: "test1", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
@@ -36,23 +39,29 @@ const Dashboard = () => {
 
     
     const [selectedOption, setSelectedOption] = useState("Tất cả")
-    const [filteredVideo, setFilteredVideo] = useState(videos)
     const [selectedVideo, setSelectedVideo] = useState();
     const [selectUpload, setSelectUpload] = useState(false);
 
     useEffect(() => {
-        filterVideo();
-    }, [selectedOption]);
+        const fetchVideos = async () => {
+            try {
+                const res = await authFetch("/api/videos/me?limit=20&skip=0");
+                setVideos(res);
+                setFilteredVideo(res);
+            } catch (err) {
+                console.error("Lỗi khi gọi API:", err.message);
+            }
+        };
+        fetchVideos();
+    }, [authFetch]);
 
-
-    const filterVideo = () =>{
-        if(selectedOption === "Tất cả"){
+    useEffect(() => {
+        if (selectedOption === "Tất cả") {
             setFilteredVideo(videos);
+        } else {
+            setFilteredVideo(videos.filter(video => video.tag === selectedOption.toLowerCase()));
         }
-        else{
-            setFilteredVideo(videos.filter(video => video.tag === selectedOption.toLowerCase()))
-        }
-    }
+    }, [selectedOption, videos]);
 
     const closeDetailVideo = () =>{
         setSelectedVideo()
@@ -190,10 +199,7 @@ const Dashboard = () => {
                         <div className="flex-1 w-full p-6 pb-4 lg:pb-6 flex justify-center items-center">
                             <div className="relative w-full rounded-xl overflow-hidden shadow-lg">
                                 <video
-                                    width="100%"
-                                    height="400"
                                     controls
-                                    preload="metadata"
                                     className="w-full aspect-video rounded-lg"
                                     poster="/placeholder.svg?height=400&width=600"
                                 >
