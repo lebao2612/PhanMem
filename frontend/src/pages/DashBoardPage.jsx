@@ -13,27 +13,16 @@ const Dashboard = () => {
     const [videos, setVideos] = useState([]);
     const [filteredVideo, setFilteredVideo] = useState([]);
     
-    const videos = [
-        {name: "test1", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test2", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test3 asf asjfh fasfj", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test4", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test5", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test6", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test7", date: "26-12-2004", tag: "", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    ]
+    // const videos = [
+    //     {name: "test1", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    //     {name: "test2", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    //     {name: "test3 asf asjfh fasfj", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    //     {name: "test4", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    //     {name: "test5", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    //     {name: "test6", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    //     {name: "test7", date: "26-12-2004", tag: "", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    // ]
 
-    // const [videos, setVideos] = useState([]);
-
-    // useEffect(() => {
-    //     fetch("http://localhost:5000/api/videos") // Hoặc endpoint thật của bạn
-    //         .then(res => res.json())
-    //         .then(data => {
-    //             setVideos(data);
-    //             setFilteredVideo(data); // Đặt dữ liệu ban đầu luôn là toàn bộ video
-    //         })
-    //         .catch(err => console.error("Lỗi khi gọi API:", err));
-    // }, []);
 
     console.log(videos)
 
