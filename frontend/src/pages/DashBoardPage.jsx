@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import LeftSideBar from "../components/LeftSideBar";
 import { FaYoutube, FaFacebook, FaTiktok, FaFilm, FaCamera, FaEye } from 'react-icons/fa';
-import { X, Calendar, Tag, Download, Upload } from "lucide-react"
+import { X, Calendar, Tag, Download, Upload } from 'lucide-react'
 import images from "../assets/images";
+import UploadVideo from "../components/UploadVideo";
 
 const Dashboard = () => {
 
@@ -37,6 +38,7 @@ const Dashboard = () => {
     const [selectedOption, setSelectedOption] = useState("Tất cả")
     const [filteredVideo, setFilteredVideo] = useState(videos)
     const [selectedVideo, setSelectedVideo] = useState();
+    const [selectUpload, setSelectUpload] = useState(false);
 
     useEffect(() => {
         filterVideo();
@@ -54,6 +56,7 @@ const Dashboard = () => {
 
     const closeDetailVideo = () =>{
         setSelectedVideo()
+        setSelectUpload(false)
     }
 
     return (
@@ -204,68 +207,90 @@ const Dashboard = () => {
 
                         {/* Info Section */}
                         <div className="lg:w-80 p-6 pt-4 lg:pt-6 border-t lg:border-t-0 lg:border-l border-zinc-700/50">
-                            <div className="space-y-6">
-                                {/* Title */}
-                                <div>
-                                    <h3 className="text-xl font-bold text-white leading-tight mb-2">{selectedVideo.name}</h3>
-                                    <div className="w-12 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
-                                </div>
+                            {selectUpload ? (
+                                // Upload Video Component
+                                <UploadVideo 
+                                    selectedVideo={selectedVideo}
+                                    onClose={() => setSelectUpload(false)}
+                                    onBack={() => setSelectUpload(false)}
+                                />
+                            ) : (
+                                // Original Info Section
+                                <div className="space-y-6">
+                                    {/* Title */}
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white leading-tight mb-2">{selectedVideo.name}</h3>
+                                        <div className="w-12 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
+                                    </div>
 
-                                {/* Metadata */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 text-zinc-300">
-                                        <div className="flex items-center justify-center w-8 h-8 bg-zinc-700/50 rounded-lg">
-                                            <Calendar className="w-4 h-4" />
+                                    {/* Metadata */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 text-zinc-300">
+                                            <div className="flex items-center justify-center w-8 h-8 bg-zinc-700/50 rounded-lg">
+                                                <Calendar className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-zinc-400 uppercase tracking-wide font-medium">Ngày phát hành</p>
+                                                <p className="text-sm font-medium">{selectedVideo.createAt}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-xs text-zinc-400 uppercase tracking-wide font-medium">Ngày phát hành</p>
-                                            <p className="text-sm font-medium">{selectedVideo.createAt}</p>
+
+                                        <div className="flex items-center gap-3 text-zinc-300">
+                                            <div className="flex items-center justify-center w-8 h-8 bg-zinc-700/50 rounded-lg">
+                                                <Tag className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-zinc-400 uppercase tracking-wide font-medium">Xuất bản</p>
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                                    {selectedVideo.tag !== "" ? selectedVideo.tag.toUpperCase() :"None"}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 text-zinc-300">
-                                        <div className="flex items-center justify-center w-8 h-8 bg-zinc-700/50 rounded-lg">
-                                            <Tag className="w-4 h-4" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-zinc-400 uppercase tracking-wide font-medium">Xuất bản</p>
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                                                {selectedVideo.tag !== "" ? selectedVideo.tag.toUpperCase() :"None"}
-                                            </span>
+                                    {/* Additional Info */}
+                                    <div className="pt-4 border-t border-zinc-700/50">
+                                        <p className="text-sm text-zinc-400 leading-relaxed">
+                                            Khám phá thế giới tự nhiên qua những thước phim tuyệt đẹp với chất lượng 4K sắc nét.
+                                        </p>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="pt-4 border-t border-zinc-700/50">
+                                        <div className="flex flex-col gap-3">
+                                            <button 
+                                                className="cursor-pointer flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                                                //onClick={}    
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                Download Video
+                                            </button>
+
+                                            <button
+                                                disabled={selectedVideo.tag != ""}
+                                                className={`flex items-center justify-center gap-2 w-full border border-zinc-600 font-medium py-3 px-4 rounded-lg transition-all duration-200
+                                                    ${selectedVideo.tag !== "" 
+                                                        ? "bg-zinc-800/50 text-zinc-500 cursor-not-allowed" 
+                                                        : "cursor-pointer text-zinc-300 hover:bg-zinc-700/50 hover:text-white"}`}
+                                                onClick={() => {
+                                                    setSelectUpload(true)
+                                                }}
+                                            >
+                                                <Upload 
+                                                    className="w-4 h-4"
+                                                />
+                                                Upload Video
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Additional Info */}
-                                <div className="pt-4 border-t border-zinc-700/50">
-                                    <p className="text-sm text-zinc-400 leading-relaxed">
-                                        Khám phá thế giới tự nhiên qua những thước phim tuyệt đẹp với chất lượng 4K sắc nét.
-                                    </p>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="pt-4 border-t border-zinc-700/50">
-                                    <div className="flex flex-col gap-3">
-                                        <button className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
-                                            <Download className="w-4 h-4" />
-                                            Download Video
-                                        </button>
-
-                                        <button className="flex items-center justify-center gap-2 w-full border border-zinc-600 text-zinc-300 hover:bg-zinc-700/50 hover:text-white font-medium py-3 px-4 rounded-lg transition-all duration-200">
-                                            <Upload className="w-4 h-4" />
-                                            Upload Video
-                                        </button>
-                                    </div>
-                                </div>
-
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
             </>
         )}
-
         </div>
     )
 }
