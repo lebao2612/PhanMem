@@ -1,5 +1,5 @@
 from app.models import User
-from .email_verify_dto import EmailVerificationDTO
+from .email_verify_DTO import EmailVerificationDTO
 
 class UserDTO:
     def __init__(
