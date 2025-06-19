@@ -1,16 +1,45 @@
 from flask import Blueprint, request, jsonify, g
 from app.services import VideoService
-from .middlewares import token_required
+from .middlewares import token_required, role_required
 
 video_bp = Blueprint("video", __name__, url_prefix="/api/videos")
 
 @video_bp.route("/", methods=["GET"], strict_slashes=False)
 @token_required
-def list_videos():
-    creator_id = str(g.current_user.id)
-    skip = int(request.args.get("skip", 0))
-    limit = int(request.args.get("limit", 20))
-    videos = VideoService.list_videos_by_creator(creator_id, skip, limit)
+def list_all_videos():
+    args = request.args
+
+    filters = {
+        "creator_id": args.get("creator_id"),
+        "title": args.get("title"),
+        "topic": args.get("topic"),
+        "tags": args.get("tags"), 
+        "keyword": args.get("keyword"),
+        "sort": args.get("sort", "-created_at"),
+        "skip": int(args.get("skip", 0)),
+        "limit": int(args.get("limit", 20)),
+    }
+
+    videos = VideoService.query_videos(filters)
+    return jsonify([v.to_dict() for v in videos]), 200
+
+@video_bp.route("/me", methods=["GET"], strict_slashes=False)
+@token_required
+def list_my_videos():
+    args = request.args
+
+    filters = {
+        "creator_id": str(g.current_user.id),
+        "title": args.get("title"),
+        "topic": args.get("topic"),
+        "tags": args.get("tags"), 
+        "keyword": args.get("keyword"),
+        "sort": args.get("sort", "-created_at"),
+        "skip": int(args.get("skip", 0)),
+        "limit": int(args.get("limit", 20)),
+    }
+
+    videos = VideoService.query_videos(filters)
     return jsonify([v.to_dict() for v in videos]), 200
 
 @video_bp.route("/<video_id>", methods=["GET"])
