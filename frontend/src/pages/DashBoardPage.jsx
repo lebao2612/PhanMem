@@ -1,56 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Header from "../components/Header";
 import LeftSideBar from "../components/LeftSideBar";
 import { FaYoutube, FaFacebook, FaTiktok, FaFilm, FaCamera, FaEye } from 'react-icons/fa';
 import { X, Calendar, Tag, Play } from "lucide-react"
 import images from "../assets/images";
+import { AuthContext } from "../contexts/AuthContext";
 
 const Dashboard = () => {
-
     const options = ["Tất cả", "Youtube", "Facebook", "Tiktok"]
-    
-    // const videos = [
-    //     {name: "test1", date: "26-12-2004", tag: "Youtube", videoID: "dQw4w9WgXcQ"},
-    //     {name: "test2", date: "26-12-2004", tag: "Youtube", videoID: "dQw4w9WgXcQ"},
-    //     {name: "test3 asf asjfh fasfj", date: "26-12-2004", tag: "Facebook", videoID: "dQw4w9WgXcQ"},
-    //     {name: "test4", date: "26-12-2004", tag: "Facebook", videoID: "dQw4w9WgXcQ"},
-    //     {name: "test5", date: "26-12-2004", tag: "Tiktok", videoID: "dQw4w9WgXcQ"},
-    //     {name: "test6", date: "26-12-2004", tag: "Tiktok", videoID: "dQw4w9WgXcQ"},
-    //     {name: "test7", date: "26-12-2004", tag: "", videoID: "dQw4w9WgXcQ"},
-    // ]
-
+    const { authFetch } = useContext(AuthContext);
     const [videos, setVideos] = useState([]);
-
-    useEffect(() => {
-        fetch("http://localhost:5000/api/videos") // Hoặc endpoint thật của bạn
-            .then(res => res.json())
-            .then(data => {
-                setVideos(data);
-                setFilteredVideo(data); // Đặt dữ liệu ban đầu luôn là toàn bộ video
-            })
-            .catch(err => console.error("Lỗi khi gọi API:", err));
-    }, []);
-
-    console.log(videos)
-
-    
+    const [filteredVideo, setFilteredVideo] = useState([]);
     const [selectedOption, setSelectedOption] = useState("Tất cả")
-    const [filteredVideo, setFilteredVideo] = useState(videos)
     const [selectedVideo, setSelectedVideo] = useState();
 
     useEffect(() => {
-        filterVideo();
-    }, [selectedOption]);
+        const fetchVideos = async () => {
+            try {
+                const res = await authFetch("/api/videos/");
+                setVideos(res);
+                setFilteredVideo(res);
+            } catch (err) {
+                console.error("Lỗi khi gọi API:", err.message);
+            }
+        };
+        fetchVideos();
+    }, [authFetch]);
 
-
-    const filterVideo = () =>{
-        if(selectedOption === "Tất cả"){
+    useEffect(() => {
+        if (selectedOption === "Tất cả") {
             setFilteredVideo(videos);
+        } else {
+            setFilteredVideo(videos.filter(video => video.tag === selectedOption.toLowerCase()));
         }
-        else{
-            setFilteredVideo(videos.filter(video => video.tag === selectedOption.toLowerCase()))
-        }
-    }
+    }, [selectedOption, videos]);
 
     const closeDetailVideo = () =>{
         setSelectedVideo()
@@ -187,10 +170,7 @@ const Dashboard = () => {
                         <div className="flex-1 p-6 pb-4 lg:pb-6">
                             <div className="relative rounded-xl overflow-hidden shadow-lg">
                                 <video
-                                    width="100%"
-                                    height="400"
                                     controls
-                                    preload="metadata"
                                     className="w-full aspect-video rounded-lg"
                                     poster="/placeholder.svg?height=400&width=600"
                                 >
