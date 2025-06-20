@@ -1,9 +1,9 @@
-Flask
-flask-pymongo
-python-dotenv
 mongoengine
 requests
-flask-cors
 bcrypt
 PyJWT
 cloudinary
+pydantic
+pydantic_settings
+fastapi
+uvicorn

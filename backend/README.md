@@ -1,6 +1,6 @@
 # 🐍 Python Backend Web Project 
 
-Dự án này là một backend web sử dụng **Python (Flask)**
+Dự án này là một backend web sử dụng **Python (FastAPI)**
 
 ---
 
@@ -18,6 +18,7 @@ project/
 │   │   ├── *_bp                 # Các blueprint
 │   ├── dto/                     # Data Transfer Objects (DTO)
 │   ├── migrations/              # Script cập nhật dữ liệu
+│   ├── schemas/                 # Định nghĩa các Pydantic schema cho validate input/output (request & response models)
 │   ├── integrations/            # Tích hợp bên ngoài (AI, media, etc.)
 │   │   ├── ai/
 │   │   ├── cloud/
