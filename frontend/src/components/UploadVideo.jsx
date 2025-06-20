@@ -30,7 +30,7 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
 
     try {
       console.log("Sending data:", { videoUrl, title, description, category, privacy })
-      const response = await fetch("http://localhost:5000/api/upload-video", {
+      const response = await fetch("http://localhost:5000/api/videos/upload-video", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

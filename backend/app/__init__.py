@@ -10,7 +10,12 @@ mongo = MongoDBConnection(Config.MONGODB_URI)
 # Khởi tạo Flask app
 def create_app() -> Flask:
     app = Flask(__name__)
-    CORS(app)
+    CORS(
+        app,
+        resources={r"/*": {"origins": "http://localhost:5173"}},
+        supports_credentials=True
+    )
+
     app.config.from_object(Config)
 
     if mongo.connect():

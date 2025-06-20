@@ -10,7 +10,15 @@ import UploadVideo from "../components/UploadVideo";
 const Dashboard = () => {
     const options = ["Tất cả", "Youtube", "Facebook", "Tiktok"]
     const { authFetch } = useContext(AuthContext);
-    const [videos, setVideos] = useState([]);
+    const [videos, setVideos] = useState([
+        {name: "test1", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test2", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test3 asf asjfh fasfj", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test4", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test5", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test6", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test7", date: "26-12-2004", tag: "", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+    ]);
     const [filteredVideo, setFilteredVideo] = useState([]);
     
     // const videos = [
@@ -31,18 +39,18 @@ const Dashboard = () => {
     const [selectedVideo, setSelectedVideo] = useState();
     const [selectUpload, setSelectUpload] = useState(false);
 
-    useEffect(() => {
-        const fetchVideos = async () => {
-            try {
-                const res = await authFetch("/api/videos/me?limit=20&skip=0");
-                setVideos(res);
-                setFilteredVideo(res);
-            } catch (err) {
-                console.error("Lỗi khi gọi API:", err.message);
-            }
-        };
-        fetchVideos();
-    }, [authFetch]);
+    // useEffect(() => {
+    //     const fetchVideos = async () => {
+    //         try {
+    //             const res = await authFetch("/api/videos/me?limit=20&skip=0");
+    //             setVideos(res);
+    //             setFilteredVideo(res);
+    //         } catch (err) {
+    //             console.error("Lỗi khi gọi API:", err.message);
+    //         }
+    //     };
+    //     fetchVideos();
+    // }, [authFetch]);
 
     useEffect(() => {
         if (selectedOption === "Tất cả") {

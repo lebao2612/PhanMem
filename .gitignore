@@ -7,5 +7,6 @@ dist/
 __pycache__/
 *.py[cod]
 *$py.class
-client_secret.json
-token.pickle
+backend/client_secret.json
+backend/token.pickle
+backend/temp_video.mp4
