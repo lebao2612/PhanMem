@@ -1,30 +1,40 @@
-from flask import Flask
-from flask_cors import CORS
-from app.api import *
-from app.database import MongoDBConnection
-from config import Config
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.routers import main_router
+from app.api.errors import register_error_handlers
+from app.database import mongo
+import logging
+logger = logging.getLogger("uvicorn")
 
- # Khởi tạo instance MongoDBConnection
-mongo = MongoDBConnection(Config.MONGODB_URI)
 
-# Khởi tạo Flask app
-def create_app() -> Flask:
-    app = Flask(__name__)
-    CORS(app)
-    app.config.from_object(Config)
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="AI Short Video Generator",
+        version="1.0.0",
+    )
 
+    # Middleware CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Kết nối MongoDB
     if mongo.connect():
-        app.extensions['mongo'] = mongo
+        app.state.mongo = mongo
     else:
-        print("❌ Failed to connect MongoDB during app init")
+        logger.error("Failed to connect MongoDB during app init")
 
-    # Register blueprints
-    app.register_blueprint(video_bp)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(user_bp)
-    app.register_blueprint(generator_bp)
+    # Đăng ký router chính
+    app.include_router(main_router)
 
-    # Register global error handlers
+    # Đăng ký middleware xử lý lỗi
     register_error_handlers(app)
 
     return app
+
+# Acept uvicorn to run the app
+app = create_app()
