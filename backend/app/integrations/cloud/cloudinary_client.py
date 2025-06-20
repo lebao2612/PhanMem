@@ -1,15 +1,15 @@
 import cloudinary
 import cloudinary.uploader
-from config import Config
 from app.services import HandledException
+from config import settings
 
 class CloudinaryClient:
     @staticmethod
     def init():
         cloudinary.config(
-            cloud_name=Config.CLOUDINARY_CLOUD_NAME,
-            api_key=Config.CLOUDINARY_API_KEY,
-            api_secret=Config.CLOUDINARY_API_SECRET
+            cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+            api_key=settings.CLOUDINARY_API_KEY,
+            api_secret=settings.CLOUDINARY_API_SECRET
         )
 
     @staticmethod

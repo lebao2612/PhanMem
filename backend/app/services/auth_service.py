@@ -3,6 +3,7 @@ from app.repository import UserRepository
 from app.dtos import AuthDTO
 from app.exceptions import HandledException
 from .jwt_service import JWTService
+from config import settings
 
 class AuthService:
     @staticmethod
@@ -29,7 +30,7 @@ class AuthService:
     def login_with_google(access_token: str) -> AuthDTO:
         try:
             res = requests.get(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
+                url=settings.GOOGLE_OAUTH_USERINFO_URL,
                 headers={"Authorization": f"Bearer {access_token}"}
             )
             if res.status_code != 200:
