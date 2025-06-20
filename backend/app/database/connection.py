@@ -1,6 +1,9 @@
+import logging
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from mongoengine import connect, disconnect
+
+logger = logging.getLogger("uvicorn")
 
 class MongoDBConnection:
     def __init__(self, uri: str):
@@ -10,10 +13,10 @@ class MongoDBConnection:
     def connect(self) -> bool:
         try:
             connect(host=self.uri)
-            print("✅ MongoEngine connected successfully!")
+            logger.info("MongoEngine connected successfully!")
             return True
         except Exception as e:
-            print(f"❌ MongoEngine connection failed: {e}")
+            logger.error(f"MongoEngine connection failed: {e}")
             return False
 
     def test_connection(self) -> bool:
@@ -23,12 +26,12 @@ class MongoDBConnection:
             self.client.close()
             return True
         except Exception as e:
-            print(f"❌ MongoDB ping failed: {e}")
+            logger.error(f"MongoDB ping failed: {e}")
             return False
 
     def disconnect(self):
         try:
             disconnect()
-            print("✅ Disconnected from MongoDB")
+            logger.info("Disconnected from MongoDB")
         except Exception as e:
-            print(f"❌ Disconnect failed: {e}")
+            logger.error(f"Disconnect failed: {e}")
