@@ -1,23 +1,17 @@
+from typing import Optional
+from pydantic import BaseModel
 from app.models import EmailVerification
 
 
-class EmailVerificationDTO:
-    def __init__(self, code, expiresAt, verified):
-        self.code = code
-        self.expiresAt = expiresAt
-        self.verified = verified
+class EmailVerificationDTO(BaseModel):
+    code: Optional[str]
+    expiresAt: Optional[str]
+    verified: bool
 
     @classmethod
     def from_model(cls, ev: EmailVerification):
         return cls(
             code=ev.code,
             expiresAt=ev.expiresAt.isoformat() if ev.expiresAt else None,
-            verified=ev.verified
+            verified=ev.verified,
         )
-
-    def to_dict(self):
-        return {
-            "code": self.code,
-            "expiresAt": self.expiresAt,
-            "verified": self.verified,
-        }
