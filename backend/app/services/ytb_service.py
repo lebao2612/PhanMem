@@ -1,5 +1,6 @@
 # services/uploadVideo.py
 
+import datetime
 from fastapi import HTTPException
 from pydantic import BaseModel, validator
 from google.oauth2.credentials import Credentials
@@ -27,9 +28,11 @@ class VideoUpload(BaseModel):
 
 # Cấu hình YouTube API
 CLIENT_SECRET_FILE = "client_secret.json"
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload",
+          "https://www.googleapis.com/auth/youtube.readonly",
+        "https://www.googleapis.com/auth/yt-analytics.readonly"]
 
-def get_youtube_service():
+def get_credentials():
     creds = None
     if os.path.exists("token.pickle"):
         with open("token.pickle", "rb") as token:
@@ -39,7 +42,22 @@ def get_youtube_service():
         creds = flow.run_local_server(port=0)
         with open("token.pickle", "wb") as token:
             pickle.dump(creds, token)
+    return creds
+
+def get_youtube_service():
+    creds = get_credentials()
     return build("youtube", "v3", credentials=creds)
+
+def get_analytics_service():
+    creds = get_credentials()
+    return build("youtubeAnalytics", "v2", credentials=creds)
+
+def get_channel_id(youtube):
+    response = youtube.channels().list(
+        part="id",
+        mine=True
+    ).execute()
+    return response["items"][0]["id"]
 
 def download_video(video_url: str, output_path: str):
     response = requests.get(video_url, stream=True)
@@ -84,6 +102,7 @@ def handle_upload(video_data: VideoUpload):
         while response is None:
             status, response = request.next_chunk()
             if response is not None:
+                media.stream().close()
                 return {"message": "Video uploaded successfully", "video_id": response["id"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -94,3 +113,25 @@ def handle_upload(video_data: VideoUpload):
                 os.remove(video_path)
             except PermissionError:
                 pass
+
+def get_video_stats(video_id: str):
+    try:
+        youtube = get_youtube_service()
+
+        response = youtube.videos().list(
+            part="statistics",
+            id=video_id
+        ).execute()
+
+        items = response.get("items", [])
+        if not items:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        stats = items[0]["statistics"]
+        return {
+            "views": int(stats.get("viewCount", 0)),
+            "likes": int(stats.get("likeCount", 0)),
+            "comments": int(stats.get("commentCount", 0))
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Video stats error: {str(e)}")

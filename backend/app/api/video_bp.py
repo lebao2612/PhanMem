@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, g
-from app.services import VideoService, VideoUpload, handle_upload
+from app.services import VideoService, VideoUpload, handle_upload, get_video_stats
 from .middlewares import token_required, role_required
 
 
@@ -110,4 +110,17 @@ def upload_video():
 
     except Exception as e:
         print("Error:", str(e))
+        return jsonify({"error": str(e)}), 500
+    
+
+@video_bp.route("/analytics", methods=["GET"])
+def get_analytics():
+    try:
+        video_id = request.args.get("video_id")
+        if not video_id:
+            return jsonify({"error": "Missing video_id parameter"}), 400
+
+        result = get_video_stats(video_id)
+        return jsonify(result)
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
