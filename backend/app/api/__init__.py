@@ -1,5 +1,3 @@
-from .user_bp import *
-from .auth_bp import *
-from .video_bp import *
-from .generator_bp import *
+from .errors import *
 from .middlewares import *
+from .routers import *

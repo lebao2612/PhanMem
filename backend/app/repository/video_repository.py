@@ -83,6 +83,7 @@ class VideoRepository:
     @staticmethod
     def update_likes(video: Video, likes: int) -> None:
         video.likes = likes
+        video.updated_at = datetime.now(timezone.utc)
         video.save()
         
     @staticmethod

@@ -1,6 +1,6 @@
 import jwt
 from datetime import datetime, timedelta, timezone
-from flask import current_app
+from config.settings import settings
 
 class JWTService:
     @staticmethod
@@ -13,14 +13,14 @@ class JWTService:
         }
         return jwt.encode(
             payload,
-            current_app.config["JWT_SECRET_KEY"],
+            settings.JWT_SECRET_KEY,
             algorithm="HS256"
         )
 
     @staticmethod
     def decode_token(token):
         try:
-            data = jwt.decode(token, current_app.config["JWT_SECRET_KEY"], algorithms=["HS256"])
+            data = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
             return data, None
         except jwt.ExpiredSignatureError:
             return None, "Token expired"
