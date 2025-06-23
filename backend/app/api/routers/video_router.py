@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
-from app.services import VideoService
+from app.services import VideoService, VideoUpload, handle_upload, get_video_stats
 from app.dtos import VideoDTO
 from app.api.middlewares import token_required
 from app.schemas.request.video import *
@@ -89,3 +89,11 @@ def update_like(video_id: str, data: UpdateLikesRequest, current_user: dict = De
 def delete_video(video_id: str, current_user: dict = Depends(token_required)):
     VideoService.delete_video(video_id)
     return {"message": "Xóa video thành công"}
+
+@router.post("/upload")
+def upload_video(data: VideoUpload):
+    return handle_upload(data)
+
+@router.get("/stats")
+def video_stats(video_id: str):
+    return get_video_stats(video_id)

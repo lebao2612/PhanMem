@@ -7,3 +7,5 @@ dist/
 __pycache__/
 *.py[cod]
 *$py.class
+backend/client_secret.json
+backend/token.pickle
