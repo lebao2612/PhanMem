@@ -39,7 +39,7 @@ async def generate_voice(data: GenerateVoiceRequest, current_user: User = Depend
         title=data.title or "Untitled Video",
         topic=data.topic,
         script=data.script,
-        creator=current_user.id,
+        creator=current_user,
         tags=data.tags or []
     )
     return video

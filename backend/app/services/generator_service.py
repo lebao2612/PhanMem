@@ -1,6 +1,6 @@
 from typing import List
 from app.repository import VideoRepository
-from app.models import MediaInfo
+from app.models import MediaInfo, User, Video
 from app.dtos import VideoDTO
 from app.exceptions import HandledException
 from app.integrations import AIGenerator, CloudinaryClient
@@ -24,7 +24,7 @@ class GeneratorService:
         return await AIGenerator.generate_script(topic)
 
     @staticmethod
-    async def generate_voice(title, topic, script, creator, tags) -> VideoDTO:
+    async def generate_voice(title: str, topic: str, script: str, creator: User, tags: List[str]) -> VideoDTO:
         # Generate voice from script. Get the (tts model) audio URL.
         raw_url = await AIGenerator.generate_voice(script)
 
@@ -55,7 +55,7 @@ class GeneratorService:
             raise HandledException("Video không tồn tại", 404)
         if str(video.creator.id) != creator_id:
             raise HandledException("Không có quyền thực hiện", 403)
-        if not video.audio:
+        if not video.voice:
             raise HandledException("Audio không tồn tại", 400)
         
         VideoRepository.update_status(video, "processing")
