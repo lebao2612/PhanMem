@@ -7,10 +7,7 @@ class GenerateScriptRequest(BaseModel):
 
 
 class GenerateVoiceRequest(BaseModel):
-    title: Optional[str] = Field(None, description="Video title")
-    topic: str = Field(..., description="Video topic")
-    script: str = Field(..., description="Script content")
-    tags: Optional[List[str]] = Field(default=[], description="List of tags for the video")
+    script: str
 
 
 class GenerateVideoRequest(BaseModel):
