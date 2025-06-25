@@ -6,7 +6,7 @@ class GenerateScriptRequest(BaseModel):
 
 
 class GenerateVoiceRequest(BaseModel):
-    video_id: str
+    script: str
 
 
 class GenerateVideoRequest(BaseModel):
