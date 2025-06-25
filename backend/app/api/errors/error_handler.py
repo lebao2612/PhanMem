@@ -1,7 +1,7 @@
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import HTTPException as FastAPIHTTPException
+from fastapi.exceptions import HTTPException as FastAPIHTTPException, RequestValidationError
 from app.exceptions import HandledException
 
 # Cấu hình logging
@@ -22,6 +22,17 @@ def register_error_handlers(app: FastAPI):
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": exc.detail, "code": exc.status_code}
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(request: Request, exc: RequestValidationError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": "Dữ liệu không hợp lệ hoặc thiếu trường bắt buộc",
+                "code": 422,
+                "details": exc.errors(),
+            },
         )
 
     @app.exception_handler(404)

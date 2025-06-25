@@ -9,4 +9,5 @@ __pycache__/
 *$py.class
 backend/client_secret.json
 backend/token.pickle
+test/
 backend/tts_secret.json

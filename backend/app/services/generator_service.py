@@ -1,32 +1,26 @@
 from typing import List
 from app.repository import VideoRepository
-from app.models import MediaInfo
+from app.models import MediaInfo, User, Video
 from app.dtos import VideoDTO
 from app.exceptions import HandledException
-from app.integrations.ai.ai_generator import AIGenerator
+from app.integrations import AIGenerator, CloudinaryClient
 
 class GeneratorService:
     @staticmethod
-    async def get_suggestions(query: str) -> List[str]:
-        """
-        Lấy gợi ý topic từ query.
-        """
-        return await AIGenerator.generate_topic_suggestions(query)
+    async def get_suggested_topics(keyword: str, limit: int) -> List[str]:
+        # Generate topic suggestions (based on a keyword).
+        return await AIGenerator.generate_topic_suggestions(keyword, limit)
 
     @staticmethod
-    async def get_trending() -> List[str]:
-        """
-        Lấy danh sách topic trending.
-        """
-        return await AIGenerator.generate_trending_topics()
+    async def get_trending_topics(limit: int) -> List[str]:
+        # Generate trending topics.
+        return await AIGenerator.generate_trending_topics(limit)
 
     @staticmethod
-    async def generate_script_from_topic(topic: str) -> str:
-        """
-        Sinh script từ topic.
-        """
+    async def generate_script(topic: str) -> str:
+        # Generate a script based on the topic.
         if not topic:
-            raise HandledException("Chủ đề không được để trống", 400)
+            raise HandledException("Topic must not empty", 400)
         return await AIGenerator.generate_script(topic)
 
     @staticmethod
@@ -39,17 +33,19 @@ class GeneratorService:
 
     @staticmethod
     async def generate_video(video_id: str, creator_id: str) -> VideoDTO:
-        """
-        Sinh video hoàn chỉnh, tự động sinh ảnh nền từ topic.
-        """
+        # Generate a video
         video = VideoRepository.find_by_id(video_id)
         if not video:
             raise HandledException("Video không tồn tại", 404)
         if str(video.creator.id) != creator_id:
             raise HandledException("Không có quyền thực hiện", 403)
-        if not video.audio:
+        if not video.voice:
             raise HandledException("Audio không tồn tại", 400)
+        
+        VideoRepository.update_status(video, "processing")
         video_url = await AIGenerator.generate_video(video)
+        
         video.video = MediaInfo(public_id="mock_video_id", url=video_url)
         VideoRepository.update_status(video, "done")
+        
         return VideoDTO.from_model(video)

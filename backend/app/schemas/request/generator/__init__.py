@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional, List
 
 
 class GenerateScriptRequest(BaseModel):
-    topic: str
+    topic: str = Field(..., description="Topic for which the script will be generated")
 
 
 class GenerateVoiceRequest(BaseModel):
@@ -10,4 +11,4 @@ class GenerateVoiceRequest(BaseModel):
 
 
 class GenerateVideoRequest(BaseModel):
-    video_id: str
+    video_id: str = Field(..., description="ID of the video to be generated")

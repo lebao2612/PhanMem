@@ -75,17 +75,5 @@ class VideoRepository:
         video.save()
 
     @staticmethod
-    def update_views(video: Video, views: int) -> None:
-        video.views = views
-        video.updated_at = datetime.now(timezone.utc)
-        video.save()
-
-    @staticmethod
-    def update_likes(video: Video, likes: int) -> None:
-        video.likes = likes
-        video.updated_at = datetime.now(timezone.utc)
-        video.save()
-        
-    @staticmethod
     def delete_video(video: Video) -> None:
         video.delete()
