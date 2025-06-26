@@ -62,9 +62,9 @@ def get_video(video_id: str, current_user: User = Depends(token_required)):
     return VideoService.get_video_by_id(video_id)
 
 
-@router.post("/", response_model=VideoDTO)
-def create_video(data: CreateVideoRequest, current_user: User = Depends(token_required)):
-    return VideoService.create_video(
+@router.post("/draft", response_model=VideoDTO)
+def create_draft_video(data: CreateDraftVideoRequest, current_user: User = Depends(token_required)):
+    return VideoService.create_draft_video(
         data.title, data.topic, data.script, current_user, data.tags
     )
 
@@ -73,11 +73,9 @@ def create_video(data: CreateVideoRequest, current_user: User = Depends(token_re
 def update_video(video_id: str, data: UpdateVideoRequest, current_user: User = Depends(token_required)):
     return VideoService.update_video(video_id, data.model_dump(exclude_unset=True))
 
-
 @router.delete("/{video_id}")
 def delete_video(video_id: str, current_user: User = Depends(token_required)):
     VideoService.delete_video(video_id)
-    return {"message": "Xóa video thành công"}
 
 @router.post("/upload")
 def upload_video(data: VideoUpload):

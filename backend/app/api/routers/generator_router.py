@@ -33,11 +33,10 @@ async def generate_script(data: GenerateScriptRequest, current_user: User = Depe
     return script
 
 
-
 @router.post("/voice")
 async def generate_voice(data: GenerateVoiceRequest, current_user: dict = Depends(token_required)):
-    url = await GeneratorService.generate_voice(data.script)
-    return url
+    video = await GeneratorService.generate_voice(data.script)
+    return video
 
 
 @router.post("/video", response_model=VideoDTO)

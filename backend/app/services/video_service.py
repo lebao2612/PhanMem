@@ -8,18 +8,16 @@ from app.exceptions import HandledException
 
 class VideoService:
     @staticmethod
-    def create_video(title: str, topic: str, script: str, creator: User, tags: Optional[List[str]] = None) -> VideoDTO:
+    def create_draft_video(title: str, topic: str, script: str, creator: User, tags: Optional[List[str]] = None) -> VideoDTO:
         video = Video(
             title=title,
             topic=topic,
             script=script,
             creator=creator,
-            tags=tags or [],
             status="draft",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            tags=tags or []
         )
-        VideoRepository.save(video)
+        VideoRepository.create_video(video)
         return VideoDTO.from_model(video)
 
     @staticmethod

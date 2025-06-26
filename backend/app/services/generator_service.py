@@ -24,12 +24,32 @@ class GeneratorService:
         return await AIGenerator.generate_script(topic)
 
     @staticmethod
-    async def generate_voice(script: str) -> str:
-        """
-        Sinh voice cho video từ script.
-        """
-        voice_url = await AIGenerator.generate_voice(script)
-        return voice_url
+    async def generate_voice(topic: str, script: str, creator: User) -> VideoDTO:
+        # Generate voice audio from script and create a draft video entry.
+        audio_bytes = await AIGenerator.generate_voice(script)
+
+        # Upload generated audio to Cloudinary (as video resource type).
+        public_id, url = await CloudinaryClient.upload_bytes(
+            data=audio_bytes,
+            resource_type="video",  # Cloudinary treats mp3 as video
+            folder="tts-audio"
+        )
+
+        # Create MediaInfo object for the uploaded audio.
+        voice = MediaInfo(public_id=public_id, url=url)
+
+        # Prepare video data and create a draft video entry in the repository.
+        data = {
+            "topic": topic,
+            "script": script,
+            "creator": creator,
+            "voice": voice,
+            "status": "draft"
+        }
+        video = VideoRepository.create_video(data)
+
+        # Return the created video as a DTO.
+        return VideoDTO.from_model(video)
 
     @staticmethod
     async def generate_video(video_id: str, creator_id: str) -> VideoDTO:

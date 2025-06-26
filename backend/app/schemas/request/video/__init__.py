@@ -2,11 +2,11 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
-class CreateVideoRequest(BaseModel):
-    title: str = Field(..., description="Video title")
+class CreateDraftVideoRequest(BaseModel):
+    title: str = Field(default="Untitled", description="Video title")
     topic: str = Field(..., description="Video topic")
-    script: Optional[str] = Field(None, description="Script content")
-    tags: Optional[List[str]] = Field(default=[], description="List of tags for the video")
+    script: str = Field(..., description="Script content")
+    tags: List[str] = Field(default_factory=list, description="List of tags for the video")
 
 
 class UpdateVideoRequest(BaseModel):

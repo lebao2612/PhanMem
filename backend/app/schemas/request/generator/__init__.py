@@ -7,7 +7,7 @@ class GenerateScriptRequest(BaseModel):
 
 
 class GenerateVoiceRequest(BaseModel):
-    script: str
+    video_id: str = Field(..., description="ID of the video to be generated")
 
 
 class GenerateVideoRequest(BaseModel):

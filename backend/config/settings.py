@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+import json
 
 class Settings(BaseSettings):
     # Server
@@ -28,12 +29,13 @@ class Settings(BaseSettings):
     LLM_API_MODEL: str
 
     # TTS
-    TTS_API_KEY: str
-    TTS_API_URL: str
-    TTS_API_MODEL: str
+    GOOGLE_TTS_SERVICE_ACCOUNT_PATH: str = "secrets/tts_secret.json"
+    TTS_VOICE_GENDER: str = "FEMALE"
 
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "allow"
 
 settings = Settings()
