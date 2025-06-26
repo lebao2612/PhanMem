@@ -15,7 +15,7 @@ project/
 │   ├── services/                # Logic nghiệp vụ, thao tác với repo
 │   ├── api/                     # Định nghĩa các API endpoint
 │   │   ├── middleware/          # Chứa middleware, error handler
-│   │   ├── *_bp                 # Các blueprint
+│   │   ├── routers/             # Các routers
 │   ├── dto/                     # Data Transfer Objects (DTO)
 │   ├── migrations/              # Script cập nhật dữ liệu
 │   ├── schemas/                 # Định nghĩa các Pydantic schema cho validate input/output (request & response models)
@@ -25,7 +25,7 @@ project/
 │   └── database/                # Kết nối cơ sở dữ liệu
 │
 ├── config/                      # Cấu hình app & kết nối MongoDB
-│   └── config.py
+│   └── settings.py
 ├── run.py                       # Điểm khởi chạy chính
 ├── requirements.txt             # Danh sách thư viện cần cài
 └── .env                         # Biến môi trường (Mongo URI, SECRET_KEY, ...)
