@@ -1,19 +1,15 @@
-from dotenv import load_dotenv
-load_dotenv()
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers import main_router
 from app.api.errors import register_error_handlers
-from app.database import mongo
-import logging
-logger = logging.getLogger("uvicorn")
+from app.contexts import lifespan
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="AI Short Video Generator",
         version="1.0.0",
+        lifespan=lifespan
     )
 
     # Middleware CORS
@@ -24,12 +20,6 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    # Kết nối MongoDB
-    if mongo.connect():
-        app.state.mongo = mongo
-    else:
-        logger.error("Failed to connect MongoDB during app init")
 
     # Đăng ký router chính
     app.include_router(main_router)
