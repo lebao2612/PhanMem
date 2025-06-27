@@ -62,14 +62,13 @@ export const handleFetchSuggestedTopics = async (
     setIsLoadingSuggested(false);
   }
 };
-
 export const handleGenerateScript = async (
   text,
   authFetch,
   setGeneratedScript,
   setShowScriptArea,
   setScriptError,
-  setVideoId // ✅ Để lưu lại videoId sau khi tạo
+  setVideoId // Có thể bỏ luôn nếu không dùng nữa
 ) => {
   if (!text.trim()) {
     alert("Please enter a topic before generating script.");
@@ -77,7 +76,7 @@ export const handleGenerateScript = async (
   }
 
   try {
-    // Bước 1: Gọi API sinh script từ topic
+    // Gọi API sinh script từ topic
     const scriptRes = await authFetch("/api/generators/script", {
       method: "POST",
       body: JSON.stringify({ topic: text }),
@@ -85,27 +84,17 @@ export const handleGenerateScript = async (
 
     const script = scriptRes.script;
 
-    // Bước 2: Gọi API tạo video mới — KHÔNG thêm headers
-    const videoRes = await authFetch("/api/videos", {
-      method: "POST",
-      body: JSON.stringify({
-        topic: text,
-        script: script,
-        title: text, // hoặc tên khác nếu muốn
-      }),
-    });
-
-    const videoId = videoRes.id;
-
-    // Bước 3: Cập nhật giao diện
+    // Cập nhật giao diện
     setGeneratedScript(script);
     setShowScriptArea(true);
     setScriptError(false);
-    setVideoId(videoId); // lưu lại videoId để dùng tiếp
+    // setVideoId không dùng nữa => có thể bỏ dòng dưới
+    // setVideoId(null);
+
     return true;
   } catch (error) {
-    console.error("Lỗi khi sinh script và tạo video:", error.message);
-    alert("Đã xảy ra lỗi khi tạo video. Hãy thử lại.");
+    console.error("Lỗi khi sinh script:", error.message);
+    alert("Đã xảy ra lỗi khi tạo script. Hãy thử lại.");
     return false;
   }
 };

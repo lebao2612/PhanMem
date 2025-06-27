@@ -26,6 +26,9 @@ const GoogleLoginButton = ({
 
       const data = await res.json(); // { token, user }
       onSuccess(data);
+
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("user", JSON.stringify(data.user));
     } catch (error) {
       if (onError) {
         onError(error);
