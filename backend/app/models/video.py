@@ -15,7 +15,7 @@ class Video(Document):
 
     # Media fields
     video = EmbeddedDocumentField(MediaInfo)
-    audio = EmbeddedDocumentField(MediaInfo)
+    voice = EmbeddedDocumentField(MediaInfo)
     thumbnail = EmbeddedDocumentField(MediaInfo)
     creator = ReferenceField(User, required=True)
     status = StringField(choices=["draft", "processing", "done", "error"], default="draft")

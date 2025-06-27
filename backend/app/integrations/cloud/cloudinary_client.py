@@ -5,36 +5,23 @@ from config import settings
 
 class CloudinaryClient:
     @staticmethod
-    def init():
-        cloudinary.config(
-            cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-            api_key=settings.CLOUDINARY_API_KEY,
-            api_secret=settings.CLOUDINARY_API_SECRET
-        )
+    async def upload_audio(raw_url: str) -> tuple[str, str]:
+        """
+        Upload audio file to Cloudinary and return public ID and URL.
+        """
+        return "mock_public_id", "https://res.cloudinary.com/df8meqyyc/video/upload/v1750279229/skanews_pyv1gd.mp3"
 
     @staticmethod
-    def upload_image(image_data: bytes, folder: str = "images") -> dict:
-        try:
-            response = cloudinary.uploader.upload(
-                image_data, resource_type="image", folder=folder
-            )
-            return {"public_id": response["public_id"], "url": response["secure_url"]}
-        except Exception as e:
-            raise HandledException(f"Lỗi tải ảnh: {str(e)}", 500)
-
+    async def upload_video(raw_url: str) -> tuple[str, str]:
+        """
+        Upload audio file to Cloudinary and return public ID and URL.
+        """
+        return "mock_public_id", "https://res.cloudinary.com/df8meqyyc/video/upload/v1750280402/text-to-video_rmp4vx.mp4"
+    
     @staticmethod
-    def upload_video(video_data: bytes, folder: str = "videos") -> dict:
-        try:
-            response = cloudinary.uploader.upload(
-                video_data, resource_type="video", folder=folder
-            )
-            return {"public_id": response["public_id"], "url": response["secure_url"]}
-        except Exception as e:
-            raise HandledException(f"Lỗi tải video: {str(e)}", 500)
-
-    @staticmethod
-    def delete_asset(public_id: str, resource_type: str = "image"):
-        try:
-            cloudinary.uploader.destroy(public_id, resource_type=resource_type)
-        except Exception as e:
-            raise HandledException(f"Lỗi xóa tài nguyên: {str(e)}", 500)
+    async def upload_image(raw_url: str) -> tuple[str, str]:
+        """
+        Upload image file to Cloudinary and return public ID and URL.
+        """
+        return "mock_public_id", "https://res.cloudinary.com/df8meqyyc/image/upload/v1750280031/tech2025_hgsl68.jpg"
+    

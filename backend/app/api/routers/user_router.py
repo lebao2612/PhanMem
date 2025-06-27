@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from typing import List
 from app.services import UserService
+from app.models import User
 from app.dtos import UserDTO
 from app.schemas.request.user import *
 from app.api.middlewares import token_required, role_required
@@ -8,13 +9,13 @@ from app.api.middlewares import token_required, role_required
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 @router.get("/{user_id}", response_model=UserDTO)
-def get_user(user_id: str, current_user: dict = Depends(token_required)):
+def get_user(user_id: str, current_user: User = Depends(token_required)):
     user = UserService.get_user_by_id(user_id)
     return user
 
 
 @router.get("/", response_model=List[UserDTO])
-def list_users(skip: int = 0, limit: int = 20, current_user: dict = Depends(token_required)):
+def list_users(skip: int = 0, limit: int = 20, current_user: User = Depends(token_required)):
     return UserService.list_users(skip, limit)
 
 
@@ -22,7 +23,7 @@ def list_users(skip: int = 0, limit: int = 20, current_user: dict = Depends(toke
 def update_user(
     user_id: str,
     data: UpdateUserRequest,
-    current_user: dict = Depends(token_required)
+    current_user: User = Depends(token_required)
 ):
     allowed_fields = ["name", "picture", "additionalPreferences"]
     updated = UserService.update_user(user_id, data.model_dump(exclude_unset=True, exclude_none=True), allowed_fields)

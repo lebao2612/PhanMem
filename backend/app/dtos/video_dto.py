@@ -9,7 +9,7 @@ class VideoDTO(BaseModel):
     script: Optional[str]
     subtitles: Optional[List[dict]]
     video: Optional[str]
-    audio: Optional[str]
+    voice: Optional[str]
     thumbnail: Optional[str]
     creator_id: Optional[str]
     status: Optional[str]
@@ -28,7 +28,7 @@ class VideoDTO(BaseModel):
             script=video.script,
             subtitles=video.subtitles,
             video=video.video.url if video.video else None,
-            audio=video.audio.url if video.audio else None,
+            voice=video.voice.url if video.voice else None,
             thumbnail=video.thumbnail.url if video.thumbnail else None,
             creator_id=str(video.creator.id) if video.creator else None,
             status=video.status,

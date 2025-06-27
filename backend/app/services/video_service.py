@@ -40,7 +40,7 @@ class VideoService:
         update_data: dict,
         allowed_fields: List[str] = [
             "title", "topic", "script", "subtitles", "tags", "status",
-            "video", "audio", "thumbnail"
+            "video", "audio", "thumbnail", "views", "likes"
         ]
     ) -> VideoDTO:
         video = VideoRepository.find_by_id(video_id)
@@ -54,19 +54,5 @@ class VideoService:
         video = VideoRepository.find_by_id(video_id)
         if not video:
             raise HandledException("Video không tồn tại", 404)
-        VideoRepository.delete(video)
+        VideoRepository.delete_video(video)
         return True
-
-    @staticmethod
-    def update_views(video_id: str, views: int) -> None:
-        video = VideoRepository.find_by_id(video_id)
-        if not video:
-            raise HandledException("Video không tồn tại", 404)
-        VideoRepository.update_views(video, views)
-
-    @staticmethod
-    def update_likes(video_id: str, likes: int) -> None:
-        video = VideoRepository.find_by_id(video_id)
-        if not video:
-            raise HandledException("Video không tồn tại", 404)
-        VideoRepository.update_likes(video, likes)

@@ -17,7 +17,7 @@ async def token_required(request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="Người dùng không tồn tại")
     
-    return {"current_user": user}
+    return user
 
 def role_required(roles: List[str]):
     async def check_role(current_user: dict = Depends(token_required)):
