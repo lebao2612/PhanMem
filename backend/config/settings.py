@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_OAUTH_USERINFO_URL: str
-    GOOGLE_REDIRECT_URI: str
+    GOOGLE_REDIRECT_URI: str = "http://localhost:5173/login"
 
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str
@@ -31,6 +31,15 @@ class Settings(BaseSettings):
     # TTS
     GOOGLE_TTS_SERVICE_ACCOUNT_PATH: str = "secrets/tts_secret.json"
     TTS_VOICE_GENDER: str = "FEMALE"
+
+    # YouTube OAuth
+    YOUTUBE_CLIENT_SECRET_PATH: str
+    YOUTUBE_TOKEN_PATH: str
+    YOUTUBE_SCOPES: list[str] = [
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/youtube.readonly",
+        "https://www.googleapis.com/auth/yt-analytics.readonly"
+    ]
 
     
     class Config:

@@ -1,1 +1,1 @@
-from .ai_generator import *
+from .ai_generator import AIGenerator

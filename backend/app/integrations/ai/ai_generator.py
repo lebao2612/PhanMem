@@ -60,18 +60,18 @@ class AIGenerator:
             raise HandledException(status_code=500, detail=f"TTS generation failed: {e}")
 
     @staticmethod
-    async def generate_image(topic: str) -> str:
+    async def generate_images(topic: str) -> str:
         # TODO
 
         # Mock background image URL
         return "https://res.cloudinary.com/df8meqyyc/image/upload/v1750280031/tech2025_hgsl68.jpg"
 
     @staticmethod
-    async def generate_video(video: Video) -> str:
+    async def generate_video(video: Video) -> bytes:
         # TODO
 
         # Mock video URL
-        return "https://res.cloudinary.com/df8meqyyc/video/upload/v1750280402/text-to-video_rmp4vx.mp4"
+        return None
     
     @staticmethod
     def ask_llm(prompt: str) -> str:
