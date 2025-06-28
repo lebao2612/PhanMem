@@ -1,1 +1,1 @@
-from .lifespan import *
+from .lifespan import lifespan

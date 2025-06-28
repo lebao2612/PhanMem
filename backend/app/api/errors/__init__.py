@@ -1,1 +1,1 @@
-from .error_handler import *
+from .error_handler import register_error_handlers

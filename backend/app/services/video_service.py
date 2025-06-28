@@ -1,25 +1,12 @@
 from typing import Optional, List
 from datetime import datetime, timezone
-from app.repository import VideoRepository
+from app.repositories import VideoRepository
 from app.models import Video, User, MediaInfo
 from app.dtos import VideoDTO
 from app.integrations import *
 from app.exceptions import HandledException
 
 class VideoService:
-    @staticmethod
-    def create_draft_video(title: str, topic: str, script: str, creator: User, tags: Optional[List[str]] = None) -> VideoDTO:
-        video = Video(
-            title=title,
-            topic=topic,
-            script=script,
-            creator=creator,
-            status="draft",
-            tags=tags or []
-        )
-        VideoRepository.create_video(video)
-        return VideoDTO.from_model(video)
-
     @staticmethod
     def get_video_by_id(video_id: str) -> VideoDTO:
         video = VideoRepository.find_by_id(video_id)
@@ -33,12 +20,11 @@ class VideoService:
         return [VideoDTO.from_model(v) for v in videos]
 
     @staticmethod
-    def update_video(
+    def update_fields(
         video_id: str,
         update_data: dict,
         allowed_fields: List[str] = [
-            "title", "topic", "script", "subtitles", "tags", "status",
-            "video", "audio", "thumbnail", "views", "likes"
+            "title", "platforms"
         ]
     ) -> VideoDTO:
         video = VideoRepository.find_by_id(video_id)
@@ -54,3 +40,4 @@ class VideoService:
             raise HandledException("Video không tồn tại", 404)
         VideoRepository.delete_video(video)
         return True
+    
