@@ -1,59 +1,12 @@
-import React from "react";
-import { useGoogleLogin } from "@react-oauth/google";
-
-const GoogleLoginButton = ({
-  onSuccess,
-  onError,
-  buttonText = "Tham gia bằng Google",
-}) => {
-  const handleLoginGG = async (credentialResponse) => {
-    try {
-      // Gửi access_token về backend
-      const res = await fetch("/api/auth/login/google", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          access_token: credentialResponse.access_token,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err?.error || "Đăng nhập Google thất bại");
-      }
-
-      const data = await res.json(); // { token, user }
-      onSuccess(data);
-    } catch (error) {
-      if (onError) {
-        onError(error);
-      } else {
-        alert("Login failed. Please try again.");
-        console.error("Login failed:", error);
-      }
-    }
+const GoogleLoginButton = ({ buttonText = "Đăng nhập bằng Google" }) => {
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google/oauth";
   };
-
-  const handleErrorGG = (error) => {
-    if (onError) {
-      onError(error);
-    } else {
-      alert("Login failed. Please try again.");
-      console.error("Login failed:", error);
-    }
-  };
-
-  const loginAccess = useGoogleLogin({
-    onSuccess: handleLoginGG,
-    onError: handleErrorGG,
-  });
 
   return (
     <button
-      className="flex items-center justify-center w-4/5 bg-[#1c1c1c] rounded-full py-3 mb-3 border border-[#333] hover:bg-[#333] transition duration-100 cursor-pointer"
-      onClick={() => loginAccess()}
+      className="flex items-center justify-center w-[400px] w-4/5 bg-[#1c1c1c] rounded-full py-3 mb-3 border border-[#333] hover:bg-[#333] transition duration-100 cursor-pointer"
+      onClick={handleGoogleLogin}
       type="button"
     >
       <img

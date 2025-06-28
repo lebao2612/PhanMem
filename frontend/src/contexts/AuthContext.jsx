@@ -10,23 +10,45 @@ export const AuthProvider = ({ children }) => {
 
   const authFetch = async (url, options = {}) => {
     const token = sessionStorage.getItem("token");
-    const headers = {
-      ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-
-    const res = await fetch(url, {
-      ...options,
-      headers
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData?.error || "Lỗi server");
+    if (!token) {
+      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
     }
 
-    return res.json();
+    const headers = {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`
+    };
+
+    if (!(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    let res;
+    try {
+      res = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } catch (err) {
+      throw new Error("Không thể kết nối đến server");
+    }
+
+    // Xử lý 204 No Content
+    if (res.status === 204) return null;
+
+    const {success, data, error} = await res.json();
+    if (!res.ok || !success) {
+      if (res.status === 401) {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        setUser(null);
+        throw new Error("Phiên đăng nhập đã hết hạn");
+      }
+
+      throw new Error(error?.message || `Lỗi hệ thống (${res.status})`);
+    }
+
+    return data;
   };
 
   return (
