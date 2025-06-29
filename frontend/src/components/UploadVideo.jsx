@@ -4,39 +4,35 @@ import { useState, useEffect } from "react"
 import { ArrowLeft } from "lucide-react"
 
 function UploadVideo({ selectedVideo, onClose, onBack }) {
-  const [videoUrl, setVideoUrl] = useState("") // Thêm state cho videoUrl
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("22") // Mặc định: People & Blogs
+  const [category, setCategory] = useState("22")
   const [privacy, setPrivacy] = useState("private")
   const [loading, setLoading] = useState(false)
 
-  // Sử dụng useEffect để populate dữ liệu từ selectedVideo
   useEffect(() => {
     if (selectedVideo) {
-      setVideoUrl(selectedVideo.videoURL || selectedVideo.videoID || "")
-      setTitle(selectedVideo.name || "")
-      setDescription(`Video được tạo ngày ${selectedVideo.date || selectedVideo.createAt || ""}`)
+      setTitle(selectedVideo.title || "")
+      setDescription(`Video được tạo ngày ${selectedVideo.createAt || ""}`)
     }
   }, [selectedVideo])
 
   const handleUpload = async () => {
     setLoading(true)
-    if (!videoUrl || !title || !description) {
-      alert("Please fill in Video URL, Title, and Description.")
+
+    if (!selectedVideo?.videoID || !title || !description) {
+      alert("Thiếu thông tin video.")
       setLoading(false)
       return
     }
 
     try {
-      console.log("Sending data:", { videoUrl, title, description, category, privacy })
-      const response = await fetch("http://localhost:5000/api/upload-video", {
+      const response = await fetch(`/api/platforms/youtube/upload/${selectedVideo.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          video_url: videoUrl,
           title,
           description,
           category,
@@ -45,25 +41,22 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
       })
 
       const result = await response.json()
-      console.log("Response:", result)
       if (response.ok) {
         alert("Video uploaded successfully!")
-        // Có thể gọi onClose() để đóng form sau khi upload thành công
-        if (onClose) onClose()
+        onClose?.()
       } else {
-        alert(`Error: ${result.detail || result.error || "Unknown error"}`)
+        alert(`Upload failed: ${result.detail || result.error || "Unknown error"}`)
       }
     } catch (error) {
       console.error("Error uploading video:", error)
-      alert("Failed to upload video.")
+      alert("Đã xảy ra lỗi khi upload video.")
     }
+
     setLoading(false)
   }
 
   return (
     <div className="space-y-2 text-white h-full flex flex-col p-1">
-        {console.log(videoUrl)}
-      {/* Header với nút Back */}
       <div className="flex items-center gap-3 mb-4">
         <button
           onClick={onBack || onClose}
@@ -74,7 +67,6 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
         <h2 className="text-xl font-bold">Upload to YouTube</h2>
       </div>
 
-      {/* Form fields */}
       <div className="space-y-2 flex-1 overflow-y-auto px-1">
         {/* <div>
           <label className="block text-sm font-medium text-zinc-300 mb-2">Video URL</label>
@@ -143,7 +135,6 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
         </div>
       </div>
 
-      {/* Upload button */}
       <div className="pt-4 border-t border-zinc-700/50">
         <button
           onClick={handleUpload}

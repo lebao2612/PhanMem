@@ -9,7 +9,14 @@ const googleOAuthCallback = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get("error");
     const code = urlParams.get("code");
+
+    // Trường hợp người dùng từ chối cấp quyền
+    if (error === "access_denied") {
+      navigate("/login");
+      return;
+    }
 
     if (!code || hasHandled.current) return;
 

@@ -59,7 +59,7 @@ class GoogleOAuthClient:
         # Get user info from Google
         try:
             res = requests.get(
-                settings.GOOGLE_OAUTH_USERINFO_URL,
+                settings.GOOGLE_OAUTH_USERINFO_URI,
                 headers={"Authorization": f"Bearer {access_token}"},
                 timeout=10
             )

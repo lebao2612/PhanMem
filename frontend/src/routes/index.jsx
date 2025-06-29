@@ -7,7 +7,7 @@ import GoogleOAuthCallbackPage from "../pages/GoogleOAuthCallbackPage";
 const publicRoutes = [
   { path: "/login", component: Login },
   { path: "/review", component: TestReview },
-  { path: "/google/callback", component: GoogleOAuthCallbackPage },
+  { path: "/login/google/oauth/callback", component: GoogleOAuthCallbackPage },
 ];
 const privateRoutes = [
   { path: "/home", component: Home },

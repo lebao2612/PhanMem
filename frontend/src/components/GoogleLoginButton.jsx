@@ -1,27 +1,6 @@
 const GoogleLoginButton = ({ buttonText = "Đăng nhập bằng Google" }) => {
-  const handleGoogleLogin = async () => {
-    // window.location.href = "/api/auth/google/oauth";
-    try {
-      const response = await fetch("/api/auth/google/oauth", {
-        method: "GET",
-        redirect: "manual", // tránh browser auto redirect
-      });
-
-      if (response.status === 307 || response.status === 302) {
-        const redirectUrl = response.headers.get("Location");
-        if (redirectUrl) {
-          window.location.href = redirectUrl;
-        } else {
-          alert("Không lấy được đường dẫn redirect từ Google.");
-        }
-      } else {
-        const text = await response.text();
-        alert("Có lỗi xảy ra khi xử lý Google OAuth:\n" + text);
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      alert("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google/oauth";
   };
 
   return (
