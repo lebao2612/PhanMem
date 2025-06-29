@@ -82,14 +82,13 @@ export const handleGenerateScript = async (
       body: JSON.stringify({ topic: text }),
     });
 
-    const script = scriptRes.script;
+    const script = typeof scriptRes === "string" ? scriptRes : scriptRes.script;
 
+    console.log("📥 Script API response:", scriptRes);
     // Cập nhật giao diện
     setGeneratedScript(script);
     setShowScriptArea(true);
     setScriptError(false);
-    // setVideoId không dùng nữa => có thể bỏ dòng dưới
-    // setVideoId(null);
 
     return true;
   } catch (error) {
@@ -99,9 +98,9 @@ export const handleGenerateScript = async (
   }
 };
 
+// Hàm này sẽ gọi API để sinh voice từ script đã tạo
 export const handleGenerateVoice = async (
-  videoId,
-  _authFetch,
+  generatedScript,
   setVoiceUrl,
   setIsLoadingVoice
 ) => {
@@ -114,34 +113,90 @@ export const handleGenerateVoice = async (
   setIsLoadingVoice(true);
   setVoiceUrl("");
 
-  try {
-    const res = await fetch("/api/generators/voice", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ video_id: videoId }),
-    });
+  console.log("📤 Gửi script đến API voice:", generatedScript);
+  // Giả sử nhận voice_url từ backend
+  const voice_url =
+    "https://res.cloudinary.com/df8meqyyc/video/upload/v1750859823/tts-audio/qfv6ryugzwx5hlqltvgz.mp3";
+  console.log("📥 Nhận voice_url:", voice_url);
+  setVoiceUrl(voice_url);
+  setIsLoadingVoice(false);
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err?.error || "Lỗi khi gọi API voice.");
-    }
+  // ------------- Chưa dùng được API (Thiếu secret key) -------------
+  // Nếu backend đã sẵn sàng, có thể bỏ comment đoạn này để gọi API
 
-    const data = await res.json();
-    console.log("📥 Voice API response:", data);
+  // try {
+  //   const res = await fetch("/api/generators/voice", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //     body: JSON.stringify({ script: generatedScript }), // ✅ đúng format backend yêu cầu
+  //   });
 
-    if (data.voice_url) {
-      setVoiceUrl(data.voice_url);
-    } else {
-      console.warn("⚠️ Không có voice_url trong response:", data);
-      alert("Không tìm thấy voice_url trong phản hồi.");
-    }
-  } catch (error) {
-    console.error("Voice generation error:", error.message);
-    alert("Đã xảy ra lỗi khi gọi API voice.");
-  } finally {
-    setIsLoadingVoice(false);
-  }
+  //   if (!res.ok) {
+  //     const err = await res.json();
+  //     throw new Error(err?.error || "Lỗi khi gọi API voice.");
+  //   }
+
+  //   const data = await res.json();
+  //   console.log("📥 Voice API response:", data);
+
+  //   if (data.voice_url) {
+  //     setVoiceUrl(data.voice_url);
+  //   } else {
+  //     console.warn("⚠️ Không có voice_url trong response:", data);
+  //     alert("Không tìm thấy voice_url trong phản hồi.");
+  //   }
+  // } catch (error) {
+  //   console.error("Voice generation error:", error.message);
+  //   alert("Đã xảy ra lỗi khi gọi API voice.");
+  // } finally {
+  //   setIsLoadingVoice(false);
+  // }
+};
+
+// Hàm này sẽ gọi API để sinh video từ voice đã tạo
+// scripts/home.js
+export const handleGenerateVideo = async (
+  videoId,
+  authFetch,
+  setVideoUrl,
+  setIsLoadingVideo
+) => {
+  // // if (!videoId) return;
+  // if (!videoId || videoId.trim() === "") {
+  //   alert("Please provide a valid video ID.");
+  //   return;
+  // }
+
+  setIsLoadingVideo(true);
+  setVideoUrl("");
+
+  // Giả sử nhận video_url từ backend
+  const videoUrl =
+    "https://res.cloudinary.com/dznocieoi/video/upload/v1751044595/video_utej9c.mp4";
+  const videoUrl2 =
+    "https://res.cloudinary.com/dznocieoi/video/upload/v1751080891/videoplayback_rgkq72.mp4";
+  console.log("Url video:", videoUrl, videoUrl2);
+  setVideoUrl(videoUrl2);
+  setIsLoadingVideo(false);
+
+  // Chưa dùng được API (Thiếu videoID)
+  // try {
+  //   const response = await authFetch("/api/generators/video", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ video_id: videoId }),
+  //   });
+
+  //   if (!response.ok) throw new Error("Video generation failed");
+
+  //   const data = await response.json();
+  //   setVideoUrl(data.video_url); //  Backend trả về `video_url` trong `VideoDTO`
+  // } catch (err) {
+  //   console.error("Video generation error:", err);
+  // } finally {
+  //   setIsLoadingVideo(false);
+  // }
 };
