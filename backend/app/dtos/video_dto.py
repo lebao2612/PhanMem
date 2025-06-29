@@ -1,23 +1,24 @@
 from app.models import Video
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 class VideoDTO(BaseModel):
     id: str
-    title: Optional[str]
-    topic: Optional[str]
-    script: Optional[str]
-    subtitles: Optional[List[dict]]
-    video: Optional[str]
-    voice: Optional[str]
-    thumbnail: Optional[str]
-    creator_id: Optional[str]
-    status: Optional[str]
-    tags: List[str]
-    views: int
-    likes: int
-    created_at: Optional[str]
-    updated_at: Optional[str]
+    title: Optional[str] = None
+    topic: Optional[str] = None
+    script: Optional[str] = None
+    subtitles: Optional[List[Dict[str, Any]]] = None
+
+    video_url: Optional[str] = None
+    voice_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+
+    creator_id: Optional[str] = None
+    status: Optional[str] = None
+    platforms: Optional[Dict[str, Any]] = None
+
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
     @classmethod
     def from_model(cls, video: Video):
@@ -27,14 +28,12 @@ class VideoDTO(BaseModel):
             topic=video.topic,
             script=video.script,
             subtitles=video.subtitles,
-            video=video.video.url if video.video else None,
-            voice=video.voice.url if video.voice else None,
-            thumbnail=video.thumbnail.url if video.thumbnail else None,
+            video_url=video.get_video_url(),
+            voice_url=video.get_voice_url(),
+            thumbnail_url=video.get_thumbnail_url(),
             creator_id=str(video.creator.id) if video.creator else None,
+            platforms=video.platforms or None,
             status=video.status,
-            tags=video.tags,
-            views=video.views,
-            likes=video.likes,
             created_at=video.created_at.isoformat() if video.created_at else None,
             updated_at=video.updated_at.isoformat() if video.updated_at else None,
         )

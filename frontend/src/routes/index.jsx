@@ -1,13 +1,13 @@
 import Home from "../pages/HomePage";
 import Login from "../pages/LoginPage";
-import Register from "../pages/RegisterPage";
 import Dashboard from "../pages/DashBoardPage";
 import TestReview from "../pages/TestReviewPage";
+import GoogleOAuthCallbackPage from "../pages/GoogleOAuthCallbackPage";
 
 const publicRoutes = [
   { path: "/login", component: Login },
-  { path: "/register", component: Register },
   { path: "/review", component: TestReview },
+  { path: "/login/google/oauth/callback", component: GoogleOAuthCallbackPage },
 ];
 const privateRoutes = [
   { path: "/home", component: Home },

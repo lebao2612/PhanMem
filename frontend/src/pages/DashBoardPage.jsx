@@ -12,21 +12,7 @@ const Dashboard = () => {
     const { authFetch } = useContext(AuthContext);
     const [videos, setVideos] = useState([]);
     const [filteredVideo, setFilteredVideo] = useState([]);
-    
-    // const videos = [
-    //     {name: "test1", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    //     {name: "test2", date: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    //     {name: "test3 asf asjfh fasfj", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    //     {name: "test4", date: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    //     {name: "test5", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    //     {name: "test6", date: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    //     {name: "test7", date: "26-12-2004", tag: "", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-    // ]
-
-
-    console.log(videos)
-
-    
+    console.log(videos)    
     const [selectedOption, setSelectedOption] = useState("Tất cả")
     const [selectedVideo, setSelectedVideo] = useState();
     const [selectUpload, setSelectUpload] = useState(false);
