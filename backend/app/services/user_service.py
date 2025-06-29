@@ -1,5 +1,5 @@
 from typing import Optional, List
-from app.repository import UserRepository
+from app.repositories import UserRepository
 from app.dtos import UserDTO
 from app.exceptions import HandledException
 
@@ -30,14 +30,6 @@ class UserService:
         if not user:
             raise HandledException("Người dùng không tồn tại", 404)
         UserRepository.delete(user)
-        return True
-
-    @staticmethod
-    def change_password(user_id: str, new_password: str) -> bool:
-        user = UserRepository.find_by_id(user_id)
-        if not user:
-            raise HandledException("Người dùng không tồn tại", 404)
-        UserRepository.change_password(user, new_password)
         return True
 
     @staticmethod

@@ -1,1 +1,1 @@
-from .cloudinary_client import *
+from .cloudinary_client import CloudinaryClient

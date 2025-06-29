@@ -1,51 +1,39 @@
-import os
-import uuid
 from typing import List
-from app.models import Video
-
 from google.cloud import texttospeech
-from fastapi import HTTPException
-import aiofiles
-import cloudinary
-import cloudinary.uploader
+from config import settings
+from app.models import Video
+from app.exceptions import HandledException
+import requests
+
 
 class AIGenerator:
-
-    cloudinary.config(
-        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-        api_key=os.getenv("CLOUDINARY_API_KEY"),
-        api_secret=os.getenv("CLOUDINARY_API_SECRET")
-    )
+    @staticmethod
+    async def generate_script(topic: str) -> str:
+        prompt = f"Viết kịch bản ~100 chữ cho video AI chủ đề \"{topic}\". Chỉ trả về văn bản thuần."
+        return AIGenerator.ask_llm(prompt)
 
     @staticmethod
     async def generate_topic_suggestions(keyword: str, limit: int) -> List[str]:
         if not keyword:
-            # Mock general topics
-            return [f"Suggestion trend {i}" for i in range(1, limit + 1)]
-        
-        # Mock topic suggestions based on query
-        return [f"{keyword} trend {i}" for i in range(1, limit + 1)]
+            return await AIGenerator.generate_trending_topics(limit)
+        prompt = f"Gợi ý {limit} chủ đề video AI liên quan đến \"{keyword}\". Mỗi dòng là 1 chủ đề."
+        raw = AIGenerator.ask_llm(prompt)
+        return [line.strip("-•. ") for line in raw.splitlines() if line.strip()]
 
     @staticmethod
     async def generate_trending_topics(limit: int) -> List[str]:
-        # Mock trending topics
-        return ["Tech 2025", "AI Tutorial", "Short Video Trends"]
+        prompt = f"Gợi ý {limit} chủ đề video AI đang thịnh hành. Mỗi dòng là 1 chủ đề."
+        raw = AIGenerator.ask_llm(prompt)
+        return [line.strip("-•. ") for line in raw.splitlines() if line.strip()]
 
     @staticmethod
-    async def generate_script(topic: str) -> str:
-        # Mock script
-        return f"Đây là đoạn script mô phỏng từ chủ đề: '{topic}'. Nội dung chi tiết sẽ do AI tạo ra sau."
-
-    @staticmethod
-    async def generate_voice(full_script: str) -> str:
-        filename = f"tts_{uuid.uuid4().hex}.mp3"
-
+    async def generate_voice(script: str) -> bytes:
         try:
             # Tạo client Google TTS
-            client = texttospeech.TextToSpeechClient.from_service_account_file("tts_secret.json")
+            client = texttospeech.TextToSpeechClient.from_service_account_file(settings.GOOGLE_TTS_CREDENTIALS_PATH)
 
             # Tạo input cho TTS
-            synthesis_input = texttospeech.SynthesisInput(text=full_script)
+            synthesis_input = texttospeech.SynthesisInput(text=script)
 
             # Cấu hình giọng nói
             voice = texttospeech.VoiceSelectionParams(
@@ -66,42 +54,50 @@ class AIGenerator:
                 audio_config=audio_config
             )
 
-            # Ghi ra file tạm
-            async with aiofiles.open(filename, "wb") as out:
-                await out.write(response.audio_content)
-
-            # Upload lên Cloudinary
-            uploaded = cloudinary.uploader.upload(
-                filename,
-                resource_type="video",  # Cloudinary xem mp3 là video
-                folder="tts-audio"
-            )
-
-            # Trả về URL
-            return uploaded["secure_url"]
+            return response.audio_content
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"TTS generation failed: {e}")
-
-        finally:
-            # Đảm bảo xóa file tạm nếu tồn tại
-            if os.path.exists(filename):
-                try:
-                    os.remove(filename)
-                except Exception as remove_err:
-                    print(f"Warning: Failed to delete temp file {filename}: {remove_err}")
-
+            raise HandledException(status_code=500, detail=f"TTS generation failed: {e}")
 
     @staticmethod
-    async def generate_background_image(topic: str) -> str:
+    async def generate_images(topic: str) -> str:
         # TODO
 
         # Mock background image URL
         return "https://res.cloudinary.com/df8meqyyc/image/upload/v1750280031/tech2025_hgsl68.jpg"
 
     @staticmethod
-    async def generate_video(video: Video) -> str:
+    async def generate_video(video: Video) -> bytes:
         # TODO
 
         # Mock video URL
-        return "https://res.cloudinary.com/df8meqyyc/video/upload/v1750280402/text-to-video_rmp4vx.mp4"
+        return None
+    
+    @staticmethod
+    def ask_llm(prompt: str) -> str:
+        url = settings.LLM_API_URL
+        headers = {
+            "Authorization": f"Bearer {settings.LLM_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": settings.LLM_API_MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Bạn là trợ lý viết nội dung video ngắn. Trả text, không tiêu đề, không giải thích."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+            result = response.json()
+            return result["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            raise Exception(f"Lỗi gọi LLM: {e}")

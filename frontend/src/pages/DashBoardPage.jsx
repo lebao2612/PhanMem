@@ -20,12 +20,8 @@ const Dashboard = () => {
         {name: "test7", createAt: "26-12-2004", tag: "", videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
     ]);
     const [filteredVideo, setFilteredVideo] = useState([]);
-    
 
-
-    console.log(videos)
-
-    
+    console.log(videos)    
     const [selectedOption, setSelectedOption] = useState("Tất cả")
     const [selectedVideo, setSelectedVideo] = useState();
     const [selectUpload, setSelectUpload] = useState(false);
