@@ -30,7 +30,7 @@ class AIGenerator:
     async def generate_voice(script: str) -> bytes:
         try:
             # Tạo client Google TTS
-            client = texttospeech.TextToSpeechClient.from_service_account_file(settings.GOOGLE_TTS_SERVICE_ACCOUNT_PATH)
+            client = texttospeech.TextToSpeechClient.from_service_account_file(settings.GOOGLE_TTS_CREDENTIALS_PATH)
 
             # Tạo input cho TTS
             synthesis_input = texttospeech.SynthesisInput(text=script)

@@ -5,24 +5,39 @@ from app.exceptions import HandledException
 
 class GoogleOAuthClient:
     @staticmethod
-    def get_oauth_url() -> str:
+    def get_oauth_url(
+        prompt: str="select_account",
+        include_granted_scopes: bool=False
+        ) -> str:
         # Build Google OAuth URL
+        scopes = [
+            "openid",
+            "email",
+            "profile",
+            settings.YOUTUBE_SCOPE_UPLOAD,
+            settings.YOUTUBE_SCOPE_READONLY,
+            settings.YOUTUBE_SCOPE_ANALYTICS,
+        ]
+
         params = {
             "client_id": settings.GOOGLE_CLIENT_ID,
             "redirect_uri": settings.GOOGLE_REDIRECT_URI,
             "response_type": "code",
             "access_type": "offline",
-            "prompt": "select_account",
-            "scope": "openid email profile https://www.googleapis.com/auth/youtube.upload"
+            "prompt": prompt,
+            "scope": " ".join(scopes),
         }
-        return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+        if include_granted_scopes:
+            params["include_granted_scopes"] = "true"
+        
+        return f"{settings.GOOGLE_OAUTH_AUTH_URI}?{urlencode(params)}"
 
     @staticmethod
     def exchange_code_for_tokens(code: str) -> dict:
         # Exchange code for tokens
         try:
             res = requests.post(
-                "https://oauth2.googleapis.com/token",
+                settings.GOOGLE_OAUTH_TOKEN_URI,
                 data={
                     "code": code,
                     "client_id": settings.GOOGLE_CLIENT_ID,
@@ -59,7 +74,7 @@ class GoogleOAuthClient:
         # Return a new access token using the refresh token
         try:
             res = requests.post(
-                "https://oauth2.googleapis.com/token",
+                settings.GOOGLE_OAUTH_TOKEN_URI,
                 data={
                     "client_id": settings.GOOGLE_CLIENT_ID,
                     "client_secret": settings.GOOGLE_CLIENT_SECRET,

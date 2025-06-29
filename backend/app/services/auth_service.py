@@ -6,8 +6,11 @@ from app.exceptions import HandledException
 
 class AuthService:
     @staticmethod
-    def get_google_oauth_url() -> str:
-        return GoogleOAuthClient.get_oauth_url()
+    def get_google_oauth_url(prompt: str, include_granted_scopes: bool) -> str:
+        return GoogleOAuthClient.get_oauth_url(
+            prompt=prompt,
+            include_granted_scopes=include_granted_scopes
+        )
 
     @staticmethod
     def handle_google_oauth_callback(code: str) -> AuthDTO:

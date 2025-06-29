@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-import json
 
 class Settings(BaseSettings):
     # Server
@@ -15,33 +14,32 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
-    GOOGLE_OAUTH_USERINFO_URL: str
-    GOOGLE_REDIRECT_URI: str = "http://localhost:5173/login"
+    GOOGLE_REDIRECT_URI: str
+
+    # Google API endpoints
+    GOOGLE_OAUTH_AUTH_URI: str
+    GOOGLE_OAUTH_TOKEN_URI: str
+    GOOGLE_OAUTH_USERINFO_URI: str
+
+    # Google TTS
+    GOOGLE_TTS_CREDENTIALS_PATH: str
+
+    # YouTube
+    YOUTUBE_CLIENT_SECRET_PATH: str
+    YOUTUBE_SCOPE_UPLOAD: str
+    YOUTUBE_SCOPE_READONLY: str
+    YOUTUBE_SCOPE_ANALYTICS: str
 
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str
     CLOUDINARY_API_KEY: str
     CLOUDINARY_API_SECRET: str
 
-    # LLM
+    # LLM (Large Language Model)
     LLM_API_KEY: str
     LLM_API_URL: str
     LLM_API_MODEL: str
 
-    # TTS
-    GOOGLE_TTS_SERVICE_ACCOUNT_PATH: str = "secrets/tts_secret.json"
-    TTS_VOICE_GENDER: str = "FEMALE"
-
-    # YouTube OAuth
-    YOUTUBE_CLIENT_SECRET_PATH: str
-    YOUTUBE_TOKEN_PATH: str
-    YOUTUBE_SCOPES: list[str] = [
-        "https://www.googleapis.com/auth/youtube.upload",
-        "https://www.googleapis.com/auth/youtube.readonly",
-        "https://www.googleapis.com/auth/yt-analytics.readonly"
-    ]
-
-    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

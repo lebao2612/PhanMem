@@ -4,7 +4,7 @@ from app.models import User
 from app.dtos import VideoDTO
 from app.schemas.requests import UpdateVideoRequest
 from app.schemas.responses import SuccessResponse
-from app.services import VideoService#, VideoUpload, handle_upload, get_video_stats
+from app.services import VideoService
 from app.api.middlewares import token_required
 
 router = APIRouter(prefix="/api/videos", tags=["videos"])
@@ -69,15 +69,3 @@ def update_video(video_id: str, data: UpdateVideoRequest, current_user: User = D
 def delete_video(video_id: str, current_user: User = Depends(token_required)):
     VideoService.delete_video(video_id)
     return SuccessResponse(data=None)
-
-
-# @router.post("/upload", response_model=SuccessResponse[dict])
-# def upload_video(data: VideoUpload):
-#     result = handle_upload(data)
-#     return SuccessResponse(data=result)
-
-
-# @router.get("/stats", response_model=SuccessResponse[dict])
-# def video_stats(video_id: str):
-#     stats = get_video_stats(video_id)
-#     return SuccessResponse(data=stats)
