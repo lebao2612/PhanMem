@@ -1,136 +1,198 @@
-import { useState, useEffect } from "react";
+"use client";
 
-function Review({ onClose }) {
+import { useState, useEffect, useRef } from "react";
 
-  const mockVideo = {videoURL: "https://www.w3schools.com/html/mov_bbb.mp4", user: ""}
-
+function Review({ onClose, exportData }) {
   const [platform, setPlatform] = useState("YouTube");
-  const [videoData, setVideoData] = useState({ video: "", user: "" });
-  const [loadingVideo, setLoadingVideo] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const descriptionRef = useRef(null);
 
-  // useEffect(() => {
-  //   fetch("http://localhost:3000/api/video")
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       setVideoData(data);
-  //     })
-  //     .catch(console.error)
-  //     .finally(() => setLoadingVideo(false));
-  // }, []);
+  useEffect(() => {
+    if (exportData) {
+      const clipCount = exportData.clips.length;
+      const duration = Math.round(exportData.timeline.totalDuration);
+      const autoTitle = `Edited video - ${clipCount} clips (${Math.floor(
+        duration / 60
+      )}:${(duration % 60).toString().padStart(2, "0")})`;
+      setTitle(autoTitle);
+
+      const autoDescription = `This video was created from ${clipCount} clips with a total duration of ${Math.floor(
+        duration / 60
+      )} minutes and ${duration % 60} seconds.${
+        exportData.stickers.length > 0
+          ? ` Includes ${exportData.stickers.length} sticker(s).`
+          : ""
+      }`;
+      setDescription(autoDescription);
+    }
+  }, [exportData]);
+
+  useEffect(() => {
+    if (descriptionRef.current) {
+      descriptionRef.current.style.height = "auto";
+      descriptionRef.current.style.height =
+        descriptionRef.current.scrollHeight + "px";
+    }
+  }, [description]);
 
   const stopPropagation = (e) => e.stopPropagation();
 
-  // function handleAutoCaption() {
-  //   fetch("http://localhost:3000/api/info")
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       setTitle(data.title || "");
-  //       setDescription(data.description || "");
-  //     })
-  //     .catch(console.error);
-  // }
+  function handleAutoCaption() {
+    if (!exportData) return;
 
-  // function handleDownload() {
-  //   if (!videoData.video) {
-  //     alert("Không có video để tải.");
-  //     return;
-  //   }
+    const clipInfo = exportData.clips
+      .map((clip, index) => `Clip ${index + 1}: ${Math.round(clip.duration)}s`)
+      .join(", ");
 
-  //   setIsDownloading(true);
+    const stickerInfo =
+      exportData.stickers.length > 0
+        ? ` Stickers: ${exportData.stickers.map((s) => s.emoji).join("")}`
+        : "";
 
-  //   fetch(videoData.video)
-  //     .then((res) => res.blob())
-  //     .then((blob) => {
-  //       const url = window.URL.createObjectURL(blob);
-  //       const a = document.createElement("a");
-  //       a.href = url;
+    const autoCaption = `🎬 Professionally edited video
+📊 ${clipInfo}${stickerInfo}
+⏱️ Total duration: ${Math.floor(
+      exportData.timeline.totalDuration / 60
+    )}:${Math.round(exportData.timeline.totalDuration % 60)
+      .toString()
+      .padStart(2, "0")}
+✨ Created with Video Editor`;
 
-  //       const cleanTitle = (title || "video")
-  //         .replace(/[^a-zA-Z0-9_\- ]/g, "")
-  //         .replace(/\s+/g, "_");
-
-  //       a.download = `${cleanTitle}.mp4`;
-
-  //       document.body.appendChild(a);
-  //       a.click();
-  //       document.body.removeChild(a);
-
-  //       window.URL.revokeObjectURL(url);
-  //     })
-  //     .catch((err) => {
-  //       console.error("Download failed", err);
-  //       alert("Tải video thất bại. Kiểm tra lại link.");
-  //     })
-  //     .finally(() => {
-  //       setIsDownloading(false);
-  //     });
-  // }
+    setDescription(autoCaption);
+  }
 
   const shareLabel = {
-    YouTube: "Chia sẻ lên YouTube",
-    TikTok: "Chia sẻ lên TikTok",
-    Facebook: "Chia sẻ lên Facebook",
+    YouTube: "Export for YouTube",
+    TikTok: "Export for TikTok",
+    Facebook: "Export for Facebook",
   };
 
   const shareButtonColor = {
-    YouTube: "bg-red-600 hover:bg-red-700 text-white",
-    TikTok: "bg-black hover:bg-gray-800 text-white",
-    Facebook: "bg-blue-600 hover:bg-blue-700 text-white",
+    YouTube: "bg-red-600 hover:bg-red-700",
+    TikTok: "bg-black hover:bg-gray-900",
+    Facebook: "bg-blue-600 hover:bg-blue-700",
   };
 
   const platformButtonClass = (name) =>
     platform === name
-      ? "text-red-600 border-b-2 border-red-600 font-medium"
-      : "text-gray-500 hover:text-black";
+      ? "text-blue-400 border-b-2 border-blue-400 font-medium"
+      : "text-zinc-400 hover:text-white";
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm flex items-center justify-center"
+      className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center text-white"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-5xl rounded-lg shadow-2xl p-6 z-50"
+        className="bg-zinc-900 w-full max-w-4xl rounded-lg shadow-2xl p-6 z-50 max-h-[90vh] overflow-y-auto border border-zinc-700"
         onClick={stopPropagation}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Xem trước video</h2>
+          <h2 className="text-xl font-semibold">Export Video Info</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-black text-2xl font-bold"
+            className="text-zinc-400 hover:text-white text-2xl font-bold"
           >
             &times;
           </button>
         </div>
 
+        {/* Export Summary */}
+        {exportData && (
+          <div className="mb-6 p-4 bg-zinc-800 rounded-lg">
+            <h3 className="font-semibold mb-3 text-white">Video Summary:</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-zinc-300">
+              <div>
+                <span className="text-zinc-500">Clips:</span>
+                <div className="font-medium text-blue-400">
+                  {exportData.clips.length} clips
+                </div>
+              </div>
+              <div>
+                <span className="text-zinc-500">Duration:</span>
+                <div className="font-medium text-blue-400">
+                  {formatTime(exportData.timeline.totalDuration)}
+                </div>
+              </div>
+              <div>
+                <span className="text-zinc-500">Stickers:</span>
+                <div className="font-medium text-blue-400">
+                  {exportData.stickers.length} sticker(s)
+                </div>
+              </div>
+              <div>
+                <span className="text-zinc-500">Status:</span>
+                <div className="font-medium text-green-400">
+                  Ready to export
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Body */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Video */}
-          <div className="flex items-center justify-center border rounded-md h-64 bg-black overflow-hidden">
-            {loadingVideo ? (
-              <div className="animate-spin h-10 w-10 border-4 border-white border-t-transparent rounded-full"></div>
-            ) : (
-              <video
-                width="100%"
-                height="400"
-                controls
-                preload="metadata"
-                className="w-full aspect-video rounded-lg"
-                poster="/placeholder.svg?height=400&width=600"
-            >
-                <source src={mockVideo.videoURL || mockVideo.videoID} type="video/mp4" />
-                <source src={mockVideo.videoURL || mockVideo.videoID} type="video/webm" />
-                <source src={mockVideo.videoURL || mockVideo.videoID} type="video/ogg" />
-                Trình duyệt của bạn không hỗ trợ thẻ video.
-            </video>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left */}
+          <div className="space-y-4">
+            <div className="bg-zinc-800 p-4 rounded-lg">
+              <h4 className="font-medium mb-3">Original Video</h4>
+              <div className="space-y-2 text-sm text-zinc-400">
+                <div className="flex justify-between">
+                  <span>URL:</span>
+                  <span className="text-blue-400 truncate max-w-48">
+                    {exportData?.originalVideoUrl}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {exportData?.clips.length > 0 && (
+              <div className="bg-zinc-800 p-3 rounded-lg">
+                <h4 className="font-medium mb-2">Clips</h4>
+                <div className="space-y-1 max-h-32 overflow-y-auto text-sm text-zinc-300">
+                  {exportData.clips.map((clip, index) => (
+                    <div key={clip.id} className="flex justify-between">
+                      <span>Clip {index + 1}</span>
+                      <span className="text-zinc-500">
+                        {formatTime(clip.startTime)} -{" "}
+                        {formatTime(clip.endTime)} ({formatTime(clip.duration)})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {exportData?.stickers.length > 0 && (
+              <div className="bg-zinc-800 p-3 rounded-lg">
+                <h4 className="font-medium mb-2">Stickers</h4>
+                <div className="flex flex-wrap gap-2">
+                  {exportData.stickers.map((sticker) => (
+                    <div
+                      key={sticker.id}
+                      className="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded text-sm border-l-2 border-blue-500 text-zinc-300"
+                    >
+                      <span className="text-lg">{sticker.emoji}</span>
+                      <span className="text-zinc-500">
+                        {formatTime(sticker.startTime)} -{" "}
+                        {formatTime(sticker.endTime)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Form */}
+          {/* Right - Form */}
           <div>
             <div className="flex space-x-6 mb-4">
               {["YouTube", "TikTok", "Facebook"].map((name) => (
@@ -146,75 +208,67 @@ function Review({ onClose }) {
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Kênh</label>
-                <div className="mt-1 p-2 bg-gray-100 rounded">
-                  {loadingVideo ? "..." : videoData.user}
+                <label className="text-sm font-medium text-zinc-400">
+                  Channel
+                </label>
+                <div className="mt-1 p-2 bg-zinc-800 rounded text-white">
+                  Video Editor User
                 </div>
               </div>
+
               <div>
-                <label className="text-sm font-medium">Tiêu đề video</label>
+                <label className="text-sm font-medium text-zinc-400">
+                  Video Title
+                </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Nhập tiêu đề..."
-                  className="w-full p-2 border rounded"
+                  placeholder="Enter title..."
+                  className="w-full p-2 bg-zinc-800 text-white border border-zinc-600 rounded"
                 />
               </div>
+
               <div>
-                <label className="text-sm font-medium">Mô tả</label>
+                <label className="text-sm font-medium text-zinc-400">
+                  Description
+                </label>
                 <textarea
-                  rows="3"
+                  ref={descriptionRef}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Nhập mô tả..."
-                  className="w-full p-2 border rounded"
+                  placeholder="Enter description..."
+                  className="w-full p-2 bg-zinc-800 text-white border border-zinc-600 rounded resize-none overflow-hidden"
                 />
               </div>
             </div>
 
             <div className="mt-6 flex gap-3">
               <button
-                className={`flex-1 py-2 rounded font-medium ${shareButtonColor[platform]}`}
+                onClick={() => {
+                  console.log("Export data:", {
+                    platform,
+                    title,
+                    description,
+                    exportData,
+                  });
+                  alert(
+                    `Exporting to ${platform}:\n\nTitle: ${title}\n\nDescription: ${description}`
+                  );
+                }}
+                className={`flex-1 py-2 rounded font-medium flex items-center justify-center text-white ${shareButtonColor[platform]}`}
               >
                 {shareLabel[platform]}
               </button>
+
               <button
-                //onClick={handleDownload}
-                disabled={isDownloading}
-                className={`flex-1 py-2 rounded font-medium flex items-center justify-center ${
-                  isDownloading
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
+                onClick={() => {
+                  console.log("Export data logged to console");
+                  alert("Export data has been logged to the console.");
+                }}
+                className="flex-1 py-2 rounded font-medium flex items-center justify-center bg-zinc-800 border border-zinc-600 text-white hover:bg-zinc-700"
               >
-                {isDownloading ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4 mr-2 text-gray-600"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Đang tải...
-                  </>
-                ) : (
-                  "Lưu video"
-                )}
+                View Info
               </button>
             </div>
           </div>
@@ -222,14 +276,15 @@ function Review({ onClose }) {
 
         {/* Footer */}
         <div className="mt-6 flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            Tạo nội dung cho các nền tảng
+          <div className="text-sm text-zinc-500">
+            Edited video is ready for export
           </div>
           <button
-            //onClick={handleAutoCaption}
-            className="px-4 py-2 bg-gray-200 text-sm rounded hover:bg-gray-300"
+            onClick={handleAutoCaption}
+            disabled={!exportData}
+            className="px-4 py-2 bg-zinc-800 border border-zinc-600 text-sm rounded hover:bg-zinc-700 text-white disabled:opacity-50"
           >
-            Tạo caption tự động
+            Generate Auto Desciption
           </button>
         </div>
       </div>

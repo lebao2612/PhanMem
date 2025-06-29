@@ -10,25 +10,34 @@ import UploadVideo from "../components/UploadVideo";
 const Dashboard = () => {
     const options = ["Tất cả", "Youtube", "Facebook", "Tiktok"]
     const { authFetch } = useContext(AuthContext);
-    const [videos, setVideos] = useState([]);
+    const [videos, setVideos] = useState([
+        {name: "test1", createAt: "26-12-2004", tag: "Youtube", videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
+        {name: "test2", createAt: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test3 asf asjfh fasfj", createAt: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test4", createAt: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test5", createAt: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test6", createAt: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {name: "test7", createAt: "26-12-2004", tag: "", videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
+    ]);
     const [filteredVideo, setFilteredVideo] = useState([]);
+
     console.log(videos)    
     const [selectedOption, setSelectedOption] = useState("Tất cả")
     const [selectedVideo, setSelectedVideo] = useState();
     const [selectUpload, setSelectUpload] = useState(false);
 
-    useEffect(() => {
-        const fetchVideos = async () => {
-            try {
-                const res = await authFetch("/api/videos/me?limit=20&skip=0");
-                setVideos(res);
-                setFilteredVideo(res);
-            } catch (err) {
-                console.error("Lỗi khi gọi API:", err.message);
-            }
-        };
-        fetchVideos();
-    }, [authFetch]);
+    // useEffect(() => {
+    //     const fetchVideos = async () => {
+    //         try {
+    //             const res = await authFetch("/api/videos/me?limit=20&skip=0");
+    //             setVideos(res);
+    //             setFilteredVideo(res);
+    //         } catch (err) {
+    //             console.error("Lỗi khi gọi API:", err.message);
+    //         }
+    //     };
+    //     fetchVideos();
+    // }, [authFetch]);
 
     useEffect(() => {
         if (selectedOption === "Tất cả") {
@@ -42,6 +51,61 @@ const Dashboard = () => {
         setSelectedVideo()
         setSelectUpload(false)
     }
+
+    const downloadVideo = async (videoUrl, videoName) => {
+        try {
+            console.log("Đang tải video...");
+
+            // Fetch video để lấy dữ liệu blob
+            const response = await fetch(videoUrl, {
+                method: "GET",
+                mode: "cors", // Đảm bảo tuân thủ CORS
+                credentials: "omit", // Không gửi cookie hoặc thông tin xác thực
+            });
+
+            if (!response.ok) {
+                throw new Error(`Không thể tải video: ${response.status} ${response.statusText}`);
+            }
+
+            // Chuyển response thành blob
+            const blob = await response.blob();
+
+            // Kiểm tra loại MIME để đảm bảo là video
+            if (!blob.type.startsWith("video/")) {
+                throw new Error("Tệp không phải video.");
+            }
+
+            // Tạo URL blob
+            const blobUrl = window.URL.createObjectURL(blob);
+
+            // Tạo thẻ <a> để tải
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = videoName.endsWith(".mp4") ? videoName : `${videoName}.mp4`;
+            link.style.display = "none";
+
+            // Thêm vào DOM, kích hoạt click, và xóa
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Dọn dẹp URL blob
+            window.URL.revokeObjectURL(blobUrl);
+
+            console.log("Tải video thành công!");
+        } catch (error) {
+            console.error("Lỗi khi tải video:", error.message);
+            // Fallback: Mở video trong tab mới
+            window.open(videoUrl, "_blank");
+            alert(
+                'Không thể tự động tải. Video đã mở trong tab mới. Click chuột phải và chọn "Lưu video dưới dạng" để tải.'
+            );
+        }
+    };
+
+    //downloadVideo("https://www.w3schools.com/html/mov_bbb.mp4", "test_video");
+
+
 
     return (
         <div className="relative flex bg-black text-white min-h-screen">
@@ -241,7 +305,7 @@ const Dashboard = () => {
                                         <div className="flex flex-col gap-3">
                                             <button 
                                                 className="cursor-pointer flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                                                //onClick={}    
+                                                onClick={() => downloadVideo(selectedVideo.videoURL || selectedVideo.videoID, selectedVideo.name)}    
                                             >
                                                 <Download className="w-4 h-4" />
                                                 Download Video
