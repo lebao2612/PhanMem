@@ -22,12 +22,14 @@ project/
 │   ├── integrations/            # Tích hợp bên ngoài (AI, media, etc.)
 │   │   ├── ai/
 │   │   ├── cloud/
+│   │   ├── platform/            # Youtube, Facebook...
 │   └── database/                # Kết nối cơ sở dữ liệu
 │
 ├── config/                      # Cấu hình app & kết nối MongoDB
 │   └── settings.py
 ├── run.py                       # Điểm khởi chạy chính
 ├── requirements.txt             # Danh sách thư viện cần cài
+├── secrets/                     # 
 └── .env                         # Biến môi trường (Mongo URI, SECRET_KEY, ...)
 
 ---
