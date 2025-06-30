@@ -2,7 +2,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from config.settings import settings
 
-class JWTService:
+class JWTUtil:
     @staticmethod
     def generate_token(user, expires_in_hours=24):
         payload = {

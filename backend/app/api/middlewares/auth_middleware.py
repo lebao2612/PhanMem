@@ -1,6 +1,6 @@
 from fastapi import HTTPException, Request, Depends
 from app.models import User
-from app.services import JWTService
+from app.utils import JWTUtil
 from typing import List
 
 async def token_required(request: Request):
@@ -9,7 +9,7 @@ async def token_required(request: Request):
         raise HTTPException(status_code=401, detail="Token không hợp lệ hoặc thiếu")
     
     token = auth_header[7:]  # Bỏ "Bearer " prefix
-    data, error = JWTService.decode_token(token)
+    data, error = JWTUtil.decode_token(token)
     if error:
         raise HTTPException(status_code=401, detail=error)
     

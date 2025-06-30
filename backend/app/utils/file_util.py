@@ -4,7 +4,7 @@ import httpx
 from app.exceptions import HandledException
 
 
-class FileClient:
+class FileUtil:
     @staticmethod
     async def download_to_bytes(url: str) -> bytes:
         """Tải dữ liệu từ URL và trả về dạng bytes"""
@@ -20,7 +20,7 @@ class FileClient:
     async def download_to_file(url: str, path: str) -> None:
         """Tải dữ liệu từ URL và lưu vào file local"""
         try:
-            data = await FileClient.download_to_bytes(url)
+            data = await FileUtil.download_to_bytes(url)
             with open(path, "wb") as f:
                 f.write(data)
         except Exception as e:

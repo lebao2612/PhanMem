@@ -20,7 +20,7 @@ class Video(Document):
     creator = ReferenceField(User, required=True)
 
     # Status of generation
-    status = StringField(choices=["draft", "processing", "done"], default="draft")
+    status = StringField(choices=["draft", "done"], default="draft")
     
     # Platform information
     platforms = DictField()

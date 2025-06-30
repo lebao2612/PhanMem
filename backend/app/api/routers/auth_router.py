@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
-from app.services import AuthService
 from app.dtos import AuthDTO
+from app.services import AuthService
 from app.schemas.responses import SuccessResponse
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])

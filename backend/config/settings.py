@@ -14,12 +14,15 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
-    GOOGLE_REDIRECT_URI: str
 
     # Google API endpoints
     GOOGLE_OAUTH_AUTH_URI: str
     GOOGLE_OAUTH_TOKEN_URI: str
     GOOGLE_OAUTH_USERINFO_URI: str
+    GOOGLE_REDIRECT_URI: str
+
+    # Google API Keys
+    GOOGLE_API_KEY: str #For LLM and other Google services
 
     # Google TTS
     GOOGLE_TTS_CREDENTIALS_PATH: str
@@ -34,11 +37,6 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str
     CLOUDINARY_API_KEY: str
     CLOUDINARY_API_SECRET: str
-
-    # LLM (Large Language Model)
-    LLM_API_KEY: str
-    LLM_API_URL: str
-    LLM_API_MODEL: str
 
     class Config:
         env_file = ".env"

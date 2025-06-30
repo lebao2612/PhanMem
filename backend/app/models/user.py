@@ -1,6 +1,18 @@
-from mongoengine import Document, StringField, ListField, DateTimeField, DictField
+from mongoengine import (
+    Document, StringField, ListField, DateTimeField, DictField,
+    EmbeddedDocument
+)
 from datetime import datetime, timezone
-from .media_info import MediaInfo
+
+class YoutubePlatform(EmbeddedDocument):
+    channelId = StringField()
+    scopes = ListField()
+    
+    def get_url() -> str:
+        raise NotImplementedError
+    def get_scope() -> str:
+        # upload, readonly...
+        raise NotImplementedError
 
 class User(Document):
     # Google OAuth fields
@@ -16,6 +28,7 @@ class User(Document):
     lastLogin = DateTimeField()
 
     # 
+    platforms = DictField(default={})
     additionalPreferences = DictField(default={"theme": "dark", "language": "vi"})
     
     meta = {"collection": "users"}

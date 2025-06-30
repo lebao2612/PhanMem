@@ -1,8 +1,7 @@
 from app.repositories import UserRepository
 from app.dtos import AuthDTO
-from app.services.jwt_service import JWTService
-from app.integrations.platform.google_oauth import GoogleOAuthClient
-from app.exceptions import HandledException
+from app.integrations import GoogleOAuthClient
+from app.utils import JWTUtil
 
 class AuthService:
     @staticmethod
@@ -34,5 +33,5 @@ class AuthService:
                 refresh_token=refresh_token,
             )
 
-        token = JWTService.generate_token(user)
+        token = JWTUtil.generate_token(user)
         return AuthDTO.from_model(token, user)

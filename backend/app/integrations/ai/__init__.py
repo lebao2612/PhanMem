@@ -1,1 +1,2 @@
-from .ai_generator import AIGenerator
+from .gemini import GeminiClient
+from .stable_diffusion import StableDiffusionClient

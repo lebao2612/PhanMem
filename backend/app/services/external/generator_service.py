@@ -3,18 +3,18 @@ from app.repositories import VideoRepository
 from app.models import MediaInfo, User, Video
 from app.dtos import VideoDTO
 from app.exceptions import HandledException
-from app.integrations import AIGenerator, CloudinaryClient
+from app.integrations import CloudinaryClient, GeminiClient, StableDiffusionClient
 
 class GeneratorService:
     @staticmethod
     async def get_suggested_topics(keyword: str, limit: int) -> List[str]:
         # Generate topic suggestions (based on a keyword).
-        return await AIGenerator.generate_topic_suggestions(keyword, limit)
+        return await GeminiClient.generate_suggested_topics(keyword, limit)
 
     @staticmethod
     async def get_trending_topics(limit: int) -> List[str]:
         # Generate trending topics.
-        return await AIGenerator.generate_trending_topics(limit)
+        return await GeminiClient.generate_trending_topics(limit)
 
     @staticmethod
     async def generate_script(topic: str, creator: User) -> VideoDTO:
@@ -22,7 +22,7 @@ class GeneratorService:
         if not topic:
             raise HandledException("Topic must not empty", 400)
         
-        script = await AIGenerator.generate_script(topic)
+        script = await GeminiClient.generate_script(topic)
 
         # Create a draft video entry with the generated script.
         data = {
@@ -43,7 +43,7 @@ class GeneratorService:
             raise HandledException("Video does not exist", 404)
         
         # Generate a new script based on the existing topic.
-        new_script = await AIGenerator.generate_script(video.topic)
+        new_script = await GeminiClient.generate_script(video.topic)
 
         # Update the video with the new script.
         video = VideoRepository.update_script(video, new_script)
@@ -61,7 +61,7 @@ class GeneratorService:
             raise HandledException("Script must not empty", 400)
 
         # Generate voice audio from script and create a draft video entry.
-        audio_bytes = await AIGenerator.generate_voice(script)
+        audio_bytes = await GeminiClient.generate_voice(script)
 
         # Upload generated audio to Cloudinary (as video resource type).
         upload_res = await CloudinaryClient.upload_file(
@@ -92,8 +92,10 @@ class GeneratorService:
         if not video.voice_file:
             raise HandledException("Voice does not exist", 400)
         
+        # TODO: Gen video
+        # video_bytes = await StableDiffusionClient.generate_video(video)
+
         # TODO: Upload the generated video to Cloudinary
-        video_bytes = await AIGenerator.generate_video(video)
         # public_id, video_url = await CloudinaryClient.upload_bytes(
         #     data=video_bytes,
         #     resource_type="video",
@@ -103,7 +105,11 @@ class GeneratorService:
         public_id = "mock_video_id"
         video_url = "https://res.cloudinary.com/df8meqyyc/video/upload/v1750280402/text-to-video_rmp4vx.mp4"
         
-        video = VideoRepository.update_video(video, public_id, video_url)
-        VideoRepository.update_status(video, "done")
+        video = VideoRepository.update_video(
+            video=video,
+            public_id=public_id,
+            video_url=video_url
+        )
+        VideoRepository.update_status(video=video, status="done")
         
         return VideoDTO.from_model(video)
