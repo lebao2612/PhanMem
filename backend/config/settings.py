@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
+    # GOOGLE_CLIENT_SECRET_PATH: str
 
     # Google API endpoints
     GOOGLE_OAUTH_AUTH_URI: str
@@ -28,7 +29,6 @@ class Settings(BaseSettings):
     GOOGLE_TTS_CREDENTIALS_PATH: str
 
     # YouTube
-    YOUTUBE_CLIENT_SECRET_PATH: str
     YOUTUBE_SCOPE_UPLOAD: str
     YOUTUBE_SCOPE_READONLY: str
     YOUTUBE_SCOPE_ANALYTICS: str

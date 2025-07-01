@@ -1,13 +1,17 @@
-# Ignore node_modules in both frontend and backend
-frontend/node_modules/
-backend/node_modules/
-backend/__pycache__/
-dist/
-.env
+node_modules
+**/node_modules/
+
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
-test/
-test.py
-test.json
-backend/secrets/
+
+dist/
+.env
+
+# Ignore any file or directory named "test" at any depth
+**/test/
+test.*
+**/test.*
+secrets/
+**/secrets/

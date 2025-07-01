@@ -130,8 +130,11 @@ class YouTubeClient:
         )
 
         response = None
-        while response is None:
-            status, response = request.next_chunk()
+        try:
+            while response is None:
+                status, response = request.next_chunk()
+        except Exception as e:
+            raise HandledException(f"Lỗi khi upload video: {e}", 500)
 
         media.stream().close()
         return response

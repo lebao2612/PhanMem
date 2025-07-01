@@ -81,7 +81,7 @@ class GeminiClient:
 
         prompt = "\n".join([
             f"Viết kịch bản video ngắn bằng ngôn ngữ {language}, chủ đề: \"{topic}\". Yêu cầu:",
-            "- 3–5 cảnh, mỗi cảnh 1 dòng, định dạng [mô tả ảnh]: [lời thoại/phụ đề sinh động, tự nhiên]",
+            "- 3-5 cảnh, mỗi cảnh 1 dòng, định dạng [mô tả ảnh]: [lời thoại/phụ đề sinh động, tự nhiên]",
             "- Không tiêu đề, đánh số, chú tích, markdown hay kí tự đặc biệt"
         ])
 

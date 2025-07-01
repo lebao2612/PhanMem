@@ -11,6 +11,52 @@ function Login() {
   const hasNavigated = useRef(false);
   const videoRef = useRef(null);
   const [showPlay, setShowPlay] = useState(true);
+  const hasHandledCodeRef = useRef(false);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    const error = urlParams.get("error");
+
+    if (error === "access_denied") {
+      alert("Bạn đã từ chối đăng nhập bằng Google");
+      return;
+    }
+
+    if (sessionStorage.getItem("token") || user) {
+      return;
+    }
+
+    if (code && !hasHandledCodeRef.current) {
+      hasHandledCodeRef.current = true;
+
+      const doGoogleLogin = async () => {
+        try {
+          const res = await fetch(`/api/auth/google/callback?code=${code}`);
+          const { success, data, error } = await res.json();
+
+          if (!res.ok || !success) throw new Error(error?.message || "Lỗi xác thực Google");
+
+          const userInfo = {
+            name: data.user.name || data.user.email,
+            email: data.user.email,
+          };
+
+          setUser(userInfo);
+          sessionStorage.setItem("token", data.token);
+          sessionStorage.setItem("user", JSON.stringify(userInfo));
+
+          navigate("/home");
+        } catch (err) {
+          alert("Đăng nhập Google thất bại");
+          console.error(err);
+          navigate("/login");
+        }
+      };
+
+      doGoogleLogin();
+    }
+  }, []);
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
