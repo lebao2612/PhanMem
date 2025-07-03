@@ -1,16 +1,17 @@
-from typing import Optional, Union, Literal
+from typing import  Union, Literal
 from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
+from app.schemas.base_schema import BaseSchema
 
-class ErrorDetail(BaseModel):
+class ErrorDetail(BaseSchema):
     message: str = Field(..., description="Detailed error message")
     code: int = Field(..., description="HTTP status code of the error")
-    details: Optional[Union[dict, list]] = Field(
+    details: Union[dict, list] | None = Field(
         default=None,
         description="Additional error details, can be dict or list"
     )
 
-class ErrorResponse(BaseModel):
+class ErrorResponse(BaseSchema):
     success: Literal[False] = Field(default=False, description="Always false for error responses")
     error: ErrorDetail = Field(..., description="Detailed error information")
 
@@ -19,7 +20,7 @@ class ErrorResponse(BaseModel):
         cls,
         message: str,
         code: int,
-        details: Optional[Union[dict, list]] = None
+        details: Union[dict, list] | None = None
     ) -> JSONResponse:
         return JSONResponse(
             status_code=code,

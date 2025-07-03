@@ -11,6 +11,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def redirect_to_google_oauth():
     url = AuthService.get_google_oauth_url(
         prompt="select_account",
+        # prompt="consent",
         include_granted_scopes=False
         )
     return RedirectResponse(url)
@@ -23,6 +24,7 @@ def redirect_to_google_oauth_extended():
         include_granted_scopes=True)
     return RedirectResponse(url)
 
+# BUỘC PHẢI GET THEO GOOGLE OAuth2
 # This endpoint handles the callback from Google OAuth after user authorization
 @router.get("/google/callback", response_model=SuccessResponse[AuthDTO])
 def google_oauth_callback(code: str):

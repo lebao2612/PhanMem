@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Query
-from typing import List
 from app.models import User
 from app.dtos import VideoDTO
 from app.services import GeneratorService
@@ -15,7 +14,7 @@ from app.schemas.requests import (
 router = APIRouter(prefix="/api/generators", tags=["generators"])
 
 
-@router.get("/topic/suggestions", response_model=SuccessResponse[List[str]])
+@router.get("/topic/suggestions", response_model=SuccessResponse[list[str]])
 async def get_suggested_topics(
     keyword: str = Query("", description="Keyword to filter topic suggestions"),
     limit: int = Query(5, ge=1, le=50, description="Maximum number of suggestions to return"),
@@ -25,7 +24,7 @@ async def get_suggested_topics(
     return SuccessResponse(data=suggestions)
 
 
-@router.get("/topic/trending", response_model=SuccessResponse[List[str]])
+@router.get("/topic/trending", response_model=SuccessResponse[list[str]])
 async def get_trending_topics(
     limit: int = Query(5, ge=1, le=20, description="Maximum number of suggestions to return"),
     current_user: User = Depends(token_required)

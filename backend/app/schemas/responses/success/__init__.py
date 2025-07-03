@@ -1,8 +1,8 @@
-from typing import Generic, TypeVar, Literal, Optional
-from pydantic import BaseModel, Field
-
+from typing import Generic, TypeVar, Literal
+from pydantic import Field
+from app.schemas.base_schema import BaseSchema
 T = TypeVar("T")
 
-class SuccessResponse(BaseModel, Generic[T]):
+class SuccessResponse(BaseSchema, Generic[T]):
     success: Literal[True] = Field(default=True, description="Always True")
-    data: Optional[T] = Field(default=None, description="Payload data")
+    data: T | None = Field(default=None, description="Payload data")
