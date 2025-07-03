@@ -9,7 +9,8 @@ from app.schemas.requests import (
     GenerateScriptRequest,
     RegenerateScriptRequest,
     GenerateVoiceRequest,
-    GenerateVideoRequest
+    GenerateVideoRequest,
+    PromptImageRequest
 )
 
 router = APIRouter(prefix="/api/generators", tags=["generators"])
@@ -56,3 +57,22 @@ async def generate_voice(data: GenerateVoiceRequest, current_user: dict = Depend
 async def generate_video(data: GenerateVideoRequest, current_user: User = Depends(token_required)):
     video = await GeneratorService.generate_video(data.video_id, str(current_user.id))
     return SuccessResponse(data=video)
+
+import replicate
+
+@router.post("/image")
+async def generate_image(request: PromptImageRequest):
+    try:
+        output = replicate.run(
+            "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
+            input={"prompt": request.prompt}
+        )
+
+        # Lấy URL thực tế từ object FileOutput
+        image_url = output[0].url if hasattr(output[0], "url") else str(output[0])
+
+        return {"success": True, "image_url": image_url}
+
+    except Exception as e:
+        print("Exception:", str(e))
+        return {"success": False, "error": str(e)}

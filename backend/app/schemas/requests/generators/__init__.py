@@ -17,3 +17,8 @@ class GenerateVoiceRequest(BaseModel):
 
 class GenerateVideoRequest(BaseModel):
     video_id: str = Field(..., description="ID of the video to be generated")
+
+class PromptImageRequest(BaseModel):
+    prompt: str
+    width: int
+    height: int
