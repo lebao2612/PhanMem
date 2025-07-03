@@ -4,7 +4,6 @@ from app.api.routers import main_router
 from app.api.errors import register_error_handlers
 from app.contexts import lifespan
 
-
 def create_app() -> FastAPI:
     app = FastAPI(
         title="AI Short Video Generator",
