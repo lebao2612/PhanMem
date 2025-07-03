@@ -24,6 +24,7 @@ project/
 │   │   ├── cloud/
 │   │   ├── platform/            # Youtube, Facebook...
 │   └── database/                # Kết nối cơ sở dữ liệu
+│   ├── utils/                   # 
 │
 ├── config/                      # Cấu hình app & kết nối MongoDB
 │   └── settings.py

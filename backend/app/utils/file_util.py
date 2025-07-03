@@ -1,8 +1,6 @@
 import os, time, io
 import httpx
 from moviepy import VideoFileClip
-# from mutagen.mp3 import MP3
-# from pydub import AudioSegment
 import audioread
 from app.exceptions import HandledException
 
