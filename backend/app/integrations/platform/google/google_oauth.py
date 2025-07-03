@@ -1,23 +1,28 @@
 import requests
 from urllib.parse import urlencode
-from config import settings
+from config import settings, constants
 from app.exceptions import HandledException
 
 class GoogleOAuthClient:
+    _SCOPES = [
+        "openid",
+        "email",
+        "profile",
+        constants.YOUTUBE_SCOPES["YOUTUBE"],
+        constants.YOUTUBE_SCOPES["YOUTUBE_UPLOAD"],
+        constants.YOUTUBE_SCOPES["YOUTUBE_READONLY"],
+        constants.YOUTUBE_SCOPES["YOUTUBE_ANALYTICS"],
+        # settings.YOUTUBE_SCOPE_UPLOAD,
+        # settings.YOUTUBE_SCOPE_READONLY,
+        # settings.YOUTUBE_SCOPE_ANALYTICS,
+    ]
+
     @staticmethod
     def get_oauth_url(
         prompt: str="select_account",
         include_granted_scopes: bool=False
         ) -> str:
         # Build Google OAuth URL
-        scopes = [
-            "openid",
-            "email",
-            "profile",
-            settings.YOUTUBE_SCOPE_UPLOAD,
-            settings.YOUTUBE_SCOPE_READONLY,
-            settings.YOUTUBE_SCOPE_ANALYTICS,
-        ]
 
         params = {
             "client_id": settings.GOOGLE_CLIENT_ID,
@@ -25,19 +30,19 @@ class GoogleOAuthClient:
             "response_type": "code",
             "access_type": "offline",
             "prompt": prompt,
-            "scope": " ".join(scopes),
+            "scope": " ".join(GoogleOAuthClient._SCOPES),
         }
         if include_granted_scopes:
             params["include_granted_scopes"] = "true"
         
-        return f"{settings.GOOGLE_OAUTH_AUTH_URI}?{urlencode(params)}"
+        return f"{constants.GOOGLE_OAUTH_ENDPOINTS["AUTH_URI"]}?{urlencode(params)}"
 
     @staticmethod
     def exchange_code_for_tokens(code: str) -> dict:
         # Exchange code for tokens
         try:
             res = requests.post(
-                settings.GOOGLE_OAUTH_TOKEN_URI,
+                url=constants.GOOGLE_OAUTH_ENDPOINTS["TOKEN_URI"],
                 data={
                     "code": code,
                     "client_id": settings.GOOGLE_CLIENT_ID,
@@ -59,7 +64,7 @@ class GoogleOAuthClient:
         # Get user info from Google
         try:
             res = requests.get(
-                settings.GOOGLE_OAUTH_USERINFO_URI,
+                url=constants.GOOGLE_OAUTH_ENDPOINTS["USERINFO_URI"],
                 headers={"Authorization": f"Bearer {access_token}"},
                 timeout=10
             )
@@ -70,11 +75,11 @@ class GoogleOAuthClient:
             raise HandledException("Could not connect to Google", 500)
 
     @staticmethod
-    def get_new_access_token(refresh_token: str) -> str:
+    def get_new_access_token(refresh_token: str) -> dict:
         # Return a new access token using the refresh token
         try:
             res = requests.post(
-                settings.GOOGLE_OAUTH_TOKEN_URI,
+                url=constants.GOOGLE_OAUTH_ENDPOINTS["TOKEN_URI"],
                 data={
                     "client_id": settings.GOOGLE_CLIENT_ID,
                     "client_secret": settings.GOOGLE_CLIENT_SECRET,
@@ -88,12 +93,13 @@ class GoogleOAuthClient:
             if res.status_code != 200:
                 raise HandledException("Failed to refresh access token", 401)
 
-            data = res.json()
-            access_token = data.get("access_token")
-            if not access_token:
-                raise HandledException("Google did not return an access_token", 401)
+            return res.json()
+            # access_token = data.get("access_token")
+            # expires_in = data.get("expires_in", 0)
+            # if not access_token:
+            #     raise HandledException("Google did not return an access_token", 401)
 
-            return access_token
+            # return access_token, expires_in
 
         except requests.RequestException:
             raise HandledException("Could not connect to Google", 500)

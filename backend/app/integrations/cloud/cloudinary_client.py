@@ -1,7 +1,6 @@
 from io import BytesIO
 import uuid
-import cloudinary
-import cloudinary.uploader
+import cloudinary, cloudinary.uploader
 from config import settings
 from app.exceptions import HandledException
 

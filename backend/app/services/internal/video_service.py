@@ -1,9 +1,6 @@
-from typing import Optional, List
-from datetime import datetime, timezone
 from app.repositories import VideoRepository
 from app.models import Video, User, MediaInfo
 from app.dtos import VideoDTO
-from app.integrations import *
 from app.exceptions import HandledException
 
 class VideoService:
@@ -15,7 +12,7 @@ class VideoService:
         return VideoDTO.from_model(video)
 
     @staticmethod
-    def query_videos(filters) -> List[VideoDTO]:
+    def query_videos(filters: dict) -> list[VideoDTO]:
         videos = VideoRepository.query(filters)
         return [VideoDTO.from_model(v) for v in videos]
 
@@ -23,8 +20,8 @@ class VideoService:
     def update_fields(
         video_id: str,
         update_data: dict,
-        allowed_fields: List[str] = [
-            "title", "platforms"
+        allowed_fields: list[str] = [
+            "title", "script"
         ]
     ) -> VideoDTO:
         video = VideoRepository.find_by_id(video_id)

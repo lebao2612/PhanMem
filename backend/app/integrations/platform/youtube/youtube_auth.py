@@ -1,11 +1,12 @@
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from config import settings
+from config import settings, constants
 
 _scopes = [
-    settings.YOUTUBE_SCOPE_UPLOAD,
-    settings.YOUTUBE_SCOPE_READONLY,
-    settings.YOUTUBE_SCOPE_ANALYTICS
+    # constants.YOUTUBE_SCOPES["YOUTUBE"],
+    constants.YOUTUBE_SCOPES["YOUTUBE_UPLOAD"],
+    constants.YOUTUBE_SCOPES["YOUTUBE_READONLY"],
+    constants.YOUTUBE_SCOPES["YOUTUBE_ANALYTICS"],
 ]
 
 class YouTubeAuth:
@@ -15,7 +16,7 @@ class YouTubeAuth:
         return Credentials(
             token=access_token,
             refresh_token=refresh_token,
-            token_uri=settings.GOOGLE_OAUTH_TOKEN_URI,
+            token_uri=constants.GOOGLE_OAUTH_ENDPOINTS["TOKEN_URI"],
             client_id=settings.GOOGLE_CLIENT_ID,
             client_secret=settings.GOOGLE_CLIENT_SECRET,
             scopes=_scopes

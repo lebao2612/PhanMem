@@ -1,7 +1,8 @@
 from app.repositories import UserRepository
 from app.dtos import AuthDTO
-from app.integrations import GoogleOAuthClient
-from app.utils import JWTUtil
+from app.utils import JWTUtil, DictUtil
+from app.integrations import GoogleOAuthClient, YouTubeClient
+from config.settings import settings
 
 class AuthService:
     @staticmethod
@@ -13,25 +14,31 @@ class AuthService:
 
     @staticmethod
     def handle_google_oauth_callback(code: str) -> AuthDTO:
-        tokens = GoogleOAuthClient.exchange_code_for_tokens(code)
-        refresh_token = tokens.get("refresh_token")
-        access_token = tokens.get("access_token")
+        google_tokens = GoogleOAuthClient.exchange_code_for_tokens(code)
+        user_info = GoogleOAuthClient.get_user_info(google_tokens["access_token"])
+        
+        youtube_data = YouTubeClient.get_channel_detail(
+            refresh_token=google_tokens["refresh_token"],
+            access_token=google_tokens["access_token"]
+        )
+        youtube_data = DictUtil.normalize_keys(youtube_data)
 
-        userinfo = GoogleOAuthClient.get_user_info(access_token)
-        email = userinfo.get("email")
-        google_id = userinfo.get("sub")
-        name = userinfo.get("name")
-        picture = userinfo.get("picture")
+        google_data = {
+            **google_tokens,
+            **user_info
+        }
+        google_data = DictUtil.normalize_keys(google_data)
+        
 
-        user = UserRepository.find_by_email(email)
+        user = UserRepository.find_by_email(google_data.get("email"))
         if not user:
-            user = UserRepository.create_user_with_google(
-                email=email,
-                google_id=google_id,
-                name=name,
-                picture=picture,
-                refresh_token=refresh_token,
-            )
+            user = UserRepository.create_with_google(google_data, youtube_data)
+        else:
+            user = UserRepository.update_google_tokens(user, google_tokens)
 
-        token = JWTUtil.generate_token(user)
-        return AuthDTO.from_model(token, user)
+        jwt_token = JWTUtil.generate_token(
+            user_id=str(user.id), email=user.email, roles=user.roles,
+            expires_in_hours=settings.JWT_EXPIRATION_HOURS
+        ) 
+        return AuthDTO.from_model(token=jwt_token, user=user)
+    

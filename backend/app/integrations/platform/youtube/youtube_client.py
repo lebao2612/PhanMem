@@ -5,10 +5,7 @@ from .youtube_auth import YouTubeAuth
 
 class YouTubeClient:
     @staticmethod
-    def trending_videos(
-        region: str = "VN",
-        limit: int = 10,
-        ) -> list:
+    def trending_videos(region: str = "VN", limit: int = 10) -> list:
         #
         youtube = YouTubeAuth.get_public_service()
         request = youtube.videos().list(
@@ -19,26 +16,10 @@ class YouTubeClient:
         )
         response = request.execute()
 
-        videos = []
-        for item in response["items"]:
-            video_id = item["id"]
-            video = {
-                "title": item["snippet"]["title"],
-                "description": item["snippet"].get("description", ""),
-                "url": f"https://www.youtube.com/watch?v={video_id}",
-                "channelTitle": item["snippet"].get("channelTitle", ""),
-                "publishedAt": item["snippet"].get("publishedAt", ""),
-                "thumbnail": item["snippet"].get("thumbnails", {}).get("medium", {}).get("url", ""),
-            }
-            videos.append(video)
-        return videos
+        return response["items"]
     
     @staticmethod
-    def search_videos(
-        keyword: str,
-        region: str = "VN",
-        limit: int = 10
-    ) -> list:
+    def search_videos(keyword: str, region: str = "VN", limit: int = 10) -> list:
         #
         youtube = YouTubeAuth.get_public_service()
         request = youtube.search().list(
@@ -50,30 +31,14 @@ class YouTubeClient:
         )
         response = request.execute()
 
-        videos = []
-        for item in response["items"]:
-            video_id = item["id"]["videoId"]
-            video = {
-                "title": item["snippet"]["title"],
-                "description": item["snippet"].get("description", ""),
-                "url": f"https://www.youtube.com/watch?v={video_id}",
-                "channelTitle": item["snippet"].get("channelTitle", ""),
-                "publishedAt": item["snippet"].get("publishedAt", ""),
-                "thumbnail": item["snippet"].get("thumbnails", {}).get("medium", {}).get("url", ""),
-            }
-            videos.append(video)
-        return videos
+        return response["items"]
 
     @staticmethod
     async def upload_video_url(
         refresh_token: str,
         access_token: str,
         video_url: str,
-        title: str,
-        description: str,
-        category: str,
-        privacy: str,
-        tags: list
+        metadata: dict,
     ) -> dict:
         temp_path = "upload_video_temp.mp4"
 
@@ -84,11 +49,7 @@ class YouTubeClient:
                 refresh_token=refresh_token,
                 access_token=access_token,
                 file_path=temp_path,
-                title=title,
-                description=description,
-                category=category,
-                privacy=privacy,
-                tags=tags
+                metadata=metadata
             )
 
         finally:
@@ -99,28 +60,12 @@ class YouTubeClient:
         refresh_token: str,
         access_token: str,
         file_path: str,
-        title: str,
-        description: str,
-        category: str,
-        privacy: str,
-        tags: list
+        metadata: dict
     ) -> dict:
         youtube = YouTubeAuth.get_auth_service(
             refresh_token=refresh_token,
             access_token=access_token
         )
-
-        metadata = {
-            "snippet": {
-                "title": title,
-                "description": description,
-                "tags": tags,
-                "categoryId": category
-            },
-            "status": {
-                "privacyStatus": privacy
-            }
-        }
 
         media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
         request = youtube.videos().insert(
@@ -140,29 +85,51 @@ class YouTubeClient:
         return response
 
     @staticmethod
-    def fetch_video_stats(video_id: str, refresh_token: str, access_token: str) -> dict:
+    def get_video_details(video_id: str, refresh_token: str, access_token: str) -> dict:
         youtube = YouTubeAuth.get_auth_service(
             refresh_token=refresh_token,
             access_token=access_token
         )
-        response = youtube.videos().list(part="statistics", id=video_id).execute()
-
+        request = youtube.videos().list(
+            part="snippet,statistics,status,contentDetails",
+            id=video_id
+        )
+        response = request.execute()
         items = response.get("items", [])
         if not items:
-            raise HandledException(status_code=404, detail="Không tìm thấy video")
+            raise HandledException(f"Không tìm thấy video với ID: {video_id}", 404)
+        return items[0]
 
-        stats = items[0]["statistics"]
-        return {
-            "views": int(stats.get("viewCount", 0)),
-            "likes": int(stats.get("likeCount", 0)),
-            "comments": int(stats.get("commentCount", 0))
-        }
-
+    @staticmethod
+    def get_channel_detail(refresh_token: str, access_token: str) -> dict:
+        youtube = YouTubeAuth.get_auth_service(
+            refresh_token=refresh_token,
+            access_token=access_token
+        )
+        request = youtube.channels().list(
+            part="snippet,statistics,status,contentDetails",
+            mine=True
+        )
+        response = request.execute()
+        items = response.get("items", [])
+        if not items:
+            raise HandledException(f"Không tìm thấy channel", 404)
+        return items[0]
+    
     @staticmethod
     def get_channel_id(refresh_token: str, access_token: str) -> str:
         youtube = YouTubeAuth.get_auth_service(
             refresh_token=refresh_token,
             access_token=access_token
         )
-        response = youtube.channels().list(part="id", mine=True).execute()
-        return response["items"][0]["id"]
+
+        response = youtube.channels().list(
+            part="id",
+            mine=True
+        ).execute()
+
+        items = response.get("items", [])
+        if not items:
+            raise HandledException("Không tìm thấy kênh YouTube", 404)
+
+        return items[0]["id"]
