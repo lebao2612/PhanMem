@@ -1,22 +1,30 @@
 from mongoengine.errors import DoesNotExist, ValidationError, NotUniqueError, OperationError
-from typing import Optional, List
-from datetime import datetime, timezone
-from app.models import Video, MediaInfo
+from app.utils import TimeUtil
 from app.exceptions import HandledException
+from app.models import (
+    User,
+    Video, MediaInfo, VideoScene,
+    YoutubeVideoMetadata
+)
 
 
 class VideoRepository:
     @staticmethod
-    def create_video(data: dict) -> Video:
+    def create_draft_video(topic: str, script: list[dict], creator: User) -> Video:
         try:
-            video = Video(**data)
+            video = Video(
+                topic=topic,
+                creator=creator,
+                status="draft",
+                script=[VideoScene.from_dict(scene) for scene in script]
+            )
             video.save()
             return video
         except (ValidationError, NotUniqueError, OperationError) as e:
             raise HandledException(f"Tạo video thất bại: {e}", 400)
 
     @staticmethod
-    def find_by_id(video_id: str) -> Optional[Video]:
+    def find_by_id(video_id: str) -> Video | None:
         try:
             return Video.objects.get(id=video_id)
         except (DoesNotExist, ValidationError):
@@ -25,7 +33,7 @@ class VideoRepository:
             raise HandledException(f"Lỗi khi tìm video: {e}", 500)
 
     @staticmethod
-    def query(filters: dict) -> List[Video]:
+    def query(filters: dict) -> list[Video]:
         try:
             query = Video.objects
 
@@ -54,22 +62,10 @@ class VideoRepository:
             raise HandledException(f"Lỗi khi truy vấn video: {e}", 500)
 
     @staticmethod
-    def update_fields(video: Video, update_data: dict, allowed_fields: List[str]) -> Video:
+    def update_script(video: Video, script: list[dict]) -> Video:
         try:
-            for field in allowed_fields:
-                if field in update_data:
-                    setattr(video, field, update_data[field])
-            video.updated_at = datetime.now(timezone.utc)
-            video.save()
-            return video
-        except Exception as e:
-            raise HandledException(f"Cập nhật video thất bại: {e}", 400)
-
-    @staticmethod
-    def update_script(video: Video, script: str) -> Video:
-        try:
-            video.script = script
-            video.updated_at = datetime.now(timezone.utc)
+            video.script = [VideoScene.from_dict(item) for item in script]
+            video.updated_at = TimeUtil.now()
             video.save()
             return video
         except Exception as e:
@@ -79,9 +75,21 @@ class VideoRepository:
     def update_status(video: Video, status: str) -> Video:
         try:
             video.status = status
-            video.updated_at = datetime.now(timezone.utc)
+            video.updated_at = TimeUtil.now()
             video.save()
             return video
+        except Exception as e:
+            raise HandledException(f"Cập nhật trạng thái thất bại: {e}", 400)
+
+    @staticmethod
+    def update_youtube(video: Video, youtube: dict) -> Video:
+        try:
+            video.youtube = YoutubeVideoMetadata.from_dict(youtube)
+            video.updated_at = TimeUtil.now()
+            video.save()
+            return video
+        except (KeyError, ValidationError) as e:
+            raise
         except Exception as e:
             raise HandledException(f"Cập nhật trạng thái thất bại: {e}", 400)
 
@@ -107,11 +115,23 @@ class VideoRepository:
                 size=size
             )
             setattr(video, media_type, media)
-            video.updated_at = datetime.now(timezone.utc)
+            video.updated_at = TimeUtil.now()
             video.save()
             return video
         except Exception as e:
             raise HandledException(f"Cập nhật {media_type} thất bại: {e}", 400)
+
+    @staticmethod
+    def update_fields(video: Video, update_data: dict, allowed_fields: list[str]) -> Video:
+        try:
+            for field in allowed_fields:
+                if field in update_data:
+                    setattr(video, field, update_data[field])
+            video.updated_at = TimeUtil.now()
+            video.save()
+            return video
+        except Exception as e:
+            raise HandledException(f"Cập nhật video thất bại: {e}", 400)
 
     @staticmethod
     def delete_video(video: Video) -> None:

@@ -1,8 +1,8 @@
-from pydantic import BaseModel
 from .user_dto import UserDTO
 from app.models import User
+from app.dtos.base_dto import BaseDTO
 
-class AuthDTO(BaseModel):
+class AuthDTO(BaseDTO):
     token: str
     user: UserDTO
 

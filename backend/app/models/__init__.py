@@ -1,3 +1,8 @@
-from .user import User
-from .video import Video
-from .media_info import MediaInfo
+from .user import (
+    User, GoogleOAuthInfo,
+    YoutubeChannelInfo, YoutubeChannelSnippet, YoutubeChannelStatistics, YoutubeChannelStatus
+)
+from .video import (
+    Video, VideoScene, MediaInfo,
+    YoutubeVideoMetadata, YoutubeVideoSnippet, YoutubeVideoStatistics, YoutubeVideoStatus
+)

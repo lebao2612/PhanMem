@@ -1,33 +1,35 @@
-from app.models import User
 from mongoengine.errors import DoesNotExist, ValidationError, NotUniqueError
-from typing import Optional, List
-from datetime import datetime, timezone
 from app.exceptions import HandledException
+from app.models import User, GoogleOAuthInfo, YoutubeChannelInfo
+from app.utils import TimeUtil
 
 class UserRepository:
-    @staticmethod
-    def create_user_with_google(
-        name: str,
-        email: str,
-        google_id: str,
-        refresh_token: str,
-        picture: str) -> User:
+    def create_with_google(google_data: dict, youtube_data: dict) -> User:
         try:
-            user = User(
-                email=email,
-                googleId=google_id,
-                googleRefreshToken=refresh_token,
-                name=name,
-                picture=picture,
-                lastLogin=datetime.now(timezone.utc)
-            )
-            user.save()
-            return user
-        except (ValidationError, NotUniqueError) as e:
-            raise HandledException(f"Tạo user bằng Google thất bại: {e}", 400)
+            email = google_data.get("email")
+            sub = google_data.get("sub")
 
+            user = UserRepository.find_by_email(email=email)
+            if user: return user
+            user = UserRepository.find_by_google(sub=sub)
+            if user: return user
+
+            google = GoogleOAuthInfo.from_dict(google_data)
+            youtube = YoutubeChannelInfo.from_dict(youtube_data)
+
+            return User(
+                name=google_data.get("name"),
+                email=email,
+                picture=google_data.get("picture"),
+                google=google,
+                youtube=youtube
+            ).save()
+        
+        except (ValidationError, NotUniqueError, KeyError) as e:
+            raise HandledException(f"Lỗi khi tạo User: {e}", 500)
+    
     @staticmethod
-    def find_by_id(user_id: str) -> Optional[User]:
+    def find_by_id(user_id: str) -> User | None:
         try:
             return User.objects.get(id=user_id)
         except (DoesNotExist, ValidationError):
@@ -36,42 +38,64 @@ class UserRepository:
             raise HandledException(f"Lỗi khi tìm user theo ID: {e}", 500)
 
     @staticmethod
-    def find_by_email(email: str) -> Optional[User]:
+    def find_by_email(email: str) -> User | None:
         try:
             return User.objects(email=email).first()
         except Exception as e:
             raise HandledException(f"Lỗi khi tìm user theo email: {e}", 500)
 
     @staticmethod
-    def find_by_google_id(google_id: str) -> Optional[User]:
+    def find_by_google(sub: str) -> User | None:
         try:
-            return User.objects(googleId=google_id).first()
+            return User.objects(google__sub=sub).first()
         except Exception as e:
             raise HandledException(f"Lỗi khi tìm user theo Google ID: {e}", 500)
 
     @staticmethod
-    def list_users(skip: int = 0, limit: int = 20) -> List[User]:
+    def list_users(skip: int = 0, limit: int = 20) -> list[User]:
         try:
             return list(User.objects.skip(skip).limit(limit))
         except Exception as e:
             raise HandledException(f"Lỗi khi truy vấn danh sách user: {e}", 500)
 
     @staticmethod
-    def update_last_login(user: User) -> None:
+    def update_google_tokens(
+        user: User,
+        tokens: dict
+    ) -> User:
         try:
-            user.lastLogin = datetime.now(timezone.utc)
-            user.save()
-        except Exception as e:
-            raise HandledException(f"Cập nhật thời gian đăng nhập thất bại: {e}", 400)
+            if not user.google:
+                raise HandledException("Người dùng chưa liên kết Google", 400)
 
+            # Luôn cập nhật access_token và expires_at
+            user.google.access_token = tokens.get("access_token")
+            user.google.expires_at = TimeUtil.time(seconds=tokens.get("expires_in", 0))
+
+            # Chỉ cập nhật refresh_token nếu thực sự có mới
+            if tokens.get("refresh_token"):
+                user.google.refresh_token = tokens["refresh_token"]
+
+            user.updated_at = TimeUtil.now()
+            user.save()
+
+            return user
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(f"Cập nhật Google token thất bại: {e}", 400)
 
     @staticmethod
-    def update_fields(user: User, update_data: dict, allowed_fields: List[str]) -> User:
+    def update_fields(user: User, update_data: dict, allowed_fields: list[str]) -> User:
         try:
             for field in allowed_fields:
                 if field in update_data:
-                    setattr(user, field, update_data[field])
-            user.updatedAt = datetime.now(timezone.utc)
+                    current_value = getattr(user, field, None)
+                    # Nếu là Dict: merge thay vì ghi đè, giá trị sau sẽ ghi đè giá trị trước
+                    if isinstance(current_value, dict) and isinstance(update_data[field], dict):
+                        setattr(user, field, {**current_value, **update_data[field]})
+                    else:
+                        setattr(user, field, update_data[field])
+            user.updated_at = TimeUtil.now()
             user.save()
             return user
         except Exception as e:
@@ -85,17 +109,10 @@ class UserRepository:
             raise HandledException(f"Xóa user thất bại: {e}", 400)
 
     @staticmethod
-    def save(user: User) -> User:
-        try:
-            user.save()
-            return user
-        except Exception as e:
-            raise HandledException(f"Lưu user thất bại: {e}", 400)
-
-    @staticmethod
     def promote_to_admin(user: User) -> None:
         try:
-            user.roles = list(set(user.roles + ["admin"]))
+            user.roles = list(set(user.roles + ["ADMIN"]))
+            user.updated_at = TimeUtil.now()
             user.save()
         except Exception as e:
             raise HandledException(f"Thăng quyền admin thất bại: {e}", 400)
