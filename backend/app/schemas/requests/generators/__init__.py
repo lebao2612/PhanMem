@@ -30,3 +30,8 @@ class GenerateVoiceRequest(BaseSchema):
 ##
 class GenerateVideoRequest(BaseSchema):
     video_id: str = Field(..., description="ID of the video to be generated")
+
+class PromptImageRequest(BaseSchema):
+    prompt: str
+    width: int
+    height: int
