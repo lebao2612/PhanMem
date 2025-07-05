@@ -1,14 +1,13 @@
 from mongoengine import (
     Document,
     StringField, DateTimeField, FloatField,
-    ReferenceField, EmbeddedDocumentField,
-    EmbeddedDocumentListField
+    ReferenceField, EmbeddedDocumentField, EmbeddedDocumentListField
 )
 from app.models.user import User
 from app.utils import TimeUtil
 from .media_info import MediaInfo
 from .video_scene import VideoScene
-from .youtube_metadata import YoutubeVideoMetadata
+from .video_metadata import YoutubeVideoMetadata
 
 class Video(Document):
     title = StringField(default="Untitled")
@@ -17,9 +16,9 @@ class Video(Document):
     duration = FloatField(min_value=0.0)
 
     # Media fields
-    video_file = EmbeddedDocumentField(MediaInfo)
-    voice_file = EmbeddedDocumentField(MediaInfo)
-    thumbnail_file = EmbeddedDocumentField(MediaInfo)
+    video_file: MediaInfo = EmbeddedDocumentField(MediaInfo)
+    voice_file: MediaInfo = EmbeddedDocumentField(MediaInfo)
+    thumbnail_file: MediaInfo = EmbeddedDocumentField(MediaInfo)
     creator = ReferenceField(User, required=True)
 
     # Status of generation
@@ -30,7 +29,7 @@ class Video(Document):
     updated_at = DateTimeField(default=TimeUtil.now)
     
     # Platform information
-    youtube = EmbeddedDocumentField(YoutubeVideoMetadata)
+    youtube: YoutubeVideoMetadata = EmbeddedDocumentField(YoutubeVideoMetadata)
     # tiktok, facebook...
 
 

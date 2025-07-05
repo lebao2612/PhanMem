@@ -1,32 +1,26 @@
 from mongoengine import (
-    Document, StringField, ListField, DateTimeField, DictField,
+    Document, StringField, ListField, DateTimeField,
     EmbeddedDocumentField
 )
-from .youtube_channel_info import YoutubeChannelInfo
-from .google_oauth_info import GoogleOAuthInfo
 from app.utils import TimeUtil
+from .google_oauth_info import GoogleOAuthInfo
+from .user_settings import UserSettings
 
 class User(Document):
-    # Google OAuth fields
     name = StringField(required=True)
-    email = StringField(required=True)
-    
-    google = EmbeddedDocumentField(GoogleOAuthInfo)
-    youtube = EmbeddedDocumentField(YoutubeChannelInfo)
+    email = StringField(required=True, unique=True)
+    # password = StringField()
 
     picture = StringField()
     roles = ListField(StringField(), default=["USER"], choices=["USER", "ADMIN"])
+    google: GoogleOAuthInfo = EmbeddedDocumentField(GoogleOAuthInfo)
+
     created_at = DateTimeField(default=TimeUtil.now)
     updated_at = DateTimeField(default=TimeUtil.now)
-    # last_login = DateTimeField()
 
-    additional_preferences = DictField(default={"theme": "dark", "language": "vi"})
+    settings: UserSettings = EmbeddedDocumentField(UserSettings, default=UserSettings)
     
     meta = {"collection": "users"}
 
     def has_role(self, required_roles: list[str]) -> bool:
         return any(role in self.roles for role in required_roles)
-    def get_language(self) -> str | None:
-        return self.additional_preferences.get("language")
-    def get_theme(self) -> str | None:
-        return self.additional_preferences.get("theme")

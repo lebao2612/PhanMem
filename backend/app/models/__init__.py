@@ -1,8 +1,7 @@
 from .user import (
-    User, GoogleOAuthInfo,
-    YoutubeChannelInfo, YoutubeChannelSnippet, YoutubeChannelStatistics, YoutubeChannelStatus
+    User, GoogleOAuthInfo, UserSettings
 )
 from .video import (
     Video, VideoScene, MediaInfo,
-    YoutubeVideoMetadata, YoutubeVideoSnippet, YoutubeVideoStatistics, YoutubeVideoStatus
+    VideoMetadata, YoutubeVideoMetadata
 )

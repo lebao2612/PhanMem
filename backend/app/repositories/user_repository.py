@@ -1,112 +1,134 @@
 from mongoengine.errors import DoesNotExist, ValidationError, NotUniqueError
 from app.exceptions import HandledException
-from app.models import User, GoogleOAuthInfo, YoutubeChannelInfo
+from app.models import User, UserSettings, GoogleOAuthInfo
 from app.utils import TimeUtil
 
 class UserRepository:
-    def create_with_google(google_data: dict, youtube_data: dict) -> User:
+    @staticmethod
+    def create_new(name: str, email: str, **kwargs) -> User:
+        """Create a new user."""
         try:
-            email = google_data.get("email")
-            sub = google_data.get("sub")
-
-            user = UserRepository.find_by_email(email=email)
-            if user: return user
-            user = UserRepository.find_by_google(sub=sub)
-            if user: return user
-
-            google = GoogleOAuthInfo.from_dict(google_data)
-            youtube = YoutubeChannelInfo.from_dict(youtube_data)
-
-            return User(
-                name=google_data.get("name"),
+            user = User(
+                name=name,
                 email=email,
-                picture=google_data.get("picture"),
-                google=google,
-                youtube=youtube
-            ).save()
+                **kwargs
+            )
+            user.save()
+            return user
+        except Exception as e:
+            raise HandledException(f"Error creating new user {e}", 500)
         
-        except (ValidationError, NotUniqueError, KeyError) as e:
-            raise HandledException(f"Lỗi khi tạo User: {e}", 500)
-    
+    @staticmethod
+    def create_if_not_exists(name: str, email: str, **kwargs) -> User:
+        """Create a new user if not exists."""
+        try:
+            user = UserRepository.find_by_email(email=email)
+            if user:
+                return user
+            
+            roles = kwargs.pop("roles", ["USER"])
+            user = User(
+                name=name,
+                email=email,
+                roles=roles,
+                **kwargs
+            )
+            user.save()
+            return user
+        except Exception as e:
+            raise HandledException(f"Error creating or updating User with Google: {e}", 500)
+
     @staticmethod
     def find_by_id(user_id: str) -> User | None:
         try:
             return User.objects.get(id=user_id)
-        except (DoesNotExist, ValidationError):
+        except DoesNotExist:
             return None
         except Exception as e:
-            raise HandledException(f"Lỗi khi tìm user theo ID: {e}", 500)
+            raise HandledException(f"Error finding user by ID: {e}", 500)
 
     @staticmethod
     def find_by_email(email: str) -> User | None:
         try:
             return User.objects(email=email).first()
+        except (DoesNotExist):
+            return None
         except Exception as e:
-            raise HandledException(f"Lỗi khi tìm user theo email: {e}", 500)
+            raise HandledException(f"Error finding user by email: {e}", 500)
 
     @staticmethod
     def find_by_google(sub: str) -> User | None:
         try:
-            return User.objects(google__sub=sub).first()
+            return User.objects.get(google__sub=sub)
+        except DoesNotExist:
+            return None
         except Exception as e:
-            raise HandledException(f"Lỗi khi tìm user theo Google ID: {e}", 500)
+            raise HandledException(f"Error finding user by Google ID: {e}", 500)
 
     @staticmethod
-    def list_users(skip: int = 0, limit: int = 20) -> list[User]:
+    def get_users(skip: int = 0, limit: int = 20) -> list[User]:
         try:
             return list(User.objects.skip(skip).limit(limit))
         except Exception as e:
-            raise HandledException(f"Lỗi khi truy vấn danh sách user: {e}", 500)
+            raise HandledException(f"Error querying user list: {e}", 500)
 
-    @staticmethod
-    def update_google_tokens(
-        user: User,
-        tokens: dict
-    ) -> User:
+    def update_setting(user: User, **kwargs) -> User:
         try:
-            if not user.google:
-                raise HandledException("Người dùng chưa liên kết Google", 400)
+            if not user.settings:
+                user.settings = UserSettings()
 
-            # Luôn cập nhật access_token và expires_at
-            user.google.access_token = tokens.get("access_token")
-            user.google.expires_at = TimeUtil.time(seconds=tokens.get("expires_in", 0))
+            for k, v in kwargs.items():
+                if hasattr(user.settings, k):
+                    setattr(user.settings, k, v)
 
-            # Chỉ cập nhật refresh_token nếu thực sự có mới
-            if tokens.get("refresh_token"):
-                user.google.refresh_token = tokens["refresh_token"]
-
-            user.updated_at = TimeUtil.now()
-            user.save()
-
-            return user
-        except HandledException:
-            raise
-        except Exception as e:
-            raise HandledException(f"Cập nhật Google token thất bại: {e}", 400)
-
-    @staticmethod
-    def update_fields(user: User, update_data: dict, allowed_fields: list[str]) -> User:
-        try:
-            for field in allowed_fields:
-                if field in update_data:
-                    current_value = getattr(user, field, None)
-                    # Nếu là Dict: merge thay vì ghi đè, giá trị sau sẽ ghi đè giá trị trước
-                    if isinstance(current_value, dict) and isinstance(update_data[field], dict):
-                        setattr(user, field, {**current_value, **update_data[field]})
-                    else:
-                        setattr(user, field, update_data[field])
             user.updated_at = TimeUtil.now()
             user.save()
             return user
         except Exception as e:
-            raise HandledException(f"Cập nhật thông tin user thất bại: {e}", 400)
+            raise HandledException(f"Error updating User settings: {e}", 500)
+
+    @staticmethod
+    def update_google(user: User, **kwargs) -> User:
+        try:
+            if user.google:
+                sub = kwargs.pop("sub", None)
+                if sub and user.google.sub != sub:
+                    raise ValidationError("Google id does not match")
+
+                for k, v in kwargs.items():
+                    if hasattr(user.google, k):
+                        setattr(user.google, k, v)
+            else:
+                if kwargs.get("sub"):
+                    user.google = GoogleOAuthInfo(**kwargs)
+                else:
+                    raise DoesNotExist("Google subject does not exist")
+            
+            user.updated_at = TimeUtil.now()
+            user.save()
+            return user
+
+        except Exception as e:
+            raise HandledException(f"Error updating User with Google: {e}", 500)
+
+    @staticmethod
+    def update_fields(user: User, **kwargs) -> User:
+        try:
+            for k, v in kwargs.items():
+                setattr(user, k, v)
+
+            user.updated_at = TimeUtil.now()
+            user.save()
+            return user
+        except Exception as e:
+            raise HandledException(f"Error updating User: {e}", 500)
 
     @staticmethod
     def delete(user: User) -> None:
         try:
             user.delete()
         except Exception as e:
-            raise HandledException(f"Xóa user thất bại: {e}", 400)
+            raise HandledException(f"Delete user failed: {e}", 400)
 
     @staticmethod
     def promote_to_admin(user: User) -> None:
@@ -115,4 +137,4 @@ class UserRepository:
             user.updated_at = TimeUtil.now()
             user.save()
         except Exception as e:
-            raise HandledException(f"Thăng quyền admin thất bại: {e}", 400)
+            raise HandledException(f"Promote to admin failed: {e}", 400)
