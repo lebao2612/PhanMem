@@ -4,7 +4,6 @@ from app.schemas.base_schema import BaseSchema
 ##
 class GenerateScriptRequest(BaseSchema):
     topic: str = Field(..., description="Topic for which the script will be generated")
-
 ##
 class RegenerateScriptRequest(BaseSchema):
     video_id: str = Field(..., description="ID of the video to regenerate the script for")
@@ -19,19 +18,12 @@ class SceneInput(BaseSchema):
     def validate_not_blank(cls, v):
         if not isinstance(v, str) or not v.strip():
             raise ValueError("Phải là chuỗi không rỗng")
-        return v.strip()
-
-##      
+        return v.strip()    
 class GenerateVoiceRequest(BaseSchema):
     video_id: str = Field(..., description="ID của video cần tạo voice")
     script: list[SceneInput] = Field(..., min_items=1, description="Danh sách cảnh (label + subtitle)")
-
+    gender: str = Field(default="")
 
 ##
 class GenerateVideoRequest(BaseSchema):
     video_id: str = Field(..., description="ID of the video to be generated")
-
-class PromptImageRequest(BaseSchema):
-    prompt: str
-    width: int
-    height: int

@@ -14,12 +14,6 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
-    # GOOGLE_CLIENT_SECRET_PATH: str
-
-    # Google API endpoints
-    # GOOGLE_OAUTH_AUTH_URI: str
-    # GOOGLE_OAUTH_TOKEN_URI: str
-    # GOOGLE_OAUTH_USERINFO_URI: str
     GOOGLE_REDIRECT_URI: str
 
     # Google API Keys
@@ -28,11 +22,9 @@ class Settings(BaseSettings):
     # Google TTS
     GOOGLE_TTS_CREDENTIALS_PATH: str
 
-    # YouTube
-    # YOUTUBE_SCOPE: str
-    # YOUTUBE_SCOPE_UPLOAD: str
-    # YOUTUBE_SCOPE_READONLY: str
-    # YOUTUBE_SCOPE_ANALYTICS: str
+    # Replicate Stable Diffusion
+    REPLICATE_API_TOKEN: str
+    STABILITY_MODEL_ID: str
 
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str

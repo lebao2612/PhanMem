@@ -57,14 +57,7 @@ def get_video(video_id: str, current_user: User = Depends(token_required)):
     video = VideoService.get_video_by_id(video_id)
     return SuccessResponse(data=video)
 
-
-@router.patch("/{video_id}", response_model=SuccessResponse[VideoDTO])
-def update_video(video_id: str, data: UpdateVideoRequest, current_user: User = Depends(token_required)):
-    video = VideoService.update_fields(video_id, data.model_dump(exclude_unset=True))
-    return SuccessResponse(data=video)
-
-
-@router.delete("/{video_id}", response_model=SuccessResponse[dict])
+@router.delete("/{video_id}", response_model=SuccessResponse[None])
 def delete_video(video_id: str, current_user: User = Depends(token_required)):
     VideoService.delete_video(video_id)
     return SuccessResponse(data=None)

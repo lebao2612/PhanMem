@@ -1,7 +1,28 @@
-class StableDiffusionClient:
-    @staticmethod
-    async def generate_images(script: str) -> str:
-        # Placeholder for actual Stable Diffusion image generation logic
-        return "https://res.cloudinary.com/df8meqyyc/image/upload/v1750280031/tech2025_hgsl68.jpg"
+import replicate
+from app.exceptions import HandledException
+from config import settings
 
-    # Additional methods for Stable Diffusion can be added here as needed
+class StableDiffusionClient:
+
+    @staticmethod
+    def generate_image(label: str) -> str:
+        try:
+            return "https://picsum.photos/640/360"
+            output = replicate.run(
+                settings.STABILITY_MODEL_ID,
+                input={
+                    "prompt": label,
+                    "num_outputs": 1
+                },
+                api_token=settings.REPLICATE_API_TOKEN
+            )
+
+            # Trả về URL ảnh đầu tiên (có thể thêm logic random, multiple, ...)
+            image_url = output[0].url if hasattr(output[0], "url") else str(output[0])
+            return image_url
+
+        except Exception as e:
+            raise HandledException(
+                status_code=500,
+                detail=f"Image generation failed: {str(e)}"
+            )

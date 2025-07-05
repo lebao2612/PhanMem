@@ -21,7 +21,11 @@ async def get_suggested_topics(
     limit: int = Query(5, ge=1, le=50, description="Maximum number of suggestions to return"),
     current_user: User = Depends(token_required)
 ):
-    suggestions = await GeneratorService.get_suggested_topics(keyword, limit)
+    suggestions = await GeneratorService.get_suggested_topics(
+        keyword=keyword,
+        limit=limit,
+        creator=current_user
+    )
     return SuccessResponse(data=suggestions)
 
 
@@ -30,48 +34,45 @@ async def get_trending_topics(
     limit: int = Query(5, ge=1, le=20, description="Maximum number of suggestions to return"),
     current_user: User = Depends(token_required)
 ):
-    trending = await GeneratorService.get_trending_topics(limit)
+    trending = await GeneratorService.get_trending_topics(
+        limit=limit,
+        creator=current_user
+    )
     return SuccessResponse(data=trending)
 
 
 @router.post("/script", response_model=SuccessResponse[VideoDTO])
 async def generate_script(data: GenerateScriptRequest, current_user: User = Depends(token_required)):
-    video = await GeneratorService.generate_script(data.topic, current_user)
+    video = await GeneratorService.generate_script(
+        topic=data.topic,
+        creator=current_user
+    )
     return SuccessResponse(data=video)
 
 
 @router.post("/script/regenerate", response_model=SuccessResponse[VideoDTO])
 async def regenerate_script(data: RegenerateScriptRequest, current_user: User = Depends(token_required)):
-    video = await GeneratorService.regenerate_script(data.video_id)
+    video = await GeneratorService.regenerate_script(
+        video_id=data.video_id,
+        creator=current_user
+    )
     return SuccessResponse(data=video)
 
 
 @router.post("/voice", response_model=SuccessResponse[VideoDTO])
 async def generate_voice(data: GenerateVoiceRequest, current_user: dict = Depends(token_required)):
-    video = await GeneratorService.generate_voice(data.video_id, data.script, current_user)
+    video = await GeneratorService.generate_voice(
+        video_id=data.video_id,
+        creator=current_user,
+        script=data.script
+    )
     return SuccessResponse(data=video)
 
 
 @router.post("/video", response_model=SuccessResponse[VideoDTO])
 async def generate_video(data: GenerateVideoRequest, current_user: User = Depends(token_required)):
-    video = await GeneratorService.generate_video(data.video_id, str(current_user.id))
+    video = await GeneratorService.generate_video(
+        video_id=data.video_id,
+        creator=current_user
+    )
     return SuccessResponse(data=video)
-
-import replicate
-
-@router.post("/image")
-async def generate_image(request: PromptImageRequest):
-    try:
-        output = replicate.run(
-            "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
-            input={"prompt": request.prompt}
-        )
-
-        # Lấy URL thực tế từ object FileOutput
-        image_url = output[0].url if hasattr(output[0], "url") else str(output[0])
-
-        return {"success": True, "image_url": image_url}
-
-    except Exception as e:
-        print("Exception:", str(e))
-        return {"success": False, "error": str(e)}

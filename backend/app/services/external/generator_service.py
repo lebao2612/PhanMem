@@ -8,19 +8,30 @@ from app.utils import FileUtil
 
 class GeneratorService:
     @staticmethod
-    async def get_suggested_topics(keyword: str, limit: int) -> list[str]:
+    async def get_suggested_topics(
+        keyword: str, limit: int,
+        creator: User=None) -> list[str]:
         # Generate topic suggestions (based on a keyword).
-        return await GeminiClient.generate_suggested_topics(keyword, limit)
+        return await GeminiClient.generate_suggested_topics(
+            keyword=keyword, limit=limit,
+            model_name=creator.settings.llm_model,
+            language=creator.settings.language
+        )
 
     @staticmethod
-    async def get_trending_topics(limit: int) -> list[str]:
+    async def get_trending_topics(
+        limit: int,
+        creator: User=None) -> list[str]:
         # Generate trending topics.
-        return await GeminiClient.generate_trending_topics(limit)
+        return await GeminiClient.generate_trending_topics(
+            limit=limit,
+            model_name=creator.settings.llm_model,
+            language=creator.settings.language
+        )
 
     @staticmethod
     async def generate_script(
         topic: str, creator: User,
-        language: str="vi", model_name: str="gemini-1.5-flash"
     ) -> VideoDTO:
         # Generate a script based on the topic.
         if not topic:
@@ -28,22 +39,21 @@ class GeneratorService:
         
         script = await GeminiClient.generate_script(
             topic=topic,
-            language=language,
-            model_name=model_name
+            language=creator.settings.language,
+            model_name=creator.settings.llm_model
         )
 
         video = VideoRepository.create_draft_video(
             topic=topic,
-            script=script,
             creator=creator
         )
+        video = VideoRepository.update_script(video=video, script=script)
 
         return VideoDTO.from_model(video)
     
     @staticmethod
     async def regenerate_script(
         video_id: str, creator: User,
-        language: str="vi", model_name: str="gemini-1.5-flash"
     ) -> VideoDTO:
         # Regenerate script for an existing video.
         video = VideoRepository.find_by_id(video_id)
@@ -56,20 +66,16 @@ class GeneratorService:
         
         script = await GeminiClient.generate_script(
             topic=video.topic,
-            language=language,
-            model_name=model_name
+            language=creator.settings.language,
+            model_name=creator.settings.llm_model
         )
 
-        # Update the video with the new script.
-        video = VideoRepository.update_script(
-            video=video,
-            script=script
-        )
-
+        video = VideoRepository.update_script(video=video, script=script)
         return VideoDTO.from_model(video)
 
     @staticmethod
-    async def generate_voice(video_id: str, script: list[dict], creator: User) -> VideoDTO:
+    async def generate_voice(
+        video_id: str, creator: User, script: list[dict]) -> VideoDTO:
         video = VideoRepository.find_by_id(video_id)
         if not video:
             raise HandledException("Video does not exist", 404)
@@ -80,7 +86,11 @@ class GeneratorService:
         
         # Generate voice audio from script and create a draft video entry.
         subtitles = [scene["subtitle"] for scene in script if "subtitle" in scene]
-        audio_chunks = await GoogleTTS.generate_voice(subtitles)
+        audio_chunks = await GoogleTTS.generate_voice(
+            subtitles=subtitles,
+            gender=creator.settings.voice_gender,
+            language=creator.settings.language
+        )
 
         # Get durations and update scripts
         for i, chunk in enumerate(audio_chunks):
@@ -98,10 +108,8 @@ class GeneratorService:
         
         video = VideoRepository.update_voice(
             video=video,
-            public_id=upload_res["public_id"],
             url=upload_res["url"],
-            format=upload_res["format"],
-            size=upload_res["bytes"]
+            public_id=upload_res["public_id"],
         )
 
         video = VideoRepository.update_script(
@@ -109,16 +117,15 @@ class GeneratorService:
             script=script
         )
 
-        # Return the created video as a DTO.
         return VideoDTO.from_model(video)
 
     @staticmethod
-    async def generate_video(video_id: str, creator_id: str) -> VideoDTO:
+    async def generate_video(video_id: str, creator: User) -> VideoDTO:
         # Generate a video
         video = VideoRepository.find_by_id(video_id)
         if not video:
             raise HandledException("Video does not exist", 404)
-        if str(video.creator.id) != creator_id:
+        if video.creator.id != creator.id:
             raise HandledException("Permission denied", 403)
         if not video.voice_file:
             raise HandledException("Voice does not exist", 400)
@@ -138,8 +145,8 @@ class GeneratorService:
         
         video = VideoRepository.update_video(
             video=video,
+            url=video_url,
             public_id=public_id,
-            video_url=video_url
         )
         VideoRepository.update_status(video=video, status="done")
         

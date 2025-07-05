@@ -1,8 +1,8 @@
 from app.repositories import UserRepository
 from app.dtos import AuthDTO
-from app.utils import JWTUtil, DictUtil
-from app.integrations import GoogleOAuthClient, YouTubeClient
-from config.settings import settings
+from app.utils import JWTUtil
+from app.integrations import GoogleOAuthClient
+
 
 class AuthService:
     @staticmethod
@@ -16,29 +16,24 @@ class AuthService:
     def handle_google_oauth_callback(code: str) -> AuthDTO:
         google_tokens = GoogleOAuthClient.exchange_code_for_tokens(code)
         user_info = GoogleOAuthClient.get_user_info(google_tokens["access_token"])
-        
-        youtube_data = YouTubeClient.get_channel_detail(
-            refresh_token=google_tokens["refresh_token"],
-            access_token=google_tokens["access_token"]
-        )
-        youtube_data = DictUtil.normalize_keys(youtube_data)
 
-        google_data = {
-            **google_tokens,
-            **user_info
-        }
-        google_data = DictUtil.normalize_keys(google_data)
-        
-
-        user = UserRepository.find_by_email(google_data.get("email"))
+        user = UserRepository.find_by_email(email=user_info["email"])
         if not user:
-            user = UserRepository.create_with_google(google_data, youtube_data)
-        else:
-            user = UserRepository.update_google_tokens(user, google_tokens)
+            user = UserRepository.create_new(
+                name=user_info["name"],
+                email=user_info["email"],
+                picture=user_info.get("picture"),
+            )
+        
+        user = UserRepository.update_google(
+            user=user,
+            sub=user_info["sub"],
+            **google_tokens
+        )
 
         jwt_token = JWTUtil.generate_token(
-            user_id=str(user.id), email=user.email, roles=user.roles,
-            expires_in_hours=settings.JWT_EXPIRATION_HOURS
+            user_id=str(user.id),
+            email=user.email,
+            roles=user.roles,
         ) 
         return AuthDTO.from_model(token=jwt_token, user=user)
-    

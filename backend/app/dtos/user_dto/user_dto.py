@@ -1,33 +1,31 @@
 from pydantic import Field
 from app.models import User
 from app.dtos.base_dto import BaseDTO
-from .google_oauth_dto import GoogleOAuthInfoDTO
-from .youtube_channel_info_dto import YoutubeChannelInfoDTO
 from app.utils import TimeUtil
+from .user_setting_dto import UserSettingsDTO
 
 class UserDTO(BaseDTO):
     id: str
-    email: str
     name: str
-    google: GoogleOAuthInfoDTO | None
-    youtube: YoutubeChannelInfoDTO | None
-    picture: str
+    email: str
+    picture: str | None
     roles: list[str]
+    google_id: str | None = Field(alias="googleId")
     created_at: str | None = Field(alias="createdAt")
     updated_at: str | None = Field(alias="updatedAt")
-    additional_preferences: dict = Field(alias="additionalPreferences")
+    settings: UserSettingsDTO = Field(default_factory=UserSettingsDTO)
 
     @classmethod
     def from_model(cls, user: User):
         return cls(
             id=str(user.id),
-            email=user.email,
             name=user.name,
+            email=user.email,
             picture=user.picture,
             roles=user.roles,
-            google=GoogleOAuthInfoDTO.from_model(user.google) if user.google else None,
-            youtube=YoutubeChannelInfoDTO.from_model(user.youtube) if user.youtube else None,
-            created_at=TimeUtil.to_iso(user.created_at),
-            updated_at=TimeUtil.to_iso(user.updated_at),
-            additional_preferences=user.additional_preferences,
+            google_id=user.google.sub if user.google else None,
+            created_at=TimeUtil.to_iso(user.created_at) if user.created_at else None,
+            updated_at=TimeUtil.to_iso(user.updated_at) if user.updated_at else None,
+            settings=UserSettingsDTO.from_model(user.settings)
         )
+

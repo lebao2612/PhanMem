@@ -5,12 +5,12 @@ from .time_util import TimeUtil
 
 class JWTUtil:
     @staticmethod
-    def generate_token(user_id: str, email: str, roles: list[str], expires_in_hours: float=24):
+    def generate_token(user_id: str, email: str, roles: list[str]):
         payload = {
             "user_id": user_id,
             "email": email,
             "roles": roles,
-            "exp": TimeUtil.time(hours=expires_in_hours)
+            "exp": TimeUtil.time(hours=settings.JWT_EXPIRATION_HOURS)
         }
         return jwt.encode(
             payload,
@@ -21,7 +21,7 @@ class JWTUtil:
     @staticmethod
     def extract_token(header: str) -> str:
         if not header or not header.lower().startswith("bearer "):
-            raise HandledException(status_code=401, detail="Token không hợp lệ hoặc thiếu")
+            raise HandledException(message="Token không hợp lệ hoặc thiếu", code=401)
         return header[7:].strip()
     
     @staticmethod
@@ -29,6 +29,6 @@ class JWTUtil:
         try:
             return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
         except jwt.ExpiredSignatureError:
-            raise HandledException("Token expried", 401)
+            raise HandledException(message="Token expried", code=401)
         except jwt.InvalidTokenError:
-            raise HandledException("Invalid token", 401)
+            raise HandledException(message="Invalid token", code=401)

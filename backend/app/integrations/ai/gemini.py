@@ -4,13 +4,20 @@ from config import settings
 
 genai.configure(api_key=settings.GOOGLE_API_KEY)
 
-gemini_flash = genai.GenerativeModel("gemini-1.5-flash")
-gemini_pro = genai.GenerativeModel("gemini-1.5-pro")
-
 class GeminiClient:
+    _gemini_flash = genai.GenerativeModel("gemini-1.5-flash")
+    _gemini_pro = genai.GenerativeModel("gemini-1.5-pro")
+
+    _model = {
+        "gemini_flash": _gemini_flash,
+        "gemini_pro" : _gemini_pro
+    }
+
     @staticmethod
     async def _generate_content_async(prompt: str, model_name: str) -> str:
-        model = gemini_flash if model_name.lower() == "gemini-1.5-flash" else gemini_pro
+        model = GeminiClient._model.get(model_name, GeminiClient._gemini_flash)
+        # model = gemini_pro if model_name.lower() != "gemini-1.5-flash" else gemini_flash
+
         response = await model.generate_content_async(prompt)
         raw_text = response.text.strip()
         

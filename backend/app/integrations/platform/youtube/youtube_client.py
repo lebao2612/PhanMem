@@ -16,10 +16,12 @@ class YouTubeClient:
         )
         response = request.execute()
 
-        return response["items"]
+        items = response.get("items", [])
+        items = [YouTubeClient.normalize_youtube_video_data(item) for item in items]
+        return items
     
     @staticmethod
-    def search_videos(keyword: str, region: str = "VN", limit: int = 10) -> list:
+    def fetch_search_results(keyword: str, region: str = "VN", limit: int = 10) -> list:
         #
         youtube = YouTubeAuth.get_public_service()
         request = youtube.search().list(
@@ -31,14 +33,16 @@ class YouTubeClient:
         )
         response = request.execute()
 
-        return response["items"]
+        items = response.get("items", [])
+        items = [YouTubeClient.normalize_youtube_video_data(item) for item in items]
+        return items
 
     @staticmethod
     async def upload_video_url(
-        refresh_token: str,
         access_token: str,
         video_url: str,
-        metadata: dict,
+        refresh_token: str=None,
+        **meta_kwargs
     ) -> dict:
         temp_path = "upload_video_temp.mp4"
 
@@ -49,7 +53,7 @@ class YouTubeClient:
                 refresh_token=refresh_token,
                 access_token=access_token,
                 file_path=temp_path,
-                metadata=metadata
+                meta_kwargs=meta_kwargs
             )
 
         finally:
@@ -57,51 +61,85 @@ class YouTubeClient:
 
     @staticmethod
     def upload_video_file(
-        refresh_token: str,
         access_token: str,
         file_path: str,
-        metadata: dict
+        refresh_token: str=None,
+        **meta_kwargs
     ) -> dict:
-        youtube = YouTubeAuth.get_auth_service(
-            refresh_token=refresh_token,
-            access_token=access_token
-        )
+        metadata = {
+            "snippet" : {
+            "title": meta_kwargs.get("title", "Untitled"),
+            "description": meta_kwargs.get("description", ""),
+            "categoryId": meta_kwargs.get("categoryId", "22"),
+            "tags": meta_kwargs.get("tags", []),
+            "defaultLanguage": "vi"
+            },
+            "status" : {
+                "privacyStatus": meta_kwargs.get("privacy", "private")
+            }
+        }
 
-        media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
-        request = youtube.videos().insert(
-            part="snippet,status",
-            body=metadata,
-            media_body=media
-        )
-
-        response = None
         try:
-            while response is None:
-                status, response = request.next_chunk()
+            youtube = YouTubeAuth.get_auth_service(
+                refresh_token=refresh_token,
+                access_token=access_token
+            )
+
+            with MediaFileUpload(file_path, chunksize=-1, resumable=True) as media:
+                request = youtube.videos().insert(
+                    part="snippet,status",
+                    body=metadata,
+                    media_body=media
+                )
+                while response is None:
+                    _, response = request.next_chunk()
+
+            media.stream().close()
+
+            return YouTubeClient.normalize_youtube_video_data(response)
         except Exception as e:
-            raise HandledException(f"Lỗi khi upload video: {e}", 500)
-
-        media.stream().close()
-        return response
+            raise HandledException(f"Lỗi khi upload video lên YouTube: {e}", 500)
 
     @staticmethod
-    def get_video_details(video_id: str, refresh_token: str, access_token: str) -> dict:
-        youtube = YouTubeAuth.get_auth_service(
-            refresh_token=refresh_token,
-            access_token=access_token
-        )
-        request = youtube.videos().list(
-            part="snippet,statistics,status,contentDetails",
-            id=video_id
-        )
-        response = request.execute()
-        items = response.get("items", [])
-        if not items:
-            raise HandledException(f"Không tìm thấy video với ID: {video_id}", 404)
-        return items[0]
+    def get_video_details(video_id: str, access_token: str, refresh_token: str=None) -> dict:
+        try:
+            youtube = YouTubeAuth.get_auth_service(
+                refresh_token=refresh_token,
+                access_token=access_token
+            )
+            request = youtube.videos().list(
+                part="snippet,statistics,status,contentDetails",
+                id=video_id
+            )
+            response = request.execute()
+            items = response.get("items", [])
+            if not items:
+                raise HandledException(f"Không tìm thấy video với ID: {video_id}", 404)
+            
+            return YouTubeClient.normalize_youtube_video_data(items[0])
+        except HandledException:
+            raise
+        except Exception as e:
+            raise HandledException(f"Lỗi khi lấy video detail: {e}", 500)
 
     @staticmethod
-    def get_channel_detail(refresh_token: str, access_token: str) -> dict:
+    def normalize_youtube_video_data(raw: dict) -> dict:
+        snippet = raw.get("snippet", {})
+        status = raw.get("status", {})
+        stats = raw.get("statistics", {})
+
+        return {
+            "id": raw.get("id") or raw.get("id", {}).get("videoId"),
+            "title": snippet.get("title", "Untitled"),
+            "description": snippet.get("description", ""),
+            "tags": snippet.get("tags", []),
+            "view_count": int(stats.get("viewCount", 0)) if stats else 0,
+            "like_count": int(stats.get("likeCount", 0)) if stats else 0,
+            "comment_count": int(stats.get("commentCount", 0)) if stats else 0,
+        }
+
+    @staticmethod
+    def get_channel_detail(access_token: str, refresh_token: str=None) -> dict:
         youtube = YouTubeAuth.get_auth_service(
             refresh_token=refresh_token,
             access_token=access_token
@@ -115,21 +153,3 @@ class YouTubeClient:
         if not items:
             raise HandledException(f"Không tìm thấy channel", 404)
         return items[0]
-    
-    @staticmethod
-    def get_channel_id(refresh_token: str, access_token: str) -> str:
-        youtube = YouTubeAuth.get_auth_service(
-            refresh_token=refresh_token,
-            access_token=access_token
-        )
-
-        response = youtube.channels().list(
-            part="id",
-            mine=True
-        ).execute()
-
-        items = response.get("items", [])
-        if not items:
-            raise HandledException("Không tìm thấy kênh YouTube", 404)
-
-        return items[0]["id"]

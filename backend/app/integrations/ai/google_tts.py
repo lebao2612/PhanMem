@@ -1,11 +1,28 @@
 from google.cloud import texttospeech
 from app.exceptions import HandledException
 from config import settings
-_tts_client = texttospeech.TextToSpeechClient.from_service_account_file(
-    settings.GOOGLE_TTS_CREDENTIALS_PATH
-)
+
 
 class GoogleTTS:
+    _client = texttospeech.TextToSpeechClient.from_service_account_file(
+        settings.GOOGLE_TTS_CREDENTIALS_PATH
+    )
+    _audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3
+    )
+    _language_code_map = {
+        "vi": "vi-VN",
+        "en": "en-US"
+    }
+    _gender_suffix_map = {
+        "female": "A",
+        "male": "B"
+    }
+    _ssml_gender_map = {
+        "male": texttospeech.SsmlVoiceGender.MALE,
+        "female": texttospeech.SsmlVoiceGender.FEMALE
+    }
+
     @staticmethod
     async def generate_voice(
         subtitles: list[str],
@@ -13,20 +30,15 @@ class GoogleTTS:
         language: str = "vi"
     ) -> list[bytes]:
         try:
-            language_code = {
-                "vi": "vi-VN",
-                "en": "en-US"
-            }.get(language.lower(), "vi-VN")
+            lang_key = language.lower()
+            gender_key = gender.lower()
 
-            voice_suffix = {
-                "female": "A",
-                "male": "B"
-            }.get(gender.lower(), "A")
-
-            ssml_gender = {
-                "male": texttospeech.SsmlVoiceGender.MALE,
-                "female": texttospeech.SsmlVoiceGender.FEMALE
-            }.get(gender.lower(), texttospeech.SsmlVoiceGender.NEUTRAL)
+            language_code = GoogleTTS._language_code_map.get(lang_key, "vi-VN")
+            voice_suffix = GoogleTTS._gender_suffix_map.get(gender_key, "A")
+            ssml_gender = GoogleTTS._ssml_gender_map.get(
+                gender_key,
+                texttospeech.SsmlVoiceGender.NEUTRAL
+            )
 
             voice_name = f"{language_code}-Standard-{voice_suffix}"
 
@@ -34,9 +46,6 @@ class GoogleTTS:
                 language_code=language_code,
                 name=voice_name,
                 ssml_gender=ssml_gender
-            )
-            audio_config = texttospeech.AudioConfig(
-                audio_encoding=texttospeech.AudioEncoding.MP3
             )
 
             audio_chunks = []
@@ -46,10 +55,10 @@ class GoogleTTS:
                     continue
 
                 synthesis_input = texttospeech.SynthesisInput(text=subtitle)
-                response = _tts_client.synthesize_speech(
+                response = GoogleTTS._client.synthesize_speech(
                     input=synthesis_input,
                     voice=voice,
-                    audio_config=audio_config
+                    audio_config=GoogleTTS._audio_config
                 )
                 audio_chunks.append(response.audio_content)
 

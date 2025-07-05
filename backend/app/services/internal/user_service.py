@@ -1,6 +1,7 @@
 from app.repositories import UserRepository
 from app.dtos import UserDTO
 from app.exceptions import HandledException
+from app.models import User
 
 class UserService:
     @staticmethod
@@ -12,28 +13,32 @@ class UserService:
 
     @staticmethod
     def list_users(skip: int = 0, limit: int = 20) -> list[UserDTO]:
-        users = UserRepository.list_users(skip, limit)
+        users = UserRepository.get_users(skip, limit)
         return [UserDTO.from_model(u) for u in users]
 
     @staticmethod
-    def update_user(
-        user_id: str, data: dict,
-    ) -> UserDTO:
-        user = UserRepository.find_by_id(user_id)
-        if not user:
-            raise HandledException("Người dùng không tồn tại", 404)
-        
-        prefs = {}
-        if "theme" in data:
-            prefs["theme"] = data.pop("theme")
-        if "language" in data:
-            prefs["language"] = data.pop("language")
-        if prefs:
-            data["additional_preferences"] = prefs
-        
-        allowed_fields = ["name", "picture", "additional_preferences"]
-        user = UserRepository.update_fields(user, data, allowed_fields)
-        return UserDTO.from_model(user)
+    def update_user_info(user: User, **kwargs) -> UserDTO:
+        # Các field hợp lệ: name, picture
+        allowed_fields = {"name", "picture"}
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
+
+        if not filtered_kwargs:
+            raise HandledException("No valid fields to update", 400)
+
+        updated_user = UserRepository.update_fields(user, **filtered_kwargs)
+        return UserDTO.from_model(updated_user)
+
+    @staticmethod
+    def update_user_settings(user: User, **kwargs) -> UserDTO:
+        # Các field hợp lệ trong settings
+        allowed_fields = {"language", "theme", "llm_model", "tts_model", "voice_gender", "tti_model"}
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
+
+        if not filtered_kwargs:
+            raise HandledException("No valid settings fields to update", 400)
+
+        updated_user = UserRepository.update_setting(user, **filtered_kwargs)
+        return UserDTO.from_model(updated_user)
 
     @staticmethod
     def delete_user(user_id: str) -> bool:

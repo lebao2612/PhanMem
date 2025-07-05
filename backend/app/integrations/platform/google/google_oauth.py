@@ -2,19 +2,14 @@ import requests
 from urllib.parse import urlencode
 from config import settings, constants
 from app.exceptions import HandledException
+from app.utils import TimeUtil
 
 class GoogleOAuthClient:
     _SCOPES = [
         "openid",
         "email",
         "profile",
-        constants.YOUTUBE_SCOPES["YOUTUBE"],
-        constants.YOUTUBE_SCOPES["YOUTUBE_UPLOAD"],
-        constants.YOUTUBE_SCOPES["YOUTUBE_READONLY"],
-        constants.YOUTUBE_SCOPES["YOUTUBE_ANALYTICS"],
-        # settings.YOUTUBE_SCOPE_UPLOAD,
-        # settings.YOUTUBE_SCOPE_READONLY,
-        # settings.YOUTUBE_SCOPE_ANALYTICS,
+        constants.YOUTUBE_SCOPES["YOUTUBE"]
     ]
 
     @staticmethod
@@ -55,22 +50,46 @@ class GoogleOAuthClient:
             )
             if res.status_code != 200:
                 raise HandledException("Failed to exchange authorization code with Google", 400)
-            return res.json()
+            
+            raw:dict = res.json()
+            print(raw.get("scope", "bacacacac"))
+            data = {
+                "access_token": raw["access_token"],
+                "expires_at": TimeUtil.time(seconds=int(raw.get("expires_in",0))),
+                "token_type": raw["token_type"],
+            }
+
+            refresh_token = raw.get("refresh_token")
+            if refresh_token:
+                data["refresh_token"] = refresh_token
+
+            return data
         except requests.RequestException:
             raise HandledException("Could not connect to Google", 500)
 
     @staticmethod
-    def get_user_info(access_token: str) -> dict:
+    def get_user_info(access_token: str, token_type: str="Bearer") -> dict:
         # Get user info from Google
         try:
             res = requests.get(
                 url=constants.GOOGLE_OAUTH_ENDPOINTS["USERINFO_URI"],
-                headers={"Authorization": f"Bearer {access_token}"},
+                headers={"Authorization": f"{token_type} {access_token}"},
                 timeout=10
             )
             if res.status_code != 200:
                 raise HandledException("Failed to retrieve user information from Google", 401)
-            return res.json()
+            
+            raw: dict = res.json()
+            data = {
+                "sub": raw["sub"],
+                "name": raw["name"],
+                "email": raw["email"],
+                # "scope": raw.get("scope"),
+            }
+            if raw.get("picture"):
+                data["picture"] = raw["picture"]
+            
+            return data
         except requests.RequestException:
             raise HandledException("Could not connect to Google", 500)
 
@@ -92,14 +111,12 @@ class GoogleOAuthClient:
 
             if res.status_code != 200:
                 raise HandledException("Failed to refresh access token", 401)
-
-            return res.json()
-            # access_token = data.get("access_token")
-            # expires_in = data.get("expires_in", 0)
-            # if not access_token:
-            #     raise HandledException("Google did not return an access_token", 401)
-
-            # return access_token, expires_in
+            
+            raw = res.json()
+            return {
+                "access_token": raw["access_token"],
+                "expires_at": TimeUtil.time(seconds=int(raw.get("expires_in",0))),
+            }
 
         except requests.RequestException:
             raise HandledException("Could not connect to Google", 500)
