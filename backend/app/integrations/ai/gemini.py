@@ -1,6 +1,11 @@
 import re
 import google.generativeai as genai
+from google.api_core.exceptions import GoogleAPIError
 from config import settings
+from google.generativeai.types.generation_types import (
+    BlockedPromptException,
+    StopCandidateException
+)
 
 genai.configure(api_key=settings.GOOGLE_API_KEY)
 
@@ -12,20 +17,6 @@ class GeminiClient:
         "gemini_flash": _gemini_flash,
         "gemini_pro" : _gemini_pro
     }
-
-    @staticmethod
-    async def _generate_content_async(prompt: str, model_name: str) -> str:
-        model = GeminiClient._model.get(model_name, GeminiClient._gemini_flash)
-        # model = gemini_pro if model_name.lower() != "gemini-1.5-flash" else gemini_flash
-
-        response = await model.generate_content_async(prompt)
-        raw_text = response.text.strip()
-        
-        # Loại bỏ ký tự đặc biệt, số, dấu đầu dòng từ đầu mỗi dòng
-        cleaned_text = re.sub(r"(?m)^[\s\-–•\d\.\)\(]+", "", raw_text)
-        # Loại bỏ dòng trống
-        cleaned_text = "\n".join(line for line in cleaned_text.splitlines() if line.strip())
-        return cleaned_text
 
     @staticmethod
     async def generate_suggested_topics(
@@ -86,3 +77,25 @@ class GeminiClient:
                 if len(parts) == 2:
                     scenes.append({"label": parts[0].strip(), "subtitle": parts[1].strip()})
         return scenes
+
+    @staticmethod
+    async def _generate_content_async(prompt: str, model_name: str) -> str:
+        model = GeminiClient._model.get(model_name, GeminiClient._gemini_flash)
+        # model = gemini_pro if model_name.lower() != "gemini-1.5-flash" else gemini_flash
+
+        try:
+            response = await model.generate_content_async(prompt)
+            raw_text = response.text.strip()
+            
+            # Loại bỏ ký tự đặc biệt, số, dấu đầu dòng từ đầu mỗi dòng
+            cleaned_text = re.sub(r"(?m)^[\s\-–•\d\.\)\(]+", "", raw_text)
+            # Loại bỏ dòng trống
+            cleaned_text = "\n".join(line for line in cleaned_text.splitlines() if line.strip())
+            return cleaned_text
+
+        except BlockedPromptException:
+            raise ValueError("Prompt rejected by Gemini.")
+        except StopCandidateException:
+            raise RuntimeError("Gemini stopped content generation.")
+        except GoogleAPIError:
+            raise RuntimeError("Gemini API error.")

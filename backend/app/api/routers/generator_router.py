@@ -8,8 +8,7 @@ from app.schemas.requests import (
     GenerateScriptRequest,
     RegenerateScriptRequest,
     GenerateVoiceRequest,
-    GenerateVideoRequest,
-    PromptImageRequest
+    GenerateVideoRequest
 )
 
 router = APIRouter(prefix="/api/generators", tags=["generators"])

@@ -14,15 +14,19 @@ cloudinary.config(
 
 class CloudinaryClient:
     @staticmethod
-    async def upload_file(data: bytes, resource_type: str = "auto", folder: str = "uploads") -> dict:
+    async def upload_byte(
+        data: bytes,
+        resource_type: str = "auto",
+        folder: str = "uploads",
+        filename: str = None
+    ) -> dict:
         """Upload dữ liệu bytes lên Cloudinary"""
         try:
-            public_id = f"{folder}/{uuid.uuid4().hex}"
             result = cloudinary.uploader.upload(
                 BytesIO(data),
                 resource_type=resource_type,
                 folder=folder,
-                public_id=public_id.split("/")[-1]
+                public_id=filename or uuid.uuid4().hex
             )
             return {
                 "public_id": result["public_id"],
@@ -32,6 +36,29 @@ class CloudinaryClient:
             }
         except Exception as e:
             raise HandledException(status_code=500, detail=f"Upload to Cloudinary failed: {e}")
+
+    @staticmethod
+    async def upload_from_url(
+        image_url: str,
+        resource_type: str = "auto",
+        folder: str = "uploads",
+        filename: str = None
+    ) -> dict:
+        try:
+            result = cloudinary.uploader.upload(
+                image_url,
+                resource_type=resource_type,
+                folder=folder,
+                public_id=filename or uuid.uuid4().hex
+            )
+            return {
+                "public_id": result["public_id"],
+                "url": result["secure_url"],
+                "format": result["format"],
+                "size": result.get("bytes", 0)
+            }
+        except Exception as e:
+            raise HandledException(status_code=500, detail=f"Upload from URL failed: {e}")
 
     @staticmethod
     async def delete_file(public_id: str, resource_type: str = "auto") -> bool:

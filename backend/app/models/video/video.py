@@ -12,13 +12,13 @@ from .video_metadata import YoutubeVideoMetadata
 class Video(Document):
     title = StringField(default="Untitled")
     topic = StringField(required=True)
-    script: list[VideoScene] = EmbeddedDocumentListField(VideoScene, default=list)
+    script = EmbeddedDocumentListField(VideoScene, default=list)
     duration = FloatField(min_value=0.0)
 
     # Media fields
-    video_file: MediaInfo = EmbeddedDocumentField(MediaInfo)
-    voice_file: MediaInfo = EmbeddedDocumentField(MediaInfo)
-    thumbnail_file: MediaInfo = EmbeddedDocumentField(MediaInfo)
+    video_file = EmbeddedDocumentField(MediaInfo)
+    voice_file = EmbeddedDocumentField(MediaInfo)
+    thumbnail_file = EmbeddedDocumentField(MediaInfo)
     creator = ReferenceField(User, required=True)
 
     # Status of generation

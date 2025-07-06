@@ -1,6 +1,6 @@
 import os, time, io
 import httpx
-from moviepy import VideoFileClip
+# from moviepy import VideoFileClip
 import audioread
 from app.exceptions import HandledException
 
@@ -50,10 +50,10 @@ class FileUtil:
             raise HandledException(500, f"Không thể ghép mp3: {e}")
 
     # === Video ===
-    @staticmethod
-    def get_mp4_duration(file_path: str) -> float:
-        try:
-            with VideoFileClip(file_path) as clip:
-                return round(clip.duration, 2)
-        except Exception as e:
-            raise HandledException(500, f"Không thể tính thời lượng mp4: {e}")
+    # @staticmethod
+    # def get_mp4_duration(file_path: str) -> float:
+    #     try:
+    #         with VideoFileClip(file_path) as clip:
+    #             return round(clip.duration, 2)
+    #     except Exception as e:
+    #         raise HandledException(500, f"Không thể tính thời lượng mp4: {e}")

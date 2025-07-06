@@ -1,7 +1,7 @@
+import asyncio
 from google.cloud import texttospeech
-from app.exceptions import HandledException
+from google.api_core.exceptions import GoogleAPIError
 from config import settings
-
 
 class GoogleTTS:
     _client = texttospeech.TextToSpeechClient.from_service_account_file(
@@ -24,45 +24,41 @@ class GoogleTTS:
     }
 
     @staticmethod
-    async def generate_voice(
+    async def generate_voices(
         subtitles: list[str],
         gender: str = "female",
         language: str = "vi"
     ) -> list[bytes]:
+        language_code = GoogleTTS._language_code_map.get(language.lower(), "vi-VN")
+        voice_suffix = GoogleTTS._gender_suffix_map.get(gender.lower(), "A")
+        ssml_gender = GoogleTTS._ssml_gender_map.get(
+            gender.lower(),
+            texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+
+        voice_name = f"{language_code}-Standard-{voice_suffix}"
         try:
-            lang_key = language.lower()
-            gender_key = gender.lower()
-
-            language_code = GoogleTTS._language_code_map.get(lang_key, "vi-VN")
-            voice_suffix = GoogleTTS._gender_suffix_map.get(gender_key, "A")
-            ssml_gender = GoogleTTS._ssml_gender_map.get(
-                gender_key,
-                texttospeech.SsmlVoiceGender.NEUTRAL
-            )
-
-            voice_name = f"{language_code}-Standard-{voice_suffix}"
-
             voice = texttospeech.VoiceSelectionParams(
                 language_code=language_code,
                 name=voice_name,
                 ssml_gender=ssml_gender
             )
 
-            audio_chunks = []
-
-            for subtitle in subtitles:
-                if not subtitle:
-                    continue
-
-                synthesis_input = texttospeech.SynthesisInput(text=subtitle)
-                response = GoogleTTS._client.synthesize_speech(
-                    input=synthesis_input,
-                    voice=voice,
-                    audio_config=GoogleTTS._audio_config
-                )
-                audio_chunks.append(response.audio_content)
-
-            return audio_chunks
-
-        except Exception as e:
-            raise HandledException(status_code=500, detail=f"TTS generation failed: {e}")
+            async def synthesize(subtitle: str) -> bytes:
+                try:
+                    synthesis_input = texttospeech.SynthesisInput(text=subtitle)
+                    response = await asyncio.to_thread(
+                        GoogleTTS._client.synthesize_speech,
+                        input=synthesis_input,
+                        voice=voice,
+                        audio_config=GoogleTTS._audio_config
+                    )
+                    return response.audio_content
+                except GoogleAPIError as e:
+                        raise RuntimeError("Không thể kết nối tới Google TTS API.") from e
+                
+            tasks = [synthesize(subtitle) for subtitle in subtitles if subtitle]
+            return await asyncio.gather(*tasks)
+    
+        except ValueError as e:
+            raise ValueError("Dữ liệu đầu vào không hợp lệ.") from e
