@@ -12,7 +12,7 @@ from .video_metadata import YoutubeVideoMetadata
 class Video(Document):
     title = StringField(default="Untitled")
     topic = StringField(required=True)
-    script = EmbeddedDocumentListField(VideoScene, default=list)
+    script: list[VideoScene] = EmbeddedDocumentListField(VideoScene, default=list)
     duration = FloatField(min_value=0.0)
 
     # Media fields

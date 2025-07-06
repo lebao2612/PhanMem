@@ -1,17 +1,13 @@
 from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build, Resource
-from config import settings, constants
-
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError, GoogleAuthError
-from app.exceptions import HandledException
+from googleapiclient.discovery import build, Resource
+from googleapiclient.errors import HttpError
+from config import settings, constants
 
 
 class YouTubeAuth:
     @staticmethod
-    def get_credentials(access_token: str, refresh_token: str|None = None) -> Credentials:
-
+    def get_credentials(access_token: str, refresh_token: str | None = None) -> Credentials:
         return Credentials(
             token=access_token,
             refresh_token=refresh_token,
@@ -27,7 +23,7 @@ class YouTubeAuth:
             "youtube",
             "v3",
             developerKey=settings.GOOGLE_API_KEY
-            )
+        )
 
     @staticmethod
     def get_auth_service(access_token: str, refresh_token: str | None = None) -> Resource:
@@ -44,30 +40,19 @@ class YouTubeAuth:
             )
 
         except RefreshError as e:
-            raise HandledException("Refresh token không hợp lệ hoặc đã hết hạn.", 401)
-        
+            raise ValueError("Refresh token không hợp lệ hoặc đã hết hạn.") from e
+
         except GoogleAuthError as e:
-            raise HandledException("Xác thực không thành công. Vui lòng kiểm tra token.", 401)
+            raise PermissionError("Xác thực không thành công. Vui lòng kiểm tra token.") from e
 
         except HttpError as e:
-            if e.resp.status == 403:
-                raise HandledException("Không đủ quyền để truy cập tài nguyên YouTube.", 403)
-            elif e.resp.status == 401:
-                raise HandledException("Token không hợp lệ hoặc đã hết hạn.", 401)
+            status = e.resp.status
+            if status == 403:
+                raise PermissionError("Không đủ quyền để truy cập tài nguyên YouTube.") from e
+            elif status == 401:
+                raise PermissionError("Token không hợp lệ hoặc đã hết hạn.") from e
             else:
-                raise HandledException(f"Lỗi từ Google API: {e}", e.resp.status)
+                raise RuntimeError(f"Lỗi từ Google API (status {status}): {e}") from e
 
         except Exception as e:
-            raise HandledException(f"Lỗi không xác định khi tạo YouTube service: {e}", 500)
-    
-    # @staticmethod
-    # def get_service_analytics(access_token: str, refresh_token: str|None = None):
-    #     credentials = YouTubeAuth.get_credentials(
-    #         refresh_token=refresh_token,
-    #         access_token=access_token
-    #     )
-    #     return build(
-    #         "youtubeAnalytics",
-    #         "v2",
-    #         credentials=credentials
-    #     )
+            raise RuntimeError(f"Lỗi không xác định khi tạo YouTube service.") from e

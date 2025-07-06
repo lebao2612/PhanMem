@@ -10,7 +10,7 @@ class VideoDTO(BaseDTO):
     title: str
     topic: str
     script: list[VideoSceneDTO] = Field(default_factory=list)
-    duration: float = Field(default=0.0)
+    duration: float | None = Field(default=0.0)
     creator_id: str = Field(alias="creatorId")
     video_url: str | None = Field(alias="videoUrl")
     voice_url: str | None = Field(alias="voiceUrl")

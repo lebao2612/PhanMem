@@ -1,26 +1,22 @@
 from mongoengine.errors import DoesNotExist, ValidationError
 from app.utils import TimeUtil
-from app.exceptions import HandledException
 from app.models import (
     User,
     Video, MediaInfo, VideoScene,
     YoutubeVideoMetadata
 )
 
-
 class VideoRepository:
     @staticmethod
     def create_draft_video(creator: User, topic: str) -> Video:
         try:
-            video = Video(
-                creator=creator,
-                topic=topic,
-                status="draft",
-            )
+            video = Video(creator=creator, topic=topic, status="draft")
             video.save()
             return video
+        except ValidationError as e:
+            raise ValueError("Dữ liệu video không hợp lệ.") from e
         except Exception as e:
-            raise HandledException(f"Failed to create video: {e}", 400)
+            raise RuntimeError("Không thể tạo video nháp.") from e
 
     @staticmethod
     def find_by_id(video_id: str) -> Video | None:
@@ -29,39 +25,37 @@ class VideoRepository:
         except (DoesNotExist, ValidationError):
             return None
         except Exception as e:
-            raise HandledException(f"Error finding video: {e}", 500)
+            raise RuntimeError("Lỗi khi tìm video theo ID.") from e
 
     @staticmethod
-    def query(creator_id: str=None, **kwargs) -> list[Video]:
+    def query(**filters) -> list[Video]:
         try:
             query = Video.objects
+            filter_kwargs = {}
 
-            # Filter by creator
-            if creator_id:
-                query = query.filter(creator=creator_id)
+            if creator_id := filters.get("creator_id"):
+                filter_kwargs["creator__id"] = creator_id
+            if title := filters.get("title"):
+                filter_kwargs["title__icontains"] = title
+            if topic := filters.get("topic"):
+                filter_kwargs["topic__icontains"] = topic
 
-            # Filter by each field
-            title = kwargs.get("title")
-            if title:
-                query = query.filter(title__icontains=title)
-
-            topic = kwargs.get("topic")
-            if topic:
-                query = query.filter(topic__icontains=topic)
+            if filter_kwargs:
+                query = query.filter(**filter_kwargs)
 
             # Sorting
-            sort_by = kwargs.get("sort", "-created_at")
+            sort_by = filters.get("sort", "-created_at")
             query = query.order_by(sort_by)
 
             # Pagination
-            skip = int(kwargs.get("skip", 0))
-            limit = int(kwargs.get("limit", 20))
+            skip = int(filters.get("skip", 0))
+            limit = int(filters.get("limit", 20))
             query = query.skip(skip).limit(limit)
 
             return list(query)
-        
+
         except Exception as e:
-            raise HandledException(f"Error querying videos: {e}", 500)
+            raise RuntimeError("Lỗi khi truy vấn danh sách video.") from e
 
     @staticmethod
     def update_status(video: Video, status: str) -> Video:
@@ -73,27 +67,37 @@ class VideoRepository:
             if video.youtube:
                 id = kwargs.pop("id", None)
                 if id and video.youtube.id != id:
-                    raise ValidationError("Video id does not match")
-                
+                    raise ValueError("Video ID không trùng khớp.")
+
                 for k, v in kwargs.items():
-                    if hasattr(video.youtube, v):
+                    if hasattr(video.youtube, k):
                         setattr(video.youtube, k, v)
             else:
                 if kwargs.get("id"):
                     video.youtube = YoutubeVideoMetadata(**kwargs)
                 else:
-                    raise DoesNotExist("Video id does not exist")
+                    raise ValueError("Thiếu ID video YouTube.")
             
-            # video.youtube.last_synced_at = TimeUtil.now()
             video.updated_at = TimeUtil.now()
             video.save()
             return video
+        except ValidationError as e:
+            raise ValueError("Dữ liệu YouTube không hợp lệ.") from e
         except Exception as e:
-            raise HandledException(f"Failed to update with YouTube: {e}", 400)
+            raise RuntimeError("Lỗi khi cập nhật thông tin YouTube.") from e
 
     @staticmethod
     def update_script(video: Video, script: list[dict]) -> Video:
-        return VideoRepository.update_fields(video, script=[VideoScene(**s) for s in script])
+        try:
+            scenes = [
+                VideoScene(**{k: v for k, v in s.items() if hasattr(VideoScene, k)})
+                for s in script
+            ]
+            return VideoRepository.update_fields(video, script=scenes)
+        except ValidationError as e:
+            raise ValueError("Kịch bản không hợp lệ.") from e
+        except Exception as e:
+            raise RuntimeError("Không thể cập nhật kịch bản.") from e
 
     @staticmethod
     def update_voice(video: Video, url: str, **kwargs) -> Video:
@@ -113,15 +117,18 @@ class VideoRepository:
             for k, v in kwargs.items():
                 if hasattr(video, k):
                     setattr(video, k, v)
+
             video.updated_at = TimeUtil.now()
             video.save()
             return video
+        except ValidationError as e:
+            raise ValueError("Dữ liệu cập nhật không hợp lệ.") from e
         except Exception as e:
-            raise HandledException(f"Failed to update video: {e}", 400)
+            raise RuntimeError("Không thể cập nhật video.") from e
 
     @staticmethod
     def delete_video(video: Video) -> None:
         try:
             video.delete()
         except Exception as e:
-            raise HandledException(f"Failed to delete video: {e}", 400)
+            raise RuntimeError("Không thể xóa video.") from e

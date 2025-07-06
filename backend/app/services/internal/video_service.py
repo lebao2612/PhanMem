@@ -1,4 +1,4 @@
-from app.repositories import VideoRepository
+from app.repositories import VideoRepository, UserRepository
 from app.exceptions import HandledException
 from app.dtos import VideoDTO
 
@@ -11,10 +11,9 @@ class VideoService:
         return VideoDTO.from_model(video)
 
     @staticmethod
-    def query_videos(filters: dict) -> list[VideoDTO]:
-        videos = VideoRepository.query(filters)
+    def query_videos(**filters) -> list[VideoDTO]:
+        videos = VideoRepository.query(**filters)
         return [VideoDTO.from_model(v) for v in videos]
-
 
     @staticmethod
     def delete_video(video_id: str) -> bool:

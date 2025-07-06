@@ -1,7 +1,7 @@
 from pydantic import Field
 from app.schemas.base_schema import BaseSchema
 
-class YouTubeUploadSchema(BaseSchema):
+class YouTubeUploadRequest(BaseSchema):
     title: str = Field(..., description="Title of the YouTube video")
     description: str = Field(..., description="Description of the YouTube video")
     tags: list[str] = Field(default=[], description="List of tags for the YouTube video")

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from app.schemas.requests import YouTubeUploadSchema
+from app.schemas.requests import YouTubeUploadRequest
 from app.schemas.responses import SuccessResponse
 from app.api.middlewares import token_required
 from app.services import YoutubeService
@@ -31,7 +31,7 @@ def search_youtube_videos(
 @router.post("/youtube/upload/{video_id}", response_model=SuccessResponse[VideoDTO])
 async def upload_youtube_video(
     video_id: str,
-    data: YouTubeUploadSchema,
+    data: YouTubeUploadRequest,
     current_user: User = Depends(token_required)):
     video = await YoutubeService.upload_video(
         creator=current_user,

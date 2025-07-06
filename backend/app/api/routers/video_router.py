@@ -27,7 +27,7 @@ def list_all_videos(
         "skip": skip,
         "limit": limit,
     }
-    videos = VideoService.query_videos(filters)
+    videos = VideoService.query_videos(**filters)
     return SuccessResponse(data=videos)
 
 
@@ -48,7 +48,7 @@ def list_my_videos(
         "skip": skip,
         "limit": limit,
     }
-    videos = VideoService.query_videos(filters)
+    videos = VideoService.query_videos(**filters)
     return SuccessResponse(data=videos)
 
 

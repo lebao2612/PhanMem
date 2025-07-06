@@ -3,8 +3,6 @@ from app.dtos import VideoDTO
 from app.repositories import VideoRepository, UserRepository
 from app.exceptions import HandledException
 from app.integrations import YouTubeClient, GoogleOAuthClient
-from app.utils import TimeUtil
-from config import constants
 
 class YoutubeService:
     @staticmethod
@@ -54,7 +52,7 @@ class YoutubeService:
         except HandledException:
             raise
         except Exception as e:
-            raise HandledException(code=500, message=f"Upload failed: {str(e)}")
+            raise HandledException(code=500, message=f"Upload failed: {e}") from e
 
     @staticmethod
     def refresh_video(creator: User, video_id: str) -> dict:
@@ -83,4 +81,4 @@ class YoutubeService:
         except HandledException:
             raise
         except Exception as e:
-            raise HandledException(code=500, message=f": {str(e)}")
+            raise HandledException(code=500, message=f": {e}") from e

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.exceptions import register_error_handlers
 from app.api.routers import main_router
-from app.api.errors import register_error_handlers
 from app.contexts import lifespan
 
 def create_app() -> FastAPI:

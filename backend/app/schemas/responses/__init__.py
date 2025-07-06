@@ -1,2 +1,2 @@
-from .error import ErrorResponse
-from .success import SuccessResponse
+from .error_response import ErrorResponse
+from .success_response import SuccessResponse

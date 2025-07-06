@@ -1,5 +1,5 @@
 from typing import  Union, Literal
-from pydantic import BaseModel, Field
+from pydantic import Field
 from fastapi.responses import JSONResponse
 from app.schemas.base_schema import BaseSchema
 
