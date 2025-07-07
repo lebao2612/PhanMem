@@ -1,24 +1,25 @@
-from app.repositories import VideoRepository, UserRepository
-from app.exceptions import HandledException
+from app.repositories import VideoRepository
 from app.dtos import VideoDTO
+from app.exceptions import HandledException
+
 
 class VideoService:
-    @staticmethod
-    def get_video_by_id(video_id: str) -> VideoDTO:
-        video = VideoRepository.find_by_id(video_id)
+    def __init__(self, video_repo: VideoRepository):
+        self.video_repo = video_repo
+
+    def get_video_by_id(self, video_id: str) -> VideoDTO:
+        video = self.video_repo.find_by_id(video_id)
         if not video:
             raise HandledException("Video không tồn tại", 404)
         return VideoDTO.from_model(video)
 
-    @staticmethod
-    def query_videos(**filters) -> list[VideoDTO]:
-        videos = VideoRepository.query(**filters)
+    def query_videos(self, **filters) -> list[VideoDTO]:
+        videos = self.video_repo.query(**filters)
         return [VideoDTO.from_model(v) for v in videos]
 
-    @staticmethod
-    def delete_video(video_id: str) -> bool:
-        video = VideoRepository.find_by_id(video_id)
+    def delete_video(self, video_id: str) -> bool:
+        video = self.video_repo.find_by_id(video_id)
         if not video:
             raise HandledException("Video không tồn tại", 404)
-        VideoRepository.delete_video(video)
+        self.video_repo.delete_video(video)
         return True

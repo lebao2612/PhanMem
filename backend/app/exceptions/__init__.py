@@ -1,2 +1,2 @@
 from .handle_exception import HandledException
-from .register_handler import register_error_handlers
+from .register_error_handler import register_error_handlers

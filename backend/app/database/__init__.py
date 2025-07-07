@@ -1,4 +1,3 @@
-from .connection import *
-
-from config import settings
-mongo = MongoDBConnection(settings.MONGODB_URI)
+# from . import mongo_db_conn
+from .db_conn import DBConnection
+from .mongo_db.mongo_db_conn import MongoDBConnection

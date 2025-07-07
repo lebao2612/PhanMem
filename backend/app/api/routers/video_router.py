@@ -3,7 +3,7 @@ from app.models import User
 from app.dtos import VideoDTO
 from app.schemas.requests import UpdateVideoRequest
 from app.schemas.responses import SuccessResponse
-from app.services import VideoService
+from app.dependencies import video_service
 from app.api.middlewares import token_required
 
 router = APIRouter(prefix="/api/videos", tags=["videos"])
@@ -27,7 +27,7 @@ def list_all_videos(
         "skip": skip,
         "limit": limit,
     }
-    videos = VideoService.query_videos(**filters)
+    videos = video_service.query_videos(**filters)
     return SuccessResponse(data=videos)
 
 
@@ -48,16 +48,16 @@ def list_my_videos(
         "skip": skip,
         "limit": limit,
     }
-    videos = VideoService.query_videos(**filters)
+    videos = video_service.query_videos(**filters)
     return SuccessResponse(data=videos)
 
 
 @router.get("/{video_id}", response_model=SuccessResponse[VideoDTO])
 def get_video(video_id: str, current_user: User = Depends(token_required)):
-    video = VideoService.get_video_by_id(video_id)
+    video = video_service.get_video_by_id(video_id)
     return SuccessResponse(data=video)
 
 @router.delete("/{video_id}", response_model=SuccessResponse[None])
 def delete_video(video_id: str, current_user: User = Depends(token_required)):
-    VideoService.delete_video(video_id)
+    video_service.delete_video(video_id)
     return SuccessResponse(data=None)

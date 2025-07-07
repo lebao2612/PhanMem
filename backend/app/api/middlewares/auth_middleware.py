@@ -1,14 +1,13 @@
 from fastapi import HTTPException, Request, Depends
 from app.models import User
-from app.utils import JWTUtil
-from app.repositories import UserRepository
+from app.dependencies import user_repository, jwt_service
 
 def token_required(request: Request) -> User | None:
     auth_header = request.headers.get('Authorization')
-    token = JWTUtil.extract_token(header=auth_header)
-    data = JWTUtil.decode_token(token=token)
+    token = jwt_service.extract_token(header=auth_header)
+    data = jwt_service.decode_token(token=token)
     
-    user = UserRepository.find_by_id(data["user_id"])
+    user = user_repository.find_by_id(data["user_id"])
     if not user:
         raise HTTPException(status_code=401, detail="Người dùng không tồn tại")
     return user

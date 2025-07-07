@@ -2,24 +2,27 @@ import asyncio
 from httpx import ReadTimeout
 from replicate import async_run
 from replicate.exceptions import ModelError
-from config import settings
+
 
 class StableDiffusionClient:
-    @staticmethod
-    async def generate_image(label: str) -> str:
-        # Trả về ảnh demo
+    def __init__(self, model_id: str, api_token: str):
+        self.model_id = model_id
+        self.api_token = api_token
+
+    async def generate_image(self, label: str) -> str:
+        # Tạm thời dùng ảnh demo nếu chưa gọi thật
         return "https://picsum.photos/640/360"
 
         try:
             output = await async_run(
-                settings.STABILITY_MODEL_ID,
+                self.model_id,
                 input={"prompt": label, "num_outputs": 1},
-                api_token=settings.REPLICATE_API_TOKEN
+                api_token=self.api_token
             )
-        except ReadTimeout as e:
-            raise RuntimeError("Replicate connection timed out.") from e
-        except ModelError as e:
-            raise ValueError("Image model failed to generate result.") from e
+        except ReadTimeout:
+            raise RuntimeError("Replicate connection timed out.")
+        except ModelError:
+            raise ValueError("Image model failed to generate result.")
         except Exception as e:
             raise RuntimeError("Failed to generate image from prompt.") from e
 
@@ -27,12 +30,9 @@ class StableDiffusionClient:
             raise ValueError("No image generated from prompt.")
         try:
             return output[0].url
-        except Exception as e:
-            raise RuntimeError("No image URL in result.") from e
+        except Exception:
+            raise RuntimeError("No image URL in result.")
 
-    @staticmethod
-    async def generate_images(labels: list[str]) -> list[str]:
-        """Return videos url"""
-        # Coroutine object: 
-        tasks = [StableDiffusionClient.generate_image(label) for label in labels]
+    async def generate_images(self, labels: list[str]) -> list[str]:
+        tasks = [self.generate_image(label) for label in labels]
         return await asyncio.gather(*tasks)

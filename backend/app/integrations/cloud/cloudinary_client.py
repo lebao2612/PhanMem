@@ -1,26 +1,27 @@
 from io import BytesIO
 import uuid
-import cloudinary, cloudinary.uploader
-from config import settings
-from app.exceptions import HandledException
-
-# Cấu hình Cloudinary khi khởi động
-cloudinary.config(
-    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-    api_key=settings.CLOUDINARY_API_KEY,
-    api_secret=settings.CLOUDINARY_API_SECRET
-)
+import cloudinary
+import cloudinary.uploader
 
 
 class CloudinaryClient:
-    @staticmethod
+    def __init__(self, cloud_name: str, api_key: str, api_secret: str):
+        try:
+            cloudinary.config(
+                cloud_name=cloud_name,
+                api_key=api_key,
+                api_secret=api_secret
+            )
+        except Exception as e:
+            raise RuntimeError("Cloudinary configuration error.") from e
+
     async def upload_byte(
+        self,
         data: bytes,
         resource_type: str = "auto",
         folder: str = "uploads",
         filename: str = None
     ) -> dict:
-        """Upload dữ liệu bytes lên Cloudinary"""
         try:
             result = cloudinary.uploader.upload(
                 BytesIO(data),
@@ -35,10 +36,10 @@ class CloudinaryClient:
                 "size": result.get("bytes", 0)
             }
         except Exception as e:
-            raise HandledException(status_code=500, detail=f"Upload to Cloudinary failed: {e}")
+            raise RuntimeError("Error uploading bytes to Cloudinary.") from e
 
-    @staticmethod
     async def upload_from_url(
+        self,
         image_url: str,
         resource_type: str = "auto",
         folder: str = "uploads",
@@ -58,11 +59,9 @@ class CloudinaryClient:
                 "size": result.get("bytes", 0)
             }
         except Exception as e:
-            raise HandledException(status_code=500, detail=f"Upload from URL failed: {e}")
+            raise RuntimeError("Error uploading from URL to Cloudinary.") from e
 
-    @staticmethod
-    async def delete_file(public_id: str, resource_type: str = "auto") -> bool:
-        """Xoá file khỏi Cloudinary dựa vào public_id"""
+    async def delete_file(self, public_id: str, resource_type: str = "auto") -> bool:
         try:
             result = cloudinary.uploader.destroy(
                 public_id=public_id,
@@ -70,15 +69,13 @@ class CloudinaryClient:
             )
             return result.get("result") == "ok"
         except Exception as e:
-            raise HandledException(status_code=500, detail=f"Xoá file thất bại: {e}")
+            raise RuntimeError("Error deleting file from Cloudinary.") from e
 
-    @staticmethod
-    def get_file_url(public_id: str, resource_type: str = "auto") -> str:
-        """Tạo secure URL từ public_id"""
+    def get_file_url(self, public_id: str, resource_type: str = "auto") -> str:
         try:
             return cloudinary.CloudinaryImage(public_id).build_url(
                 resource_type=resource_type,
                 secure=True
             )
         except Exception as e:
-            raise HandledException(status_code=500, detail=f"Lấy URL thất bại: {e}")
+            raise RuntimeError("Error generating URL from public_id.") from e

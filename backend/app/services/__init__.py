@@ -1,5 +1,6 @@
 from .internal import (
     AuthService,
+    JWTService,
     VideoService,
     UserService,
 )

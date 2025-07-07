@@ -1,9 +1,11 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from mongoengine import connect, disconnect
+from app.database.db_conn import DBConnection
 
-class MongoDBConnection:
-    def __init__(self, uri: str, alias: str = "default"):
+class MongoDBConnection(DBConnection):
+    def __init__(self, uri: str, alias: str = "main"):
+        super().__init__()
         self.uri = uri
         self.alias = alias
 
