@@ -59,9 +59,12 @@ const LeftSideBar = () =>{
                         Dashboard
                     </li>
 
-                    <li className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm">
+                    <li 
+                        className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm"
+                        onClick={() => navigate("/analyst")}
+                    >
                         <i className="fa-solid fa-gears mr-2 text-2xl"></i>
-                        Settings
+                        Analyst
                     </li>
                 </ul>
                 </div>
