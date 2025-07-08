@@ -31,13 +31,13 @@ class GoogleTTSClient:
     async def generate_voices(
         self,
         subtitles: list[str],
-        gender: str = "female",
+        voice_gender: str = "female",
         language: str = "vi"
     ) -> list[bytes]:
         language_code = self._language_code_map.get(language.lower(), "vi-VN")
-        voice_suffix = self._gender_suffix_map.get(gender.lower(), "A")
+        voice_suffix = self._gender_suffix_map.get(voice_gender.lower(), "A")
         ssml_gender = self._ssml_gender_map.get(
-            gender.lower(),
+            voice_gender.lower(),
             texttospeech.SsmlVoiceGender.NEUTRAL
         )
 

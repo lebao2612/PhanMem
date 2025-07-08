@@ -4,9 +4,11 @@ import google.generativeai as genai
 class GeminiClient:
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
+        self._gemini_flash = genai.GenerativeModel("gemini-1.5-flash")
+        self._gemini_pro = genai.GenerativeModel("gemini-1.5-pro")
         self._models = {
-            "gemini_flash": genai.GenerativeModel("gemini-1.5-flash"),
-            "gemini_pro": genai.GenerativeModel("gemini-1.5-pro")
+            "gemini_flash": self._gemini_flash,
+            "gemini_pro": self._gemini_pro
         }
 
     async def generate_suggested_topics(
@@ -17,8 +19,8 @@ class GeminiClient:
         model_name: str = "gemini_flash"
     ) -> list[str]:
         prompt = (
-            f"Gợi ý {limit} chủ đề video ngắn đang được quan tâm, ngôn ngữ {language}, "
-            f"có liên quan đến từ khóa: \"{keyword}\".\n"
+            f"Gợi ý [{limit}] chủ đề video ngắn đang được quan tâm, ngôn ngữ [{language}], "
+            f"có liên quan đến từ khóa: [{keyword}].\n"
         ) + "\n".join([
             "- Nội dung phù hợp TikTok, YouTube Shorts",
             "- không tiêu đề, đánh đầu dòng, chú thích, markdown hay ký tự đặc biệt",
@@ -35,11 +37,11 @@ class GeminiClient:
         model_name: str = "gemini_flash"
     ) -> list[str]:
         prompt = (
-            f"Gợi ý {limit} chủ đề video ngắn đang thịnh hành, ngôn ngữ {language}.\n"
+            f"Gợi ý {limit} chủ đề video ngắn đang thịnh hành, ngôn ngữ [{language}].\n"
         ) + "\n".join([
             "- Nội dung phù hợp TikTok, YouTube Shorts",
             "- không tiêu đề, đánh đầu dòng, chú thích, markdown hay ký tự đặc biệt",
-            "- Mỗi dòng là một chủ đề ngắn gọn (tối đa 10 từ)"
+            "- Mỗi dòng là một chủ đề ngắn gọn (tối đa 20 từ)"
         ])
 
         raw_text = await self._generate_content_async(prompt, model_name)
@@ -49,12 +51,13 @@ class GeminiClient:
         self,
         topic: str,
         language: str = "vi",
-        model_name: str = "gemini_flash"
+        model_name: str = "gemini_flash",
+        scenes: int = 5
     ) -> list[dict]:
         prompt = "\n".join([
-            f"Viết kịch bản video ngắn bằng ngôn ngữ {language}, chủ đề: \"{topic}\". Yêu cầu:",
+            f"Viết kịch bản video ngắn bằng ngôn ngữ [{language}], chủ đề: [{topic}]. Yêu cầu:",
             "Không tiêu đề, đánh đầu dòng, chú thích, markdown hay kí tự đặc biệt",
-            "Gồm 3-5 cảnh, mỗi cảnh 1 dòng, định dạng:",
+            f"Gồm [{scenes}] cảnh, các cảnh phải liên kết rành mạch với nhau, mỗi cảnh 1 dòng, định dạng:",
             "mô tả ảnh ## lời thoại/phụ đề sinh động, tự nhiên",
         ])
 
@@ -71,7 +74,7 @@ class GeminiClient:
         return scenes
 
     async def _generate_content_async(self, prompt: str, model_name: str) -> str:
-        model = self._models.get(model_name, self._models["gemini_flash"])
+        model = self._models.get(model_name, self._gemini_flash)
 
         try:
             response = await model.generate_content_async(prompt)

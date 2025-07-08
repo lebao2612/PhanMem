@@ -49,6 +49,7 @@ project/
 │   │   ├── cloud/              # Tích hợp cloud (Cloudinary, ...)
 │   │   └── platform/           # Tích hợp nền tảng khác (YouTube, Google, ...)
 │   ├── database/               # Kết nối & cấu hình cơ sở dữ liệu
+│   ├── exceptions/             # 
 │   └── utils/                  # Tiện ích dùng chung (JWT, File IO, ...)
 │
 ├── config/                     # Cấu hình app & kết nối MongoDB
