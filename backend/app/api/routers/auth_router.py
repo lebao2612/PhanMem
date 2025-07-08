@@ -9,19 +9,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 # This endpoint is used to redirect to Google OAuth
 @router.get("/google/oauth")
 def redirect_to_google_oauth():
-    url = auth_service.get_google_oauth_url(
-        prompt="select_account",
-        # prompt="consent",
-        include_granted_scopes=False
-        )
+    url = auth_service.get_google_oauth_url()
     return RedirectResponse(url)
 
 # This endpoint is used to redirect to Google OAuth with extended scopes
 @router.get("/google/oauth/extend")
 def redirect_to_google_oauth_extended():
-    url = auth_service.get_google_oauth_url(
-        prompt="consent",
-        include_granted_scopes=True)
+    url = auth_service.get_google_oauth_extend_url()
     return RedirectResponse(url)
 
 # BUỘC PHẢI GET THEO GOOGLE OAuth2

@@ -15,11 +15,11 @@ class AuthService:
         self.oauth_client = oauth_client
         self.jwt_service = jwt_service
 
-    def get_google_oauth_url(self, prompt: str, include_granted_scopes: bool) -> str:
-        return self.oauth_client.get_oauth_url(
-            prompt=prompt,
-            include_granted_scopes=include_granted_scopes
-        )
+    def get_google_oauth_url(self) -> str:
+        return self.oauth_client.get_oauth_url(prompt="select_account",include_granted_scopes=False)
+
+    def get_google_oauth_extend_url(self) -> str:
+        return self.oauth_client.get_oauth_url(prompt="consent",include_granted_scopes=True)
 
     def handle_google_oauth_callback(self, code: str) -> AuthDTO:
         google_tokens = self.oauth_client.exchange_code_for_tokens(code)
