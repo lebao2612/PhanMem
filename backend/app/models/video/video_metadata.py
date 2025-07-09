@@ -20,6 +20,6 @@ class VideoMetadata(EmbeddedDocument):
 class YoutubeVideoMetadata(VideoMetadata):
     # last_synced_at = DateTimeField(default=TimeUtil.now)
 
-    def get_youtube_url(self) -> str | None:
+    def get_video_url(self) -> str | None:
         if self.id:
             return f"https://www.youtube.com/watch?v={self.id}"

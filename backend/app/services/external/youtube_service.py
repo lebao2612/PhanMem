@@ -52,7 +52,7 @@ class YoutubeService:
                 refresh_token=creator.google.refresh_token,
                 access_token=creator.google.access_token,
                 video_url=video.get_video_url(),
-                meta_kwargs=kwargs
+                **kwargs
             )
 
             video = self.video_repo.update_youtube(video=video, **video_detail)

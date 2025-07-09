@@ -1,9 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { ArrowLeft } from "lucide-react"
+import { AuthContext } from "../contexts/AuthContext";
 
 function UploadVideo({ selectedVideo, onClose, onBack }) {
+  
+  const { authFetch } = useContext(AuthContext);
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("22")
@@ -11,6 +14,9 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+
+    console.log("selectedVideo:", selectedVideo)
+
     if (selectedVideo) {
       setTitle(selectedVideo.title || "")
       setDescription(`Video được tạo ngày ${selectedVideo.createAt || ""}`)
@@ -20,14 +26,16 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
   const handleUpload = async () => {
     setLoading(true)
 
-    if (!selectedVideo?.videoID || !title || !description) {
+    console.log(selectedVideo.title, description)
+
+    if (!selectedVideo?._id || !title || !description) {
       alert("Thiếu thông tin video.")
       setLoading(false)
       return
     }
 
     try {
-      const response = await fetch(`/api/platforms/youtube/upload/${selectedVideo.id}`, {
+      const response = await authFetch(`/api/videos/youtube/upload/${selectedVideo._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +57,7 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
       }
     } catch (error) {
       console.error("Error uploading video:", error)
-      alert("Đã xảy ra lỗi khi upload video.")
+      //alert("Đã xảy ra lỗi khi upload video.")
     }
 
     setLoading(false)

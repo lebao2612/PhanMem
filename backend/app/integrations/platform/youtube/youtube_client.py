@@ -4,6 +4,7 @@ from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
 from app.utils import FileUtil
 from .youtube_auth import YouTubeAuth
+import traceback
 
 
 class YouTubeClient:
@@ -49,16 +50,13 @@ class YouTubeClient:
         with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_file:
             temp_path = tmp_file.name
 
-        try:
-            await FileUtil.download_to_file(video_url, temp_path)
-            return self.upload_video_file(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                file_path=temp_path,
-                **meta_kwargs
-            )
-        finally:
-            FileUtil.delete_file(temp_path)
+        await FileUtil.download_to_file(video_url, temp_path)
+        return self.upload_video_file(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            file_path=temp_path,
+            **meta_kwargs
+        )
 
     def upload_video_file(
         self,
@@ -83,17 +81,19 @@ class YouTubeClient:
         try:
             youtube = self.auth.get_auth_service(access_token=access_token, refresh_token=refresh_token)
 
-            with MediaFileUpload(file_path, chunksize=-1, resumable=True) as media:
-                request = youtube.videos().insert(
-                    part="snippet,status",
-                    body=metadata,
-                    media_body=media
-                )
-                response = None
-                while response is None:
-                    _, response = request.next_chunk()
+            media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
 
-            media.stream().close()
+            request = youtube.videos().insert(
+                part="snippet,status",
+                body=metadata,
+                media_body=media
+            )
+            response = None
+            while response is None:
+                _, response = request.next_chunk()
+
+            print(">>> YouTube upload response:", response)
+
             return self.normalize_youtube_video_data(response)
 
         except HttpError as e:
@@ -103,6 +103,8 @@ class YouTubeClient:
                 raise PermissionError("Token không hợp lệ hoặc đã hết hạn.") from e
             raise RuntimeError("Lỗi khi upload video lên YouTube.") from e
         except Exception as e:
+            print(">>> Unhandled Upload Error:", repr(e))         # In ra dạng chi tiết
+            traceback.print_exc()                                 # In traceback lỗi
             raise RuntimeError("Lỗi không xác định khi upload video.") from e
 
     def get_video_details(self, video_id: str, access_token: str, refresh_token: Optional[str] = None) -> dict:
@@ -145,10 +147,10 @@ class YouTubeClient:
         stats = raw.get("statistics", {})
 
         return {
-            "id": raw.get("id") or raw.get("id", {}).get("videoId"),
+            "id": raw.get("id"),
             "title": snippet.get("title", "Untitled"),
             "description": snippet.get("description", ""),
-            "tags": snippet.get("tags", []),
+            "tags": [],
             "view_count": int(stats.get("viewCount", 0)) if stats else 0,
             "like_count": int(stats.get("likeCount", 0)) if stats else 0,
             "comment_count": int(stats.get("commentCount", 0)) if stats else 0,

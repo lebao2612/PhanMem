@@ -19,10 +19,10 @@ class YoutubeVideoMetadataDTO(BaseDTO):
     def from_model(cls, youtube: YoutubeVideoMetadata):
         return cls(
             video_url=youtube.get_video_url(),
-            title=youtube.snippet.title if youtube.snippet else "Untitled",
-            description=youtube.snippet.description if youtube.snippet else None,
-            tags=youtube.snippet.tags if youtube.snippet else [],
-            view_count=youtube.statistics.view_count if youtube.statistics else 0,
-            like_count=youtube.statistics.like_count if youtube.statistics else 0,
-            comment_count=youtube.statistics.comment_count if youtube.statistics else 0
+            title=youtube.title,
+            description=youtube.description,
+            tags=youtube.tags,
+            view_count=youtube.view_count,
+            like_count=youtube.like_count,
+            comment_count=youtube.comment_count,
         )

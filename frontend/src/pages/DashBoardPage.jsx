@@ -11,13 +11,13 @@ const Dashboard = () => {
     const options = ["Tất cả", "Youtube", "Facebook", "Tiktok"]
     const { authFetch } = useContext(AuthContext);
     const [videos, setVideos] = useState([
-        {name: "test1", createAt: "26-12-2004", tag: "Youtube", videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
-        {name: "test2", createAt: "26-12-2004", tag: "Youtube", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test3 asf asjfh fasfj", createAt: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test4", createAt: "26-12-2004", tag: "Facebook", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test5", createAt: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test6", createAt: "26-12-2004", tag: "Tiktok", videoURL: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        {name: "test7", createAt: "26-12-2004", tag: "", videoURL: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
+        {_id: 1, title: "test1", createAt: "26-12-2004", tag: "Youtube", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
+        {_id: 2, title: "test2", createAt: "26-12-2004", tag: "Youtube", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {_id: 3, title: "test3 asf asjfh fasfj", createAt: "26-12-2004", tag: "Facebook", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {_id: 4, title: "test4", createAt: "26-12-2004", tag: "Facebook", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {_id: 5, title: "test5", createAt: "26-12-2004", tag: "Tiktok", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {_id: 6, title: "test6", createAt: "26-12-2004", tag: "Tiktok", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
+        {_id: '686e9754d84a337ef62721d4', title: "test7", createAt: "26-12-2004", tag: "", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
     ]);
     const [filteredVideo, setFilteredVideo] = useState([]);
 
@@ -52,12 +52,12 @@ const Dashboard = () => {
         setSelectUpload(false)
     }
 
-    const downloadVideo = async (videoUrl, videoName) => {
+    const downloadVideo = async (url, videoName) => {
         try {
             console.log("Đang tải video...");
 
             // Fetch video để lấy dữ liệu blob
-            const response = await fetch(videoUrl, {
+            const response = await fetch(url, {
                 method: "GET",
                 mode: "cors", // Đảm bảo tuân thủ CORS
                 credentials: "omit", // Không gửi cookie hoặc thông tin xác thực
@@ -96,7 +96,7 @@ const Dashboard = () => {
         } catch (error) {
             console.error("Lỗi khi tải video:", error.message);
             // Fallback: Mở video trong tab mới
-            window.open(videoUrl, "_blank");
+            window.open(url, "_blank");
             alert(
                 'Không thể tự động tải. Video đã mở trong tab mới. Click chuột phải và chọn "Lưu video dưới dạng" để tải.'
             );
@@ -190,7 +190,7 @@ const Dashboard = () => {
                         >
                             <img src={images.thumbV || "/placeholder.svg"} className="w-full object-cover rounded mb-3" />
                             <div className="flex flex-col flex-grow">
-                                <h3 className="text-lg font-bold mb-2 line-clamp-2 min-h-[3.5rem]">{video.name}</h3>
+                                <h3 className="text-lg font-bold mb-2 line-clamp-2 min-h-[3.5rem]">{video.title}</h3>
                                 <div className="mt-auto space-y-1">
                                     <p className="text-sm text-neutral-400">Ngày: {video.createAt}</p>
                                     <p className="text-sm text-neutral-400">Tag: {video.tag}</p>
@@ -242,9 +242,9 @@ const Dashboard = () => {
                                     className="w-full aspect-video rounded-lg"
                                     poster="/placeholder.svg?height=400&width=600"
                                 >
-                                    <source src={selectedVideo.videoURL || selectedVideo.videoID} type="video/mp4" />
-                                    <source src={selectedVideo.videoURL || selectedVideo.videoID} type="video/webm" />
-                                    <source src={selectedVideo.videoURL || selectedVideo.videoID} type="video/ogg" />
+                                    <source src={selectedVideo.url || selectedVideo.videoID} type="video/mp4" />
+                                    <source src={selectedVideo.url || selectedVideo.videoID} type="video/webm" />
+                                    <source src={selectedVideo.url || selectedVideo.videoID} type="video/ogg" />
                                     Trình duyệt của bạn không hỗ trợ thẻ video.
                                 </video>
                             </div>
@@ -264,7 +264,7 @@ const Dashboard = () => {
                                 <div className="space-y-6">
                                     {/* Title */}
                                     <div>
-                                        <h3 className="text-xl font-bold text-white leading-tight mb-2">{selectedVideo.name}</h3>
+                                        <h3 className="text-xl font-bold text-white leading-tight mb-2">{selectedVideo.title}</h3>
                                         <div className="w-12 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" />
                                     </div>
 
@@ -305,7 +305,7 @@ const Dashboard = () => {
                                         <div className="flex flex-col gap-3">
                                             <button 
                                                 className="cursor-pointer flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-                                                onClick={() => downloadVideo(selectedVideo.videoURL || selectedVideo.videoID, selectedVideo.name)}    
+                                                onClick={() => downloadVideo(selectedVideo.url || selectedVideo.videoID, selectedVideo.title)}    
                                             >
                                                 <Download className="w-4 h-4" />
                                                 Download Video

@@ -7,11 +7,11 @@ from .youtube_metadata_dto import YoutubeVideoMetadataDTO
 
 class VideoDTO(BaseDTO):
     id: str
-    title: str
-    topic: str
+    title: str | None
+    topic: str | None
     script: list[VideoSceneDTO] = Field(default_factory=list)
     duration: float | None = Field(default=0.0)
-    creator_id: str = Field(alias="creatorId")
+    creator_id: str | None = Field(alias="creatorId")
     video_url: str | None = Field(alias="videoUrl")
     voice_url: str | None = Field(alias="voiceUrl")
     thumbnail_url: str | None = Field(alias="thumbnailUrl")
