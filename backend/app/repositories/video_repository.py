@@ -7,6 +7,8 @@ from app.models import (
 )
 from app.database import MongoDBConnection
 
+from bson import ObjectId
+
 
 class VideoRepository:
     def __init__(self, conn: MongoDBConnection):
@@ -36,7 +38,7 @@ class VideoRepository:
             filter_kwargs = {}
 
             if creator_id := filters.get("creator_id"):
-                filter_kwargs["creator__id"] = creator_id
+                filter_kwargs["creator"] = ObjectId(creator_id)
             if title := filters.get("title"):
                 filter_kwargs["title__icontains"] = title
             if topic := filters.get("topic"):

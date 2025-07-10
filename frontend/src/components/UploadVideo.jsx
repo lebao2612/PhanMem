@@ -1,11 +1,13 @@
 "use client"
 
+import { useNavigate } from "react-router-dom";
+
 import { useState, useEffect, useContext } from "react"
 import { ArrowLeft } from "lucide-react"
 import { AuthContext } from "../contexts/AuthContext";
 
 function UploadVideo({ selectedVideo, onClose, onBack }) {
-  
+  const navigate = useNavigate();
   const { authFetch } = useContext(AuthContext);
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -19,7 +21,7 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
 
     if (selectedVideo) {
       setTitle(selectedVideo.title || "")
-      setDescription(`Video được tạo ngày ${selectedVideo.createAt || ""}`)
+      setDescription(`Video được tạo ngày ${selectedVideo.createdAt ? new Date(selectedVideo.createdAt).toISOString().slice(0, 10) : "N/A"}`)
     }
   }, [selectedVideo])
 
@@ -28,14 +30,14 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
 
     console.log(selectedVideo.title, description)
 
-    if (!selectedVideo?._id || !title || !description) {
+    if (!selectedVideo?.id || !title || !description) {
       alert("Thiếu thông tin video.")
       setLoading(false)
       return
     }
 
     try {
-      const response = await authFetch(`/api/videos/youtube/upload/${selectedVideo._id}`, {
+      const response = await authFetch(`/api/videos/youtube/upload/${selectedVideo.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -48,11 +50,12 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
         }),
       })
 
-      const result = await response.json()
+      // const result = await response.json()
       if (response.ok) {
         alert("Video uploaded successfully!")
-        onClose?.()
+        
       } else {
+        const result = await response.json()
         alert(`Upload failed: ${result.detail || result.error || "Unknown error"}`)
       }
     } catch (error) {
@@ -61,6 +64,7 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
     }
 
     setLoading(false)
+    window.location.reload();
   }
 
   return (

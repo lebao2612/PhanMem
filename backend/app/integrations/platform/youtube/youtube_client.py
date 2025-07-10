@@ -97,6 +97,10 @@ class YouTubeClient:
             return self.normalize_youtube_video_data(response)
 
         except HttpError as e:
+            print(">>> HttpError occurred:", repr(e))        # In dạng đầy đủ
+            print(">>> Status:", e.resp.status)              # In HTTP status
+            print(">>> Reason:", e.error_details)            # Nếu dùng Google API client mới
+            print(">>> Content:", e.content)                 # Nội dung trả về từ Google API (bytes)
             if e.resp.status == 403:
                 raise PermissionError("Không đủ quyền để upload video.") from e
             elif e.resp.status == 401:
