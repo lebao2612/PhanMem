@@ -14,5 +14,7 @@ google-api-python-client
 google-cloud-texttospeech
 google.generativeai
 moviepy
+ffmpeg-python
+redis
 audioread
 replicate
