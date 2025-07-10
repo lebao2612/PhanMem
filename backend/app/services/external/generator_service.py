@@ -16,7 +16,7 @@ from app.integrations import (
     GoogleTTSClient,
     StableDiffusionClient
 )
-from app.utils import TimeUtil
+from app.utils import time_util
 from app.module import render_video
 
 class GeneratorService:
@@ -128,7 +128,7 @@ class GeneratorService:
                 upload_result = self.cloudinary_client.upload_from_bytes(
                     data=audio_data,
                     resource_type="video",  # Cloudinary accepts mp3 as video
-                    folder=f"{creator.id}/{TimeUtil.to_date_str(dt=TimeUtil.now())}/voices",
+                    folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/voices",
                 )
 
                 return MediaDTO(
@@ -164,7 +164,7 @@ class GeneratorService:
                 upload_result = self.cloudinary_client.upload_from_url(
                     image_url,
                     resource_type="image",
-                    folder=f"{creator.id}/{TimeUtil.to_date_str(dt=TimeUtil.now())}/images",
+                    folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/images",
                 )
 
                 return MediaDTO(
@@ -199,7 +199,7 @@ class GeneratorService:
             upload_result = self.cloudinary_client.upload_from_path(
                 file_path=tmp_file.name,
                 resource_type="video",
-                folder=f"{creator.id}/{TimeUtil.to_date_str(dt=TimeUtil.now())}/video",
+                folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/video",
             )
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo mới video: {e}", 500) from e

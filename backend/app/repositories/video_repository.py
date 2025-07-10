@@ -1,6 +1,6 @@
 from bson import ObjectId
 from mongoengine.errors import DoesNotExist, ValidationError
-from app.utils import TimeUtil
+from app.utils import time_util
 from app.models import (
     User,
     Video, VideoScene,
@@ -104,7 +104,7 @@ class VideoRepository:
                 else:
                     raise ValueError("Thiếu ID video YouTube.")
 
-            video.updated_at = TimeUtil.now()
+            video.updated_at = time_util.datetime_now()
             video.save(using=self.conn.alias)
             return video
         except ValidationError as e:
@@ -118,7 +118,7 @@ class VideoRepository:
                 if hasattr(video, k):
                     setattr(video, k, v)
 
-            video.updated_at = TimeUtil.now()
+            video.updated_at = time_util.datetime_now()
             video.save(using=self.conn.alias)
             return video
         except ValidationError as e:

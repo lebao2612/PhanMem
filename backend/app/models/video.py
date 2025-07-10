@@ -3,7 +3,7 @@ from mongoengine import (
     StringField, DateTimeField, FloatField,
     ReferenceField, EmbeddedDocumentField, EmbeddedDocumentListField
 )
-from app.utils import TimeUtil
+from app.utils import time_util
 from app.models.user import User
 from app.models.embedded import (
     Media, VideoMedia, VoiceMedia, ImageMedia,
@@ -23,8 +23,8 @@ class Video(Document):
     status = StringField(choices=["draft", "processing", "done", "failed"], default="draft")
 
     # Timestamps
-    created_at = DateTimeField(default=TimeUtil.now)
-    updated_at = DateTimeField(default=TimeUtil.now)
+    created_at = DateTimeField(default=time_util.datetime_now)
+    updated_at = DateTimeField(default=time_util.datetime_now)
     
     # Platform information
     youtube: YoutubeVideoMetadata = EmbeddedDocumentField(document_type=YoutubeVideoMetadata)

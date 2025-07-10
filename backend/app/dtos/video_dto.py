@@ -1,7 +1,7 @@
 from pydantic import Field
 from app.models import Video, VideoScene, YoutubeVideoMetadata
 from app.dtos.base_dto import BaseDTO
-from app.utils import TimeUtil
+from app.utils import time_util
 
 class YoutubeVideoMetadataDTO(BaseDTO):
     video_url: str|None = Field(default=None, alias="videoUrl")
@@ -63,7 +63,7 @@ class VideoDTO(BaseDTO):
             thumbnail_url=video.sources.thumbnail if video.sources else None,
             url=video.sources.url if video.sources else None,
             status=video.status,
-            created_at=TimeUtil.to_iso(video.created_at),
-            updated_at=TimeUtil.to_iso(video.updated_at),
+            created_at=time_util.datetime_to_iso(video.created_at),
+            updated_at=time_util.datetime_to_iso(video.updated_at),
             youtube=YoutubeVideoMetadataDTO.from_model(video.youtube) if video.youtube else None
         )

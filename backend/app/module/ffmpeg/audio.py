@@ -1,24 +1,9 @@
-import os
 import ffmpeg
+import os
 
-def combine_video_audio(video_path: str, audio_path: str):
-    """
-    Ghép audio vào video (sử dụng file tạm), giữ nguyên định dạng .mp4.
-    """
-    base, ext = os.path.splitext(video_path)
-    tmp_path = f"{base}.tmp{ext}"  # ex: scene_1.tmp.mp4
-
-    input_video = ffmpeg.input(video_path)
-    input_audio = ffmpeg.input(audio_path)
-
-    (
-        ffmpeg
-        .output(input_video, input_audio, tmp_path, vcodec="copy", acodec="aac", strict="experimental")
-        .overwrite_output()
-        .run(quiet=True)
-    )
-
-    os.replace(tmp_path, video_path)
+def is_valid_image_file(path: str, valid_exts: list[str] = [".jpg", ".jpeg", ".png"]) -> bool:
+    ext = os.path.splitext(path)[1].lower()
+    return ext in valid_exts
 
 
 def get_audio_duration(audio_path: str) -> float:

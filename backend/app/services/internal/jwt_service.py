@@ -1,6 +1,6 @@
 import jwt
 from app.exceptions import HandledException
-from app.utils import TimeUtil
+from app.utils import time_util
 
 class JWTService:
     def __init__(self, secret_key: str, expiration_hours: int = 24):
@@ -12,7 +12,7 @@ class JWTService:
             "user_id": user_id,
             "email": email,
             "roles": roles,
-            "exp": TimeUtil.time(hours=self.expiration_hours)
+            "exp": time_util.datetime_delta(hours=self.expiration_hours)
         }
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
 

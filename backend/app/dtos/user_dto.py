@@ -1,6 +1,6 @@
 from pydantic import Field
 from app.dtos.base_dto import BaseDTO
-from app.utils import TimeUtil
+from app.utils import time_util
 from app.models import User
 from app.models import UserSettings
 
@@ -45,7 +45,7 @@ class UserDTO(BaseDTO):
             email=user.email,
             picture=user.picture,
             roles=user.roles,
-            created_at=TimeUtil.to_iso(user.created_at) if user.created_at else None,
-            updated_at=TimeUtil.to_iso(user.updated_at) if user.updated_at else None,
+            created_at=time_util.datetime_to_iso(user.created_at) if user.created_at else None,
+            updated_at=time_util.datetime_to_iso(user.updated_at) if user.updated_at else None,
             settings=UserSettingsDTO.from_model(user.settings)
         )

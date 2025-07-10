@@ -2,7 +2,7 @@ from mongoengine import (
     Document, StringField, ListField, DateTimeField,
     EmbeddedDocumentField
 )
-from app.utils import TimeUtil
+from app.utils import time_util
 from app.models.embedded import (
     GoogleOAuthInfo,
     UserSettings
@@ -18,8 +18,8 @@ class User(Document):
     roles = ListField(StringField(), default=["USER"], choices=["USER", "ADMIN"])
     google: GoogleOAuthInfo = EmbeddedDocumentField(GoogleOAuthInfo)
 
-    created_at = DateTimeField(default=TimeUtil.now)
-    updated_at = DateTimeField(default=TimeUtil.now)
+    created_at = DateTimeField(default=time_util.datetime_now)
+    updated_at = DateTimeField(default=time_util.datetime_now)
 
     settings: UserSettings = EmbeddedDocumentField(UserSettings, default=UserSettings)
     

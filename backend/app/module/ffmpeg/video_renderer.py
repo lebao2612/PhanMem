@@ -3,29 +3,21 @@ import asyncio
 import httpx
 import ffmpeg
 import tempfile
-from .subtitle_video import burn_subtitle
-from .audio_video import get_audio_duration, combine_video_audio
-from .image_video import prepare_pan_safe_image
-
-
+from app.utils import file_util
+from .audio import get_audio_duration, is_valid_image_file
+from .image import crop_image, resize_image, is_valid_image_file
 
 # output_path = folder/file.mp4/ 
 async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple[int, int] = (1080, 1920)):
-    # Tạo file tạm cho ảnh và audio
-    image_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
-    audio_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
-    image_tmp.close()
-    audio_tmp.close()
-    
     try:
         # 1. Download ảnh và audio
-        await asyncio.gather(
-            download_file(scene["image"]["url"], image_tmp.name),
-            download_file(scene["voice"]["url"], audio_tmp.name)
+        image_path, audio_path = await asyncio.gather(
+            file_util.download_to_tempfile(scene["image"]["url"]),
+            file_util.download_to_tempfile(scene["voice"]["url"])
         )
 
         # 2. Lấy thời lượng audio làm thời lượng video
-        video_duration = get_audio_duration(audio_tmp.name)
+        video_duration = get_audio_duration(audio_path)
         total_frames = int(video_duration * fps)
         # print(video_duration)
 
@@ -38,7 +30,7 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
         effect_frames = int(min(effect_duration, video_duration) * fps)
 
         prepare_pan_safe_image(
-            image_path=image_tmp.name,
+            image_path=image_path,
             pan=pan_effect,
             output_size=output_size,
             buffer_ratio=0.1
@@ -46,7 +38,7 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
 
         (
             ffmpeg
-            .input(image_tmp.name, loop=1, framerate=fps, t=video_duration)
+            .input(image_path, loop=1, framerate=fps, t=video_duration)
             .filter("zoompan",
                     z=get_zoom_expr(zoom_effect, effect_frames),
                     x=get_pan_x_expr(pan_effect, effect_frames),
@@ -74,13 +66,11 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
         # 8. Ghép audio
         combine_video_audio(
             video_path=output_path,
-            audio_path=audio_tmp.name
+            audio_path=audio_path
         )
     finally:
-        if os.path.exists(image_tmp.name):
-            os.remove(image_tmp.name)
-        if os.path.exists(audio_tmp.name):
-            os.remove(audio_tmp.name)
+        file_util.delete_file(audio_path)
+        file_util.delete_file(image_path)
 
 
 ####
@@ -139,12 +129,12 @@ async def render_video(scenes: list[dict], output_path: str, suffix=".mkv"):
 
 
 
-async def download_file(url: str, output_path: str) -> None:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        response.raise_for_status()
-        with open(output_path, "wb") as f:
-            f.write(response.content)
+# async def download_file(url: str, output_path: str) -> None:
+#     async with httpx.AsyncClient() as client:
+#         response = await client.get(url)
+#         response.raise_for_status()
+#         with open(output_path, "wb") as f:
+#             f.write(response.content)
 
 def get_zoom_expr(zoom: str | None, effect_frames: int) -> str:
     if not zoom:
@@ -169,3 +159,101 @@ def get_pan_y_expr(pan: str | None, effect_frames: int) -> str:
         "up": f"if(lte(on,{effect_frames}),y-1.1,y)",
         "down": f"if(lte(on,{effect_frames}),y+1.1,y)"
     }[pan]
+
+
+
+def combine_video_audio(video_path: str, audio_path: str):
+    """
+    Ghép audio vào video (sử dụng file tạm), giữ nguyên định dạng .mp4.
+    """
+    base, ext = os.path.splitext(video_path)
+    tmp_path = f"{base}.tmp{ext}"  # ex: scene_1.tmp.mp4
+
+    input_video = ffmpeg.input(video_path)
+    input_audio = ffmpeg.input(audio_path)
+
+    (
+        ffmpeg
+        .output(input_video, input_audio, tmp_path, vcodec="copy", acodec="aac", strict="experimental")
+        .overwrite_output()
+        .run(quiet=True)
+    )
+
+    os.replace(tmp_path, video_path)
+
+
+def compute_buffered_dimensions(
+    pan: str | None,
+    output_size: tuple[int, int],
+    buffer_ratio: float
+) -> tuple[int, int]:
+    target_w, target_h = output_size
+
+    if pan in ("left", "right"):
+        target_w = int(target_w * (1 + buffer_ratio))
+    elif pan in ("up", "down"):
+        target_h = int(target_h * (1 + buffer_ratio))
+
+    return target_w, target_h
+
+def prepare_pan_safe_image(
+    image_path: str,
+    pan: str | None = None,
+    output_size: tuple[int, int] = (1080, 1920),
+    buffer_ratio: float = 0.1
+):
+    target_w, target_h = output_size
+
+    extra_w, extra_h = compute_buffered_dimensions(pan, output_size, buffer_ratio)
+
+    probe = ffmpeg.probe(image_path)["streams"][0]
+    iw = int(probe["width"])
+    ih = int(probe["height"])
+    aspect = iw / ih
+
+    if aspect > (extra_w / extra_h):
+        scale_h = extra_h
+        scale_w = int(scale_h * aspect)
+    else:
+        scale_w = extra_w
+        scale_h = int(scale_w / aspect)
+
+    resize_image(image_path, scale_w, scale_h)
+
+    crop_x = (scale_w - target_w) // 2
+    crop_y = (scale_h - target_h) // 2
+    crop_image(image_path, crop_x, crop_y, target_w, target_h)
+
+def burn_subtitle(video_path: str, subtitle: str, duration: float, start_time: float = 0) -> str:
+    srt_path = tempfile.mktemp(suffix=".srt")
+    tmp_output = tempfile.mktemp(suffix=os.path.splitext(video_path)[1] or ".mp4")
+
+    try:
+        start = format_srt_time(start_time)
+        end = format_srt_time(start_time + duration)
+        with open(srt_path, "w", encoding="utf-8") as f:
+            f.write(f"1\n{start} --> {end}\n{subtitle}\n")
+
+        srt_path_clean = srt_path.replace("\\", "/").replace(":", "\\:")
+
+        (
+            ffmpeg
+            .input(video_path)
+            .filter("subtitles", srt_path_clean)
+            .output(tmp_output,filter_complex=f'subtitles={srt_path_clean}', vcodec="libx264", acodec="copy")
+            .overwrite_output()
+            .run()
+        )
+
+        os.replace(tmp_output, video_path)
+        return video_path
+    finally:
+        if os.path.exists(srt_path):
+            os.remove(srt_path)
+
+def format_srt_time(seconds: float) -> str:
+    hrs = int(seconds // 3600)
+    mins = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millis = int((seconds - int(seconds)) * 1000)
+    return f"{hrs:02d}:{mins:02d}:{secs:02d},{millis:03d}"

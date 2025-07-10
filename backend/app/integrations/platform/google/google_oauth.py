@@ -1,6 +1,6 @@
 import requests
 from urllib.parse import urlencode
-from app.utils import TimeUtil
+from app.utils import time_util
 
 
 class GoogleOAuthClient:
@@ -68,7 +68,7 @@ class GoogleOAuthClient:
         raw = res.json()
         data = {
             "access_token": raw["access_token"],
-            "expires_at": TimeUtil.time(seconds=int(raw.get("expires_in", 0))),
+            "expires_at": time_util.datetime_delta(seconds=int(raw.get("expires_in", 0))),
             "token_type": raw["token_type"],
         }
         if "refresh_token" in raw:
@@ -118,5 +118,5 @@ class GoogleOAuthClient:
         raw = res.json()
         return {
             "access_token": raw["access_token"],
-            "expires_at": TimeUtil.time(seconds=int(raw.get("expires_in", 0))),
+            "expires_at": time_util.datetime_delta(seconds=int(raw.get("expires_in", 0))),
         }

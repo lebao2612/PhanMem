@@ -2,7 +2,7 @@ import tempfile
 from typing import Optional
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
-from app.utils import FileIOUtil
+from app.utils import file_util
 from .youtube_auth import YouTubeAuth
 
 class YouTubeClient:
@@ -49,7 +49,7 @@ class YouTubeClient:
             temp_path = tmp_file.name
 
         try:
-            await FileIOUtil.download_to_file(video_url, temp_path)
+            await file_util.download_to_file(video_url, temp_path)
             return self.upload_video_file(
                 access_token=access_token,
                 refresh_token=refresh_token,
@@ -57,7 +57,7 @@ class YouTubeClient:
                 **meta_kwargs
             )
         finally:
-            FileIOUtil.delete_file(temp_path)
+            file_util.delete_file(temp_path)
 
     def upload_video_file(
         self,
