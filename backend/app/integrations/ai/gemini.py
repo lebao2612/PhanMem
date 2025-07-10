@@ -7,8 +7,8 @@ class GeminiClient:
         self._gemini_flash = genai.GenerativeModel("gemini-1.5-flash")
         self._gemini_pro = genai.GenerativeModel("gemini-1.5-pro")
         self._models = {
-            "gemini_flash": self._gemini_flash,
-            "gemini_pro": self._gemini_pro
+            "gemini-1.5-flash": self._gemini_flash,
+            "gemini-1.5-pro": self._gemini_pro
         }
 
     async def generate_suggested_topics(
@@ -16,7 +16,7 @@ class GeminiClient:
         keyword: str,
         limit: int = 5,
         language: str = "vi",
-        model_name: str = "gemini_flash"
+        model_name: str = "gemini-1.5-flash"
     ) -> list[str]:
         prompt = (
             f"Gợi ý [{limit}] chủ đề video ngắn đang được quan tâm, ngôn ngữ [{language}], "
@@ -34,7 +34,7 @@ class GeminiClient:
         self,
         limit: int = 5,
         language: str = "vi",
-        model_name: str = "gemini_flash"
+        model_name: str = "gemini-1.5-flash"
     ) -> list[str]:
         prompt = (
             f"Gợi ý {limit} chủ đề video ngắn đang thịnh hành, ngôn ngữ [{language}].\n"
@@ -51,27 +51,28 @@ class GeminiClient:
         self,
         topic: str,
         language: str = "vi",
-        model_name: str = "gemini_flash",
-        scenes: int = 5
+        model_name: str = "gemini-1.5-flash",
+        scene_count: int = 5
     ) -> list[dict]:
         prompt = "\n".join([
             f"Viết kịch bản video ngắn bằng ngôn ngữ [{language}], chủ đề: [{topic}]. Yêu cầu:",
-            "Không tiêu đề, đánh đầu dòng, chú thích, markdown hay kí tự đặc biệt",
-            f"Gồm [{scenes}] cảnh, các cảnh phải liên kết rành mạch với nhau, mỗi cảnh 1 dòng, định dạng:",
-            "mô tả ảnh ## lời thoại/phụ đề sinh động, tự nhiên",
+             "- Không tiêu đề, đánh đầu dòng, chú thích, markdown hay kí tự đặc biệt",
+            f"- Gồm [{scene_count}] cảnh, các cảnh phải có liên kết với nhau",
+             "- mỗi cảnh 1 dòng duy nhất, định dạng:",
+             "mô tả ảnh ## lời thoại/phụ đề sinh động, tự nhiên",
         ])
 
         raw_text = await self._generate_content_async(prompt, model_name)
-        scenes = []
+        scene_count = []
         for line in raw_text.splitlines():
             if line.strip():
                 parts = line.split("##")
                 if len(parts) == 2:
-                    scenes.append({
+                    scene_count.append({
                         "label": parts[0].strip(),
                         "subtitle": parts[1].strip()
                     })
-        return scenes
+        return scene_count
 
     async def _generate_content_async(self, prompt: str, model_name: str) -> str:
         model = self._models.get(model_name, self._gemini_flash)

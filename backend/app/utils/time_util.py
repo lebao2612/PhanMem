@@ -30,3 +30,9 @@ class TimeUtil:
         if not dt:
             return None
         return dt.astimezone(timezone.utc).isoformat()
+
+    @staticmethod
+    def to_date_str(dt: datetime | None = None, format: str = r"%d-%m-%Y") -> str:
+        if dt is None:
+            dt = TimeUtil.now()
+        return dt.strftime(format)

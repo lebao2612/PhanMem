@@ -1,16 +1,23 @@
 import asyncio
-from app.models import User
-from app.dtos import VideoDTO
+import os
+import uuid
+import tempfile
+from app.models import User, Video, ImageMedia, VoiceMedia
 from app.exceptions import HandledException
 from app.repositories import VideoRepository
+from app.dtos import (
+    MediaDTO,
+    VideoDTO,VideoSceneDTO,
+    YoutubeVideoMetadataDTO,
+)
 from app.integrations import (
     CloudinaryClient,
     GeminiClient,
     GoogleTTSClient,
     StableDiffusionClient
 )
-from app.utils import FileUtil
-
+from app.utils import TimeUtil
+from app.module import render_video
 
 class GeneratorService:
     def __init__(
@@ -29,8 +36,8 @@ class GeneratorService:
 
     async def get_suggested_topics(
         self,
-        keyword: str, limit: int,
         creator: User,
+        keyword: str, limit: int,
         model_name:str = None,
         language: str = None,
     ) -> list[str]:
@@ -51,8 +58,8 @@ class GeneratorService:
 
     async def get_trending_topics(
         self,
-        limit: int,
         creator: User,
+        limit: int,
         model_name:str = None,
         language: str = None,
     ) -> list[str]:
@@ -72,12 +79,12 @@ class GeneratorService:
 
     async def generate_script(
         self,
-        topic: str,
         creator: User,
+        topic: str,
         language: str=None,
         model_name: str=None,
-        scenes: int=5
-    ) -> VideoDTO:
+        scene_count: int=5
+    ) -> list[VideoSceneDTO]:
         if not topic:
             raise HandledException("Topic must not be empty", 400)
         if not model_name and creator and creator.settings:
@@ -86,145 +93,129 @@ class GeneratorService:
             language = creator.settings.language
         
         try:
-            script = await self.gemini_client.generate_script(
+            scenes = await self.gemini_client.generate_script(
                 topic=topic,
                 model_name=model_name,
                 language=language,
-                scenes=scenes
+                scene_count=scene_count
             )
+            return [VideoSceneDTO(label=scene["label"], subtitle=scene["subtitle"]) for scene in scenes]
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo script: {e}") from e
 
-        video = self.video_repo.create_draft_video(topic=topic, creator=creator)
-        video = self.video_repo.update_script(video=video, script=script)
-        return VideoDTO.from_model(video)
-
-    async def regenerate_script(
+    async def generate_voices(
         self,
-        video_id: str,
         creator: User,
-        language: str=None,
-        model_name: str=None,
-        scenes: int=5
-    ) -> VideoDTO:
-        video = self.video_repo.find_by_id(video_id)
-        if not video:
-            raise HandledException("Video does not exist", 404)
-        if not creator or str(video.creator.id) != str(creator.id):
-            raise HandledException("Permission denied", 403)
-        if not video.topic:
-            raise HandledException("Topic must not be empty", 400)
-        if not model_name and creator and creator.settings:
-            model_name = creator.settings.llm_model
-        if not language and creator and creator.settings:
-            language = creator.settings.language
-        
-        try:
-            script = await self.gemini_client.generate_script(
-                topic=video.topic,
-                model_name=model_name,
-                language=language,
-                scenes=scenes
-            )
-        except Exception as e:
-            raise HandledException(f"Lỗi khi tạo lại script: {e}") from e
-
-        video = self.video_repo.update_script(video=video, script=script)
-        return VideoDTO.from_model(video)
-
-    async def generate_voice(
-        self,
-        video_id: str,
-        creator: User,
-        script: list[dict],
+        subtitles: list[str],
         voice_gender: str=None,
-        language: str=None,
-    ) -> VideoDTO:
-        video = self.video_repo.find_by_id(video_id)
-        if not video:
-            raise HandledException("Video does not exist", 404)
-        if str(video.creator.id) != str(creator.id):
-            raise HandledException("Permission denied", 403)
-        if not video.script:
-            raise HandledException("Script does not exist", 404)
+        voice_language: str=None,
+    ) -> list[MediaDTO]:
         if not voice_gender and creator.settings:
             voice_gender = creator.settings.voice_gender
-        if not language and creator.settings:
-            language = creator.settings.language
+        if not voice_language and creator.settings:
+            voice_language = creator.settings.language
 
-        subtitles = [scene["subtitle"] for scene in script if "subtitle" in scene]
+        async def process_subvoice(index: int, sub: str) -> VoiceMedia:
+            try:
+                # 1. Generate voice
+                audio_data = await self.google_tts_client.generate_voice(
+                    subtitle=sub,
+                    voice_gender=voice_gender,
+                    language=voice_language
+                )
+
+                # 2. Upload voice
+                upload_result = self.cloudinary_client.upload_from_bytes(
+                    data=audio_data,
+                    resource_type="video",  # Cloudinary accepts mp3 as video
+                    folder=f"{creator.id}/{TimeUtil.to_date_str(dt=TimeUtil.now())}/voices",
+                )
+
+                return MediaDTO(
+                    url=upload_result["url"],
+                    public_id=upload_result["public_id"],
+                )
+            except Exception as e:
+                raise HandledException(f"Lỗi xử lý voice cho subtitle #{index + 1}: {e}", 400) from e
 
         try:
-            audio_chunks = await self.google_tts_client.generate_voices(
-                subtitles=subtitles,
-                voice_gender=voice_gender,
-                language=language
-            )
-        except Exception as e:
-            raise HandledException(f"Lỗi khi tạo voice: {e}", 400) from e
-
-        try:
-            duration_tasks = [
-                asyncio.to_thread(FileUtil.get_mp3_duration, chunk)
-                for chunk in audio_chunks
+            tasks = [
+                process_subvoice(i, sub)
+                for i, sub in enumerate(subtitles)
             ]
-            durations = await asyncio.gather(*duration_tasks)
-            for i, duration in enumerate(durations):
-                script[i]["duration"] = duration
-            final_bytes = FileUtil.merge_mp3_chunks(audio_chunks)
+            return await asyncio.gather(*tasks)
         except Exception as e:
-            raise HandledException(f"Lỗi khi xử lí voice sau khi tạo: {e}", 400) from e
+            raise HandledException(f"Lỗi khi tạo hoặc tải voice: {e}", 400) from e
+
+    async def generate_images(
+        self,
+        creator: User,
+        labels: list[str]
+    ) -> list[MediaDTO]:
+        if not labels:
+            raise HandledException("Label list is empty", 400)
+
+        async def process_image(index: int, label: str) -> MediaDTO:
+            try:
+                # 1. Generate image từ label
+                image_url = await self.stable_diffusion_client.generate_image(label=label)
+
+                # 2. Upload image từ URL lên Cloudinary
+                upload_result = self.cloudinary_client.upload_from_url(
+                    image_url,
+                    resource_type="image",
+                    folder=f"{creator.id}/{TimeUtil.to_date_str(dt=TimeUtil.now())}/images",
+                )
+
+                return MediaDTO(
+                    url=upload_result["url"],
+                    public_id=upload_result["public_id"]
+                )
+            except Exception as e:
+                raise HandledException(f"Lỗi xử lý image #{index + 1}: {e}", 400) from e
 
         try:
-            upload_res = await self.cloudinary_client.upload_byte(
-                data=final_bytes,
-                resource_type="video",
-                folder=f"{creator.id}/{video_id}/voices"
-            )
+            tasks = [process_image(i, label) for i, label in enumerate(labels)]
+            return await asyncio.gather(*tasks)
         except Exception as e:
-            raise HandledException(f"Lỗi khi tải file lên cloud: {e}", 400) from e
+            raise HandledException(f"Lỗi khi tạo hoặc tải ảnh: {e}", 400) from e
+
+    async def generate_video(
+        self,
+        creator: User,
+        title: str,
+        topic: str,
+        scenes: list[dict],
+    ) -> VideoDTO:
+        if not scenes or not topic or not creator:
+            raise HandledException(f"Lỗi khi tạo video: Thiếu thông tin", 400)
         
         try:
-            video = self.video_repo.update_voice(
-                video=video,
-                url=upload_res["url"],
-                public_id=upload_res["public_id"]
+            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+            tmp_file.close()
+
+            await render_video(scenes=scenes, output_path=tmp_file.name, suffix=".mp4")
+            
+            upload_result = self.cloudinary_client.upload_from_path(
+                file_path=tmp_file.name,
+                resource_type="video",
+                folder=f"{creator.id}/{TimeUtil.to_date_str(dt=TimeUtil.now())}/video",
             )
-            video = self.video_repo.update_script(video=video, script=script)
-
-            return VideoDTO.from_model(video)
         except Exception as e:
-            try:
-                _ = await self.cloudinary_client.delete_file(public_id=upload_res["public_id"])
-            except:
-                pass
-            raise HandledException(f"Lỗi khi xử lí voice sau khi tạo: {e}", 400) from e
+            raise HandledException(f"Lỗi khi tạo mới video: {e}", 500) from e
+        finally:
+            if os.path.exists(tmp_file.name):
+                os.remove(tmp_file.name)
 
-
-    async def generate_images(self, video_id: str, creator: User) -> VideoDTO:
-        video = self.video_repo.find_by_id(video_id)
-        if not video:
-            raise HandledException("Video not found", 404)
-        if str(video.creator.id) != str(creator.id):
-            raise HandledException("Permission denied", 403)
-        if not video.script:
-            raise HandledException("No script to generate images for", 400)
-
-        labels = [scene["label"] for scene in video.script]
-        # TODO: Chưa implement thật sự
-        raise NotImplementedError("Not implemented")
-
-    async def generate_video(self, video_id: str, creator: User) -> VideoDTO:
-        video = self.video_repo.find_by_id(video_id)
-        if not video:
-            raise HandledException("Video does not exist", 404)
-        if video.creator.id != creator.id:
-            raise HandledException("Permission denied", 403)
-        if not video.voice_file:
-            raise HandledException("Voice does not exist", 400)
-
-        # TODO: Add logic to generate final video + upload
-
-        videoDTO = VideoDTO.from_model(video)
-        videoDTO.video_url = "https://res.cloudinary.com/df8meqyyc/video/upload/v1751946200/final_iownqn.mp4"
-        return videoDTO
+        try:
+            video = self.video_repo.create_video(
+                creator=creator,
+                topic=topic,
+                scenes=scenes,
+                src=upload_result,
+                title=title
+            )
+        except Exception as e:
+            raise HandledException(f"Lỗi khi lưu video xuống database: {e}", 500) from e
+        
+        return VideoDTO.from_model(video=video)

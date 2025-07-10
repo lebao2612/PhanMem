@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     # MongoDB
     MONGODB_URI: str
 
+    # Redis
+    REDIS_URL: str
+
     # JWT
     JWT_SECRET_KEY: str
     JWT_EXPIRATION_HOURS: int = 24
