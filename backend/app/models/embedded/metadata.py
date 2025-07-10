@@ -1,9 +1,9 @@
 from mongoengine import (
-    EmbeddedDocument, DateTimeField,
+    EmbeddedDocument,
     StringField, IntField, ListField,
 )
 
-class VideoMetadata(EmbeddedDocument):
+class Metadata(EmbeddedDocument):
     meta = {"allow_inheritance": True}
     id = StringField(required=True)
 
@@ -17,9 +17,9 @@ class VideoMetadata(EmbeddedDocument):
     like_count = IntField(default=0)
     comment_count = IntField(default=0)
 
-class YoutubeVideoMetadata(VideoMetadata):
+class YoutubeVideoMetadata(Metadata):
     # last_synced_at = DateTimeField(default=TimeUtil.now)
 
-    def get_youtube_url(self) -> str | None:
+    def get_video_url(self) -> str | None:
         if self.id:
             return f"https://www.youtube.com/watch?v={self.id}"

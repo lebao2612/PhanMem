@@ -3,8 +3,11 @@ from mongoengine import (
     EmbeddedDocumentField
 )
 from app.utils import TimeUtil
-from .google_oauth_info import GoogleOAuthInfo
-from .user_settings import UserSettings
+from app.models.embedded import (
+    GoogleOAuthInfo,
+    UserSettings
+)
+
 
 class User(Document):
     name = StringField(required=True)

@@ -18,20 +18,6 @@ class YoutubeService:
         self.youtube_client = youtube_client
         self.google_oauth_client = google_oauth_client
 
-    def fetch_trending_videos(self, region: str = "VN", limit: int = 10) -> list[VideoDTO]:
-        try:
-            videos = self.youtube_client.trending_videos(region=region, limit=limit)
-            return [VideoDTO.from_model(video) for video in videos]
-        except Exception as e:
-            raise HandledException(message=f"Failed to fetch trending videos: {str(e)}", code=500)
-
-    def fetch_search_results(self, keyword: str, region: str = "VN", limit: int = 10) -> list[VideoDTO]:
-        try:
-            videos = self.youtube_client.fetch_search_results(keyword=keyword, region=region, limit=limit)
-            return [VideoDTO.from_model(video) for video in videos]
-        except Exception as e:
-            raise HandledException(message=f"Search failed: {str(e)}", code=500)
-
     async def upload_video(self, creator: User, video_id: str, **kwargs) -> VideoDTO:
         video = self.video_repo.find_by_id(video_id)
         if not video:

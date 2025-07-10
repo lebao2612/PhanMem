@@ -1,6 +1,6 @@
-from .user_dto import UserDTO
 from app.models import User
 from app.dtos.base_dto import BaseDTO
+from .user_dto import UserDTO
 
 class AuthDTO(BaseDTO):
     token: str

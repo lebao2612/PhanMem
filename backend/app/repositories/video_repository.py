@@ -2,7 +2,8 @@ from mongoengine.errors import DoesNotExist, ValidationError
 from app.utils import TimeUtil
 from app.models import (
     User,
-    Video, MediaInfo, VideoScene,
+    Video, VideoScene,
+    Media, VideoMedia, ImageMedia, VoiceMedia,
     YoutubeVideoMetadata
 )
 from app.database import MongoDBConnection
@@ -12,15 +13,34 @@ class VideoRepository:
     def __init__(self, conn: MongoDBConnection):
         self.conn = conn
 
-    def create_draft_video(self, creator: User, topic: str) -> Video:
+    def create_video(
+        self,
+        creator: User,
+        topic: str,
+        scenes: list[dict],
+        src: dict,
+        title: str="Untitled"
+    ) -> Video:
         try:
-            video = Video(creator=creator, topic=topic, status="draft")
+            filtered_src = {k: v for k, v in src.items() if hasattr(VideoMedia, k)}
+            filtered_scenes = [
+                {k: v for k, v in scene.items() if hasattr(VideoScene, k)}
+                for scene in scenes
+            ]
+
+            video = Video(
+                title=title,
+                topic=topic,
+                creator=creator,
+                sources=VideoMedia(**filtered_src),
+                scenes=[VideoScene(**scene) for scene in filtered_scenes]
+            )
             video.save(using=self.conn.alias)
             return video
         except ValidationError as e:
-            raise ValueError("Dữ liệu video không hợp lệ.") from e
+            raise ValueError(f"Dữ liệu video không hợp lệ: {e}") from e
         except Exception as e:
-            raise RuntimeError("Không thể tạo video nháp.") from e
+            raise RuntimeError(f"Không thể tạo video: {e}") from e
 
     def find_by_id(self, video_id: str) -> Video | None:
         try:
@@ -36,7 +56,8 @@ class VideoRepository:
             filter_kwargs = {}
 
             if creator_id := filters.get("creator_id"):
-                filter_kwargs["creator__id"] = creator_id
+                from bson import ObjectId
+                filter_kwargs["creator"] = ObjectId(creator_id)
             if title := filters.get("title"):
                 filter_kwargs["title__icontains"] = title
             if topic := filters.get("topic"):
@@ -58,6 +79,14 @@ class VideoRepository:
 
     def update_status(self, video: Video, status: str) -> Video:
         return self.update_fields(video, status=status)
+
+    def update_sources(self, video: Video, url: str, public_id: str, **kwargs) -> Video:
+        sources=VideoMedia(url=url, public_id=public_id)
+        for k, v in kwargs.items():
+            if hasattr(sources, k):
+                setattr(sources, k, v)
+        
+        return self.update_fields(video=video, sources=sources)
 
     def update_youtube(self, video: Video, **kwargs) -> Video:
         try:
@@ -82,27 +111,6 @@ class VideoRepository:
             raise ValueError("Dữ liệu YouTube không hợp lệ.") from e
         except Exception as e:
             raise RuntimeError("Lỗi khi cập nhật thông tin YouTube.") from e
-
-    def update_script(self, video: Video, script: list[dict]) -> Video:
-        try:
-            scenes = [
-                VideoScene(**{k: v for k, v in s.items() if hasattr(VideoScene, k)})
-                for s in script
-            ]
-            return self.update_fields(video, script=scenes)
-        except ValidationError as e:
-            raise ValueError("Kịch bản không hợp lệ.") from e
-        except Exception as e:
-            raise RuntimeError("Không thể cập nhật kịch bản.") from e
-
-    def update_voice(self, video: Video, url: str, **kwargs) -> Video:
-        return self.update_fields(video, voice_file=MediaInfo(url=url, **kwargs))
-
-    def update_video(self, video: Video, url: str, **kwargs) -> Video:
-        return self.update_fields(video, video_file=MediaInfo(url=url, **kwargs))
-
-    def update_thumbnail(self, video: Video, url: str, **kwargs) -> Video:
-        return self.update_fields(video, thumbnail_file=MediaInfo(url=url, **kwargs))
 
     def update_fields(self, video: Video, **kwargs) -> Video:
         try:

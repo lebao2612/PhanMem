@@ -1,5 +1,5 @@
 from mongoengine import (
-    StringField, DateTimeField, ListField,
+    StringField, DateTimeField,
     EmbeddedDocument
 )
 from app.utils import TimeUtil
