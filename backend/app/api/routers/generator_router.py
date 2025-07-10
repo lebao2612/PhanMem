@@ -56,7 +56,7 @@ async def get_trending_topics(
 async def generate_script(data: GenerateScriptRequest, current_user: User = Depends(token_required)):
     video = await generator_service.generate_script(
         creator=current_user,
-        **data.model_dump(by_alias=True, exclude_unset=True)
+        **data.model_dump(exclude_unset=True, exclude_none=True)
         # topic=data.topic,
         # model_name=data.model_name,
         # language=data.language,
@@ -69,7 +69,7 @@ async def generate_script(data: GenerateScriptRequest, current_user: User = Depe
 async def generate_voices(data: GenerateVoicesRequest, current_user: User = Depends(token_required)):
     video = await generator_service.generate_voices(
         creator=current_user,
-        **data.model_dump(exclude_unset=True)
+        **data.model_dump(exclude_unset=True, exclude_none=True)
         # subtitles=data.subtitles,
         # voice_gender=data.voice_gender,
         # voice_language=data.voice_language,
@@ -80,7 +80,7 @@ async def generate_voices(data: GenerateVoicesRequest, current_user: User = Depe
 async def generate_image(data: GenerateImagesRequest, current_user: User = Depends(token_required)):
     video = await generator_service.generate_images(
         creator=current_user,
-        **data.model_dump(exclude_unset=True),
+        **data.model_dump(exclude_unset=True, exclude_none=True),
         # labels=data.labels,
     )
     return SuccessResponse(data=video)
@@ -89,7 +89,7 @@ async def generate_image(data: GenerateImagesRequest, current_user: User = Depen
 async def generate_video(data: GenerateVideoRequest, current_user: User = Depends(token_required)):
     video = await generator_service.generate_video(
         creator=current_user,
-        **data.model_dump(exclude_unset=True),
+        **data.model_dump(exclude_unset=True, exclude_none=True),
         # title=data.title,
         # topic=data.topic,
         # scenes=data.scenes,

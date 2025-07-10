@@ -1,3 +1,4 @@
+from bson import ObjectId
 from mongoengine.errors import DoesNotExist, ValidationError
 from app.utils import TimeUtil
 from app.models import (
@@ -56,7 +57,6 @@ class VideoRepository:
             filter_kwargs = {}
 
             if creator_id := filters.get("creator_id"):
-                from bson import ObjectId
                 filter_kwargs["creator"] = ObjectId(creator_id)
             if title := filters.get("title"):
                 filter_kwargs["title__icontains"] = title

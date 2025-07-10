@@ -48,3 +48,7 @@ class UpdateUserSettingsRequest(BaseSchema):
         description="TextToImage model",
         pattern="^(stable-diffusion)$"
     )
+    personality: list[str] | None = Field(
+        None,
+        description="AI personality",
+    )

@@ -15,4 +15,4 @@ class GoogleOAuthInfo(EmbeddedDocument):
     def is_token_expired(self) -> bool:
         if not self.expires_at or not self.access_token:
             return True
-        return TimeUtil.now() >= self.expires_at
+        return TimeUtil.now().timestamp() >= self.expires_at.timestamp()

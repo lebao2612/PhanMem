@@ -1,7 +1,7 @@
 from app.repositories import UserRepository
 from app.dtos import UserDTO
 from app.exceptions import HandledException
-from app.models import User
+from app.models import User, UserSettings
 
 
 class UserService:
@@ -29,13 +29,7 @@ class UserService:
         return UserDTO.from_model(updated_user)
 
     def update_user_settings(self, user: User, **kwargs) -> UserDTO:
-        allowed_fields = {"language", "theme", "llm_model", "tts_model", "voice_gender", "tti_model"}
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
-
-        if not filtered_kwargs:
-            raise HandledException("No valid settings fields to update", 400)
-
-        updated_user = self.user_repo.update_setting(user, **filtered_kwargs)
+        updated_user = self.user_repo.update_setting(user, **kwargs)
         return UserDTO.from_model(updated_user)
 
     def delete_user(self, user_id: str) -> bool:
