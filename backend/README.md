@@ -35,6 +35,7 @@ project/
 │
 ├── app/                        # Thư mục chính chứa mã nguồn ứng dụng
 │   ├── __init__.py             # Khởi tạo app Python package
+│   ├── dependencies/           # 
 │   ├── models/                 # Định nghĩa MongoDB document (model dữ liệu)
 │   ├── repositories/           # Truy xuất dữ liệu từ MongoDB (CRUD)
 │   ├── services/               # Xử lý logic nghiệp vụ
@@ -66,12 +67,20 @@ project/
 
 ## ▶️ Hướng dẫn chạy dự án
 
+0. **Yêu cầu**
+   ```bash
+   python >= 3.9
+   fastapi...
+   ```
 1. **Cài đặt thư viện:**
    ```bash
    pip install -r requirements.txt
    ```
 
 2. **Tạo file `.env`** (hoặc copy từ `.env.example`) và điền các biến môi trường cần thiết (MongoDB URI, Cloudinary, API keys...).
+   ```env
+   MONGO_URI=...
+   ```
 
 3. **Chạy server FastAPI:**
    ```bash

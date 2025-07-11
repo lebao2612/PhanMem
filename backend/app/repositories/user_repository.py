@@ -1,6 +1,6 @@
 from mongoengine.errors import DoesNotExist, ValidationError, NotUniqueError
 from app.models import User, UserSettings, GoogleOAuthInfo
-from app.utils import TimeUtil
+from app.utils import time_util
 from app.database import MongoDBConnection
 
 
@@ -72,7 +72,7 @@ class UserRepository:
                 if hasattr(user.settings, k):
                     setattr(user.settings, k, v)
 
-            user.updated_at = TimeUtil.now()
+            user.updated_at = time_util.datetime_now()
             user.save(using=self.conn.alias)
             return user
         except ValidationError as e:
@@ -96,7 +96,7 @@ class UserRepository:
                 else:
                     raise ValueError("Thiếu Google subject.")
 
-            user.updated_at = TimeUtil.now()
+            user.updated_at = time_util.datetime_now()
             user.save(using=self.conn.alias)
             return user
         except ValidationError as e:
@@ -109,7 +109,7 @@ class UserRepository:
             for k, v in kwargs.items():
                 setattr(user, k, v)
 
-            user.updated_at = TimeUtil.now()
+            user.updated_at = time_util.datetime_now()
             user.save(using=self.conn.alias)
             return user
         except ValidationError as e:
@@ -128,7 +128,7 @@ class UserRepository:
             if user.roles and "ADMIN" in user.roles:
                 return
             user.roles = list(set(user.roles + ["ADMIN"]))
-            user.updated_at = TimeUtil.now()
+            user.updated_at = time_util.datetime_now()
             user.save(using=self.conn.alias)
         except Exception as e:
             raise RuntimeError("Không thể nâng quyền ADMIN.") from e

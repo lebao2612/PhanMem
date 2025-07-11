@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 def register_error_handlers(app: FastAPI):
     @app.exception_handler(HandledException)
     async def handle_service_error(request: Request, exc: HandledException):
+        logger.warning(f"HandledException: {exc.message} (status: {exc.code})")
         return ErrorResponse.json_response(
             message=exc.message,
             code=exc.code,

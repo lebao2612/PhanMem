@@ -1,7 +1,9 @@
-from .user import (
-    User, GoogleOAuthInfo, UserSettings
-)
-from .video import (
-    Video, VideoScene, MediaInfo,
-    VideoMetadata, YoutubeVideoMetadata
+from .user import User
+from .video import Video
+from .embedded import (
+    GoogleOAuthInfo,
+    UserSettings,
+    Media, ImageMedia, VoiceMedia, VideoMedia,
+    VideoScene,
+    Metadata, YoutubeVideoMetadata,
 )

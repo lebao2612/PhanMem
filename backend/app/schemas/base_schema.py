@@ -1,8 +1,8 @@
 from pydantic import BaseModel
-from app.utils import DictUtil
+# from app.utils import DictUtil
+# from pydantic.alias_generators import to_camel
 
 class BaseSchema(BaseModel):
     model_config = {
-        "alias_generator": DictUtil.snake_to_camel,
-        "validate_by_name": True,
+        "populate_by_name": True,  # cho phép khởi tạo bằng snake_case trong code
     }

@@ -1,9 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom";
+
+import { useState, useEffect, useContext } from "react"
 import { ArrowLeft } from "lucide-react"
+import { AuthContext } from "../contexts/AuthContext";
 
 function UploadVideo({ selectedVideo, onClose, onBack }) {
+  const navigate = useNavigate();
+  const { authFetch } = useContext(AuthContext);
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("22")
@@ -11,23 +16,28 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+
+    console.log("selectedVideo:", selectedVideo)
+
     if (selectedVideo) {
       setTitle(selectedVideo.title || "")
-      setDescription(`Video được tạo ngày ${selectedVideo.createAt || ""}`)
+      setDescription(`Video được tạo ngày ${selectedVideo.createdAt ? new Date(selectedVideo.createdAt).toISOString().slice(0, 10) : "N/A"}`)
     }
   }, [selectedVideo])
 
   const handleUpload = async () => {
     setLoading(true)
 
-    if (!selectedVideo?.videoID || !title || !description) {
+    console.log(selectedVideo.title, description)
+
+    if (!selectedVideo?.id || !title || !description) {
       alert("Thiếu thông tin video.")
       setLoading(false)
       return
     }
 
     try {
-      const response = await fetch(`/api/platforms/youtube/upload/${selectedVideo.id}`, {
+      const response = await authFetch(`/api/videos/youtube/upload/${selectedVideo.id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,19 +50,21 @@ function UploadVideo({ selectedVideo, onClose, onBack }) {
         }),
       })
 
-      const result = await response.json()
+      // const result = await response.json()
       if (response.ok) {
         alert("Video uploaded successfully!")
-        onClose?.()
+        
       } else {
+        const result = await response.json()
         alert(`Upload failed: ${result.detail || result.error || "Unknown error"}`)
       }
     } catch (error) {
       console.error("Error uploading video:", error)
-      alert("Đã xảy ra lỗi khi upload video.")
+      //alert("Đã xảy ra lỗi khi upload video.")
     }
 
     setLoading(false)
+    window.location.reload();
   }
 
   return (

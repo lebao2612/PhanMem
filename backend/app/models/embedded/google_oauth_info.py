@@ -1,8 +1,8 @@
 from mongoengine import (
-    StringField, DateTimeField, ListField,
+    StringField, DateTimeField,
     EmbeddedDocument
 )
-from app.utils import TimeUtil
+from app.utils import time_util
 
 class GoogleOAuthInfo(EmbeddedDocument):
     sub = StringField(required=True)
@@ -15,4 +15,4 @@ class GoogleOAuthInfo(EmbeddedDocument):
     def is_token_expired(self) -> bool:
         if not self.expires_at or not self.access_token:
             return True
-        return TimeUtil.now() >= self.expires_at
+        return time_util.datetime_now().timestamp() >= self.expires_at.timestamp()

@@ -7,8 +7,8 @@ from .videos_request import (
 )
 from .generator_request import (
     GenerateScriptRequest,
-    RegenerateScriptRequest,
-    GenerateVoiceRequest,
+    GenerateVoicesRequest,
+    GenerateImagesRequest,
     GenerateVideoRequest
 )
 from .platforms_request import (

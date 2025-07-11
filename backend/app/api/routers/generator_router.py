@@ -1,14 +1,18 @@
 from fastapi import APIRouter, Depends, Query
 from app.models import User
-from app.dtos import VideoDTO
 from app.dependencies import generator_service
 from app.api.middlewares import token_required
 from app.schemas.responses import SuccessResponse
 from app.schemas.requests import (
     GenerateScriptRequest,
-    RegenerateScriptRequest,
-    GenerateVoiceRequest,
-    GenerateVideoRequest
+    GenerateVoicesRequest,
+    GenerateVideoRequest,
+    GenerateImagesRequest
+)
+from app.dtos import (
+    MediaDTO,
+    VideoDTO, VideoSceneDTO,
+    YoutubeVideoMetadataDTO
 )
 
 router = APIRouter(prefix="/api/generators", tags=["generators"])
@@ -23,9 +27,9 @@ async def get_suggested_topics(
     current_user: User = Depends(token_required)
 ):
     suggestions = await generator_service.get_suggested_topics(
+        creator=current_user,
         keyword=keyword,
         limit=limit,
-        creator=current_user,
         model_name=model_name,
         language=language
     )
@@ -40,50 +44,54 @@ async def get_trending_topics(
     current_user: User = Depends(token_required)
 ):
     trending = await generator_service.get_trending_topics(
-        limit=limit,
         creator=current_user,
+        limit=limit,
         model_name=model_name,
         language=language
     )
     return SuccessResponse(data=trending)
 
 
-@router.post("/script", response_model=SuccessResponse[VideoDTO])
+@router.post("/script", response_model=SuccessResponse[list[VideoSceneDTO]])
 async def generate_script(data: GenerateScriptRequest, current_user: User = Depends(token_required)):
     video = await generator_service.generate_script(
-        topic=data.topic,
         creator=current_user,
-        model_name=data.model_name,
-        language=data.language
+        **data.model_dump(exclude_unset=True, exclude_none=True)
+        # topic=data.topic,
+        # model_name=data.model_name,
+        # language=data.language,
+        # scene_count=data.scene_count
     )
     return SuccessResponse(data=video)
 
 
-@router.post("/script/{video_id}", response_model=SuccessResponse[VideoDTO])
-async def regenerate_script(video_id: str, data: RegenerateScriptRequest, current_user: User = Depends(token_required)):
-    video = await generator_service.regenerate_script(
-        video_id=video_id,
+@router.post("/voices", response_model=SuccessResponse[list[MediaDTO]])
+async def generate_voices(data: GenerateVoicesRequest, current_user: User = Depends(token_required)):
+    video = await generator_service.generate_voices(
         creator=current_user,
-        model_name=data.model_name,
-        language=data.language
+        **data.model_dump(exclude_unset=True, exclude_none=True)
+        # subtitles=data.subtitles,
+        # voice_gender=data.voice_gender,
+        # voice_language=data.voice_language,
     )
     return SuccessResponse(data=video)
 
-
-@router.post("/voice", response_model=SuccessResponse[VideoDTO])
-async def generate_voice(data: GenerateVoiceRequest, current_user: User = Depends(token_required)):
-    video = await generator_service.generate_voice(
-        video_id=data.video_id,
+@router.post("/images", response_model=SuccessResponse[list[MediaDTO]])
+async def generate_image(data: GenerateImagesRequest, current_user: User = Depends(token_required)):
+    video = await generator_service.generate_images(
         creator=current_user,
-        script=data.script
+        **data.model_dump(exclude_unset=True, exclude_none=True),
+        # labels=data.labels,
     )
     return SuccessResponse(data=video)
-
 
 @router.post("/video", response_model=SuccessResponse[VideoDTO])
 async def generate_video(data: GenerateVideoRequest, current_user: User = Depends(token_required)):
     video = await generator_service.generate_video(
-        video_id=data.video_id,
-        creator=current_user
+        creator=current_user,
+        **data.model_dump(exclude_unset=True, exclude_none=True),
+        # title=data.title,
+        # topic=data.topic,
+        # scenes=data.scenes,
     )
     return SuccessResponse(data=video)

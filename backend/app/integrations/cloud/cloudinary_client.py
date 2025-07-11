@@ -15,7 +15,7 @@ class CloudinaryClient:
         except Exception as e:
             raise RuntimeError("Cloudinary configuration error.") from e
 
-    async def upload_byte(
+    def upload_from_bytes(
         self,
         data: bytes,
         resource_type: str = "auto",
@@ -38,16 +38,39 @@ class CloudinaryClient:
         except Exception as e:
             raise RuntimeError("Error uploading bytes to Cloudinary.") from e
 
-    async def upload_from_url(
+    def upload_from_path(
         self,
-        image_url: str,
+        file_path: str,
         resource_type: str = "auto",
         folder: str = "uploads",
         filename: str = None
     ) -> dict:
         try:
             result = cloudinary.uploader.upload(
-                image_url,
+                file_path,
+                resource_type=resource_type,
+                folder=folder,
+                public_id=filename or uuid.uuid4().hex
+            )
+            return {
+                "public_id": result["public_id"],
+                "url": result["secure_url"],
+                "format": result["format"],
+                "size": result.get("bytes", 0)
+            }
+        except Exception as e:
+            raise RuntimeError(f"Error uploading file from path: {file_path}") from e
+
+    def upload_from_url(
+        self,
+        url: str,
+        resource_type: str = "auto",
+        folder: str = "uploads",
+        filename: str = None
+    ) -> dict:
+        try:
+            result = cloudinary.uploader.upload(
+                url,
                 resource_type=resource_type,
                 folder=folder,
                 public_id=filename or uuid.uuid4().hex
@@ -61,7 +84,7 @@ class CloudinaryClient:
         except Exception as e:
             raise RuntimeError("Error uploading from URL to Cloudinary.") from e
 
-    async def delete_file(self, public_id: str, resource_type: str = "auto") -> bool:
+    def delete_file(self, public_id: str, resource_type: str = "auto") -> bool:
         try:
             result = cloudinary.uploader.destroy(
                 public_id=public_id,

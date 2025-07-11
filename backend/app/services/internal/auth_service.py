@@ -43,5 +43,6 @@ class AuthService:
             user_id=str(user.id),
             email=user.email,
             roles=user.roles,
-        ) 
+        )
+        print(jwt_token)
         return AuthDTO.from_model(token=jwt_token, user=user)

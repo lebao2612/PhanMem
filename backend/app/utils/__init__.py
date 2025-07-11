@@ -1,3 +1,2 @@
-from .file_util import FileUtil
-from .time_util import TimeUtil
-from .dict_util import DictUtil
+from . import time_util
+from . import file_util
