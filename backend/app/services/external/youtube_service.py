@@ -89,9 +89,9 @@ class YoutubeService:
         except Exception as e:
             raise HandledException(code=500, message=f": {e}") from e
 
-    def get_total_stats(self, creator: User, video_ids: list[str], start_date: str, end_date: str) -> dict:
+    def get_video_stats_list(self, creator: User, video_ids: list[str], start_date: str, end_date: str) -> dict:
         try:
-            return self.youtube_client.get_total_stats(
+            return self.youtube_client.get_video_stats_list(
                 video_ids=video_ids,
                 start_date=start_date,
                 end_date=end_date,
@@ -100,15 +100,3 @@ class YoutubeService:
             )
         except Exception as e:
             raise HandledException(code=500, message=f"Failed to get total stats: {e}") from e
-
-    def view_trend(self, creator: User, start_date: str, end_date: str):
-        try:
-            return self.youtube_client.get_video_views_trend(
-                creator=creator,
-                start_date=start_date,
-                end_date=end_date,
-                access_token=creator.google.access_token,
-                refresh_token=creator.google.refresh_token
-                )
-        except Exception as e:
-            raise HandledException(code=500, message=f"Failed to get view trend: {e}") from e

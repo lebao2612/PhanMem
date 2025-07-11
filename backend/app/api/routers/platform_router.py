@@ -49,7 +49,7 @@ def refresh_youtube_video(
     video = youtube_service.refresh_video(current_user, video_id)
     return SuccessResponse(data=video)
 
-@router.get("/youtube/summary")
+@router.get("/youtube/video_stats")
 def get_video_stats_summary(
     current_user: User = Depends(token_required),
     start_date: str = Query(None),
@@ -69,8 +69,6 @@ def get_video_stats_summary(
         return {"message": "Không có video nào"}
 
     # B2: gọi API Analytics
-    stats = youtube_service.get_total_stats(creator=current_user, video_ids=video_ids, start_date=start_date, end_date=end_date)
+    stats = youtube_service.get_video_stats_list(creator=current_user, video_ids=video_ids, start_date=start_date, end_date=end_date)
 
-    return {
-        **stats
-    }
+    return stats

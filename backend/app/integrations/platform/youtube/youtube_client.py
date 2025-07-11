@@ -154,20 +154,14 @@ class YouTubeClient:
             "comment_count": int(stats.get("commentCount", 0)) if stats else 0,
         }
     
-    def get_total_stats(self, video_ids: list[str], start_date: str, end_date: str, access_token: str, refresh_token: Optional[str] = None) -> dict:
-        total_views = 0
-        total_likes = 0
-        total_comments = 0
-        total_duration = 0.0
-        counted = 0
-
+    def get_video_stats_list(self, video_ids: list[str], start_date: str, end_date: str, access_token: str, refresh_token: Optional[str] = None) -> list[list]:
         try:
             youtube = self.auth.get_analytics_service(
                 access_token=access_token,
                 refresh_token=refresh_token
             )
-
-            for video_id in video_ids:
+            result = []
+            for video_id in video_ids:  
                 try:
                     response = youtube.reports().query(
                         ids="channel==MINE",
@@ -177,53 +171,24 @@ class YouTubeClient:
                         dimensions="video",
                         filters=f"video=={video_id}"
                     ).execute()
-
                     rows = response.get("rows", [])
                     if rows:
                         row = rows[0]
-                        # row = [videoId, views, likes, comments, shares]
-                        total_views += row[1]
-                        total_likes += row[2]
-                        total_comments += row[3]
-                        total_shares += row[4]
-                        counted += 1
+                        result.append([
+                            video_id,
+                            int(row[1]),
+                            int(row[2]),
+                            int(row[3]),
+                            float(row[4])
+                        ])
 
                 except HttpError as ve:
-                    # Bạn có thể log lỗi video riêng lẻ này
                     print(f"[WARN] Không lấy được thống kê cho video {video_id}: {ve}")
                     continue
 
-            return {
-                "total_videos": len(video_ids),
-                "videos_with_data": counted,
-                "total_views": total_views,
-                "total_likes": total_likes,
-                "total_comments": total_comments,
-                "total_shares": total_shares
-            }
+            return result
 
         except HttpError as e:
             raise RuntimeError(f"Không thể gọi Analytics API: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Lỗi không xác định: {e}") from e
-
-
-    def get_video_views_trend(self, start_date: str, end_date: str, access_token: str, refresh_token: Optional[str] = None) -> list:
-        try:
-            youtube = self.auth.get_analytics_service(
-                access_token=access_token,
-                refresh_token=refresh_token
-            )
-            request = youtube.reports().query(
-                ids="channel==MINE",
-                startDate=start_date,
-                endDate=end_date,
-                metrics="views,likes,comments,shares",
-                dimensions="day"
-            )
-            response = request.execute()
-            return response.get("rows", [])
-        except HttpError as e:
-            raise RuntimeError(f"Không thể lấy dữ liệu views trend: {e}") from e
-        except Exception as e:
-            raise RuntimeError(f"Lỗi không xác định khi lấy views trend: {e}") from e
