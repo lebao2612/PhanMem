@@ -53,60 +53,20 @@ class GenerateImagesRequest(BaseSchema):
 
 
 ######
-class MediaInput(BaseSchema):
-    public_id: str = Field(
-        ...,
-        alias="publicId",
-        description="Public identifier of the media."
-    )
-    url: str = Field(
-        ...,
-        description="URL of the media."
-    )
+class MediaSceneInput(BaseSchema):
+    public_id: str = Field(..., alias="publicId", description="Media ID.")
+    url: str = Field(..., description="Media URL.")
 
-    @field_validator("public_id", "url", mode="before")
-    @classmethod
-    def validate_not_blank(cls, v):
-        if not isinstance(v, str) or not v.strip():
-            raise ValueError("Value must be a non-empty string.")
-        return v.strip()
-
-class EffectInput(BaseSchema):
-    zoom: str = Field(
-        default=None, description=""
-    )
-    pan: str = Field(
-        default=None, description=""
-    )
+class EffectSceneInput(BaseSchema):
+    zoom: str = Field(default=None, description="Zoom effect.")
+    pan: str = Field(default=None, description="Pan effect.")
 
 class SceneInput(BaseSchema):
-    label: str = Field(
-        ...,
-        description="Description of the image.",
-    )
-    subtitle: str = Field(
-        ...,
-        description="Subtitle text.",
-    )
-    voice: MediaInput = Field(
-        ...,
-        description="Voice sources.",
-    )
-    image: MediaInput = Field(
-        ...,
-        description="Image sources.",
-    )
-    effect: EffectInput = Field(
-        default=None,
-        description=""
-    )
-
-    @field_validator("label", "subtitle", mode="before")
-    @classmethod
-    def validate_not_blank(cls, v):
-        if not isinstance(v, str) or not v.strip():
-            raise ValueError("Value must be a non-empty string.")
-        return v.strip()
+    label: str = Field(..., description="Image description.")
+    subtitle: str = Field(..., description="Subtitle text.")
+    voice: MediaSceneInput = Field(..., description="Voice media.")
+    image: MediaSceneInput = Field(..., description="Image media.")
+    effect: EffectSceneInput = Field(default=None, description="Scene effects.")
 
 class GenerateVideoRequest(BaseSchema):
     title: str = Field(

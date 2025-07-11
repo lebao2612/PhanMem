@@ -3,7 +3,8 @@ from .users_request import (
     UpdateUserInfoRequest,
 )
 from .videos_request import (
-    UpdateVideoRequest
+    UpdateVideoRequest,
+    EditVideoRequest
 )
 from .generator_request import (
     GenerateScriptRequest,

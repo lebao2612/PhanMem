@@ -1,7 +1,8 @@
 from app.repositories import VideoRepository
 from app.dtos import VideoDTO
 from app.exceptions import HandledException
-
+from app.models import User
+from app.modules import mediax
 
 class VideoService:
     def __init__(self, video_repo: VideoRepository):
@@ -23,3 +24,12 @@ class VideoService:
             raise HandledException("Video không tồn tại", 404)
         self.video_repo.delete_video(video)
         return True
+    
+    def edit_video(self, creator: User, video_id: str, **kwargs):
+        video = self.video_repo.find_by_id(video_id)
+        if not video:
+            raise HandledException(message="Video not found", code=404)
+        if not video.sources:
+            raise HandledException(message="Video has not been fully created yet", code=400)
+        
+        pass

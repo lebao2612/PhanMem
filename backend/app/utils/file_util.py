@@ -3,6 +3,14 @@ import time
 import httpx
 import tempfile
 import filetype
+import aiofiles
+
+
+def create_tempfile(suffix: str = "", prefix: str = "tmp_", dir: str | None = None) -> str:
+    fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
+    os.close(fd)  # Close file descriptor; caller will write to path
+    return path
+
 
 async def download_to_bytes(url: str) -> bytes:
     try:
@@ -19,25 +27,22 @@ async def download_to_bytes(url: str) -> bytes:
 
 
 async def download_to_file(url: str, path: str) -> None:
-    try:
-        data = await download_to_bytes(url)
-        with open(path, "wb") as f:
-            f.write(data)
-    except (IOError, OSError) as e:
-        raise IOError(f"Lỗi khi ghi file: {e}") from e
-    except Exception as e:
-        raise RuntimeError(f"Lỗi không xác định khi lưu file: {e}") from e
+    data = await download_to_bytes(url)
+    async with aiofiles.open(path, "wb") as f:
+        await f.write(data)
+
 
 async def download_to_tempfile(url: str) -> str:
     data = await download_to_bytes(url)
 
-    # Dùng filetype để đoán định dạng
+    # Dùng filetype để đoán định định dạng
     kind = filetype.guess(data)
     extension = f".{kind.extension}" if kind else ".bin"
 
-    with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as tmp_file:
-        tmp_file.write(data)
-        temp_path = tmp_file.name
+    temp_path = create_tempfile(suffix=extension)
+
+    async with aiofiles.open(temp_path, "wb") as f:
+        await f.write(data)
 
     return temp_path
 

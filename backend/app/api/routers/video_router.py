@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from app.models import User
 from app.dtos import VideoDTO
-from app.schemas.requests import UpdateVideoRequest
+from app.schemas.requests import UpdateVideoRequest, EditVideoRequest
 from app.schemas.responses import SuccessResponse
 from app.dependencies import video_service
 from app.api.middlewares import token_required
@@ -57,7 +57,17 @@ def get_video(video_id: str, current_user: User = Depends(token_required)):
     video = video_service.get_video_by_id(video_id)
     return SuccessResponse(data=video)
 
+
 @router.delete("/{video_id}", response_model=SuccessResponse[None])
 def delete_video(video_id: str, current_user: User = Depends(token_required)):
     video_service.delete_video(video_id)
     return SuccessResponse(data=None)
+
+@router.put("/{video_id}", response_model=SuccessResponse[VideoDTO])
+async def edit_video(video_id: str, data: EditVideoRequest , current_user: User = Depends(token_required)):
+    video =  await video_service.edit_video(
+        creator=current_user,
+        video_id=video_id,
+        **data.model_dump(exclude_none=True, by_alias=True)
+    )
+    return SuccessResponse(data=video)

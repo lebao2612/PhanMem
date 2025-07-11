@@ -14,10 +14,10 @@ from app.integrations import (
     CloudinaryClient,
     GeminiClient,
     GoogleTTSClient,
-    StabilityClient
+    ReplicateClient
 )
-from app.utils import time_util
-from app.module import render_video
+from app.utils import time_util, file_util
+from app.modules import render_video
 
 class GeneratorService:
     def __init__(
@@ -26,7 +26,7 @@ class GeneratorService:
         gemini_client: GeminiClient,
         google_tts_client: GoogleTTSClient,
         cloudinary_client: CloudinaryClient,
-        stability_client: StabilityClient
+        stability_client: ReplicateClient
     ):
         self.video_repo = video_repo
         self.gemini_client = gemini_client
@@ -194,21 +194,17 @@ class GeneratorService:
             raise HandledException(f"Lỗi khi tạo video: Thiếu thông tin", 400)
         
         try:
-            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-            tmp_file.close()
-
-            await render_video(scenes=scenes, output_path=tmp_file.name, suffix=".mp4")
+            video_path = await render_video(scenes=scenes, suffix=".mp4")
             
             upload_result = self.cloudinary_client.upload_from_path(
-                file_path=tmp_file.name,
+                file_path=video_path,
                 resource_type="video",
                 folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/video",
             )
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo mới video: {e}", 500) from e
         finally:
-            if os.path.exists(tmp_file.name):
-                os.remove(tmp_file.name)
+            file_util.delete_file(video_path)
 
         try:
             video = self.video_repo.create_video(
