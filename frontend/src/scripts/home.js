@@ -48,7 +48,6 @@ export const handleFetchSuggestedTopics = async (
     alert("Please enter a topic before fetching suggestions.");
     return;
   }
-
   try {
     setIsLoadingSuggested(true);
     const res = await authFetch(
@@ -62,34 +61,43 @@ export const handleFetchSuggestedTopics = async (
     setIsLoadingSuggested(false);
   }
 };
+
 export const handleGenerateScript = async (
   text,
   authFetch,
-  setGeneratedScript,
+  setGeneratedScripts, // Changed from setGeneratedScript
   setShowScriptArea,
   setScriptError,
-  setVideoId // Có thể bỏ luôn nếu không dùng nữa
+  setVideoId
 ) => {
   if (!text.trim()) {
     alert("Please enter a topic before generating script.");
     return false;
   }
-
   try {
-    // Gọi API sinh script từ topic
+    // Call API to generate script from topic
     const scriptRes = await authFetch("/api/generators/script", {
       method: "POST",
       body: JSON.stringify({ topic: text }),
     });
 
-    const script = typeof scriptRes === "string" ? scriptRes : scriptRes.script;
-
     console.log("📥 Script API response:", scriptRes);
-    // Cập nhật giao diện
-    setGeneratedScript(script);
+
+    // Handle the response - assuming it returns an object with a script array
+    let scriptArray = [];
+    if (Array.isArray(scriptRes)) {
+      scriptArray = scriptRes;
+    } else if (scriptRes.script && Array.isArray(scriptRes.script)) {
+      scriptArray = scriptRes.script;
+    } else if (typeof scriptRes === "string") {
+      // If it's a string, create a single script object
+      scriptArray = [{ label: "Scene 1", subtitle: scriptRes }];
+    }
+
+    // Update UI with script array
+    setGeneratedScripts(scriptArray);
     setShowScriptArea(true);
     setScriptError(false);
-
     return true;
   } catch (error) {
     console.error("Lỗi khi sinh script:", error.message);
@@ -98,11 +106,13 @@ export const handleGenerateScript = async (
   }
 };
 
-// Hàm này sẽ gọi API để sinh voice từ script đã tạo
+// This function will call API to generate voice from created script
 export const handleGenerateVoice = async (
-  generatedScript,
+  generatedScripts, // Changed to accept the full scripts array instead of combined text
   setVoiceUrl,
-  setIsLoadingVoice
+  setIsLoadingVoice,
+  videoId = "", // Add videoId parameter
+  voiceGender = "female" // Add voiceGender parameter with default
 ) => {
   const token = sessionStorage.getItem("token");
   if (!token) {
@@ -112,88 +122,122 @@ export const handleGenerateVoice = async (
 
   setIsLoadingVoice(true);
   setVoiceUrl("");
+  console.log("📤 Gửi script đến API voice:", generatedScripts);
 
-  console.log("📤 Gửi script đến API voice:", generatedScript);
-  // Giả sử nhận voice_url từ backend
-  const voice_url =
-    "https://res.cloudinary.com/df8meqyyc/video/upload/v1750859823/tts-audio/qfv6ryugzwx5hlqltvgz.mp3";
-  console.log("📥 Nhận voice_url:", voice_url);
-  setVoiceUrl(voice_url);
+  // Mock voice URL from backend
+  const mockVoiceUrl = "https://res.cloudinary.com/demo/video/upload/dog.mp3";
+  setVoiceUrl(mockVoiceUrl);
   setIsLoadingVoice(false);
 
-  // ------------- Chưa dùng được API (Thiếu secret key) -------------
-  // Nếu backend đã sẵn sàng, có thể bỏ comment đoạn này để gọi API
-
   // try {
+  //   const requestBody = {
+  //     videoId: videoId,
+  //     script: generatedScripts, // Send the full script array
+  //     voiceGender: voiceGender,
+  //   }
+
+  //   console.log("📤 Request body:", JSON.stringify(requestBody, null, 2))
+  //   console.log("📤 Request URL: /api/generators/voice")
+  //   console.log("📤 Token:", token ? "Present" : "Missing")
+
   //   const res = await fetch("/api/generators/voice", {
   //     method: "POST",
   //     headers: {
   //       "Content-Type": "application/json",
   //       Authorization: `Bearer ${token}`,
   //     },
-  //     body: JSON.stringify({ script: generatedScript }), // ✅ đúng format backend yêu cầu
-  //   });
+  //     body: JSON.stringify(requestBody),
+  //   })
+
+  //   console.log("📥 Response status:", res.status)
+  //   console.log("📥 Response headers:", Object.fromEntries(res.headers.entries()))
 
   //   if (!res.ok) {
-  //     const err = await res.json();
-  //     throw new Error(err?.error || "Lỗi khi gọi API voice.");
+  //     if (res.status === 404) {
+  //       console.error("❌ API endpoint not found. Check if:")
+  //       console.error("1. Backend server is running")
+  //       console.error("2. Endpoint URL is correct: /api/generators/voice")
+  //       console.error("3. Route is implemented in backend")
+  //       alert("API endpoint không tồn tại. Vui lòng kiểm tra backend server.")
+  //       return
+  //     }
+
+  //     let errorMessage = "Unknown error"
+  //     try {
+  //       const err = await res.json()
+  //       errorMessage = err?.error || err?.message || `HTTP ${res.status}`
+  //     } catch (parseError) {
+  //       errorMessage = `HTTP ${res.status} - ${res.statusText}`
+  //     }
+
+  //     throw new Error(errorMessage)
   //   }
 
-  //   const data = await res.json();
-  //   console.log("📥 Voice API response:", data);
+  //   const response = await res.json()
+  //   console.log("📥 Voice API response:", response)
 
-  //   if (data.voice_url) {
-  //     setVoiceUrl(data.voice_url);
+  //   // Handle the new response structure
+  //   if (response.success && response.data && response.data.voiceUrl) {
+  //     setVoiceUrl(response.data.voiceUrl)
+  //     console.log("✅ Voice URL set successfully:", response.data.voiceUrl)
   //   } else {
-  //     console.warn("⚠️ Không có voice_url trong response:", data);
-  //     alert("Không tìm thấy voice_url trong phản hồi.");
+  //     console.warn("⚠️ Không có voiceUrl trong response:", response)
+  //     alert("Không tìm thấy voiceUrl trong phản hồi.")
   //   }
   // } catch (error) {
-  //   console.error("Voice generation error:", error.message);
-  //   alert("Đã xảy ra lỗi khi gọi API voice.");
+  //   console.error("❌ Voice generation error:", error.message)
+
+  //   // More specific error messages
+  //   if (error.message.includes("fetch")) {
+  //     alert("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.")
+  //   } else if (error.message.includes("404")) {
+  //     alert("API endpoint không tồn tại. Vui lòng liên hệ admin.")
+  //   } else {
+  //     alert(`Lỗi khi tạo voice: ${error.message}`)
+  //   }
   // } finally {
-  //   setIsLoadingVoice(false);
+  //   setIsLoadingVoice(false)
   // }
 };
 
-// Hàm này sẽ gọi API để sinh video từ voice đã tạo
-// scripts/home.js
+// This function will call API to generate video from created voice
 export const handleGenerateVideo = async (
   videoId,
   authFetch,
   setVideoUrl,
-  setIsLoadingVideo
+  setIsLoadingVideo,
+  generatedScripts, // Added to get script count for images
+  setGeneratedImages // Added to set image URLs
 ) => {
-  // // if (!videoId) return;
-  // if (!videoId || videoId.trim() === "") {
-  //   alert("Please provide a valid video ID.");
-  //   return;
-  // }
-
   setIsLoadingVideo(true);
   setVideoUrl("");
+  setGeneratedImages([]); // Clear previous images
 
-  // Giả sử nhận video_url từ backend
+  // Mock video URLs from backend
   const videoUrl =
     "https://res.cloudinary.com/dznocieoi/video/upload/v1751044595/video_utej9c.mp4";
   const videoUrl2 =
     "https://res.cloudinary.com/dznocieoi/video/upload/v1751080891/videoplayback_rgkq72.mp4";
   console.log("Url video:", videoUrl, videoUrl2);
   setVideoUrl(videoUrl2);
-  setIsLoadingVideo(false);
 
-  // Chưa dùng được API (Thiếu videoID)
+  // Generate mock image URLs based on the number of scripts
+  const singleMockImageUrl =
+    "https://res.cloudinary.com/dznocieoi/image/upload/v1752220874/Screenshot_2025-07-11_145645_kirjqe.png";
+  const mockImageUrls = generatedScripts.map(() => singleMockImageUrl);
+  setGeneratedImages(mockImageUrls);
+
+  setIsLoadingVideo(false);
+  // API call when ready (uncomment when backend is ready)
   // try {
   //   const response = await authFetch("/api/generators/video", {
   //     method: "POST",
   //     headers: { "Content-Type": "application/json" },
   //     body: JSON.stringify({ video_id: videoId }),
   //   });
-
   //   if (!response.ok) throw new Error("Video generation failed");
-
   //   const data = await response.json();
-  //   setVideoUrl(data.video_url); //  Backend trả về `video_url` trong `VideoDTO`
+  //   // setVideoUrl(data.video_url);
   // } catch (err) {
   //   console.error("Video generation error:", err);
   // } finally {
