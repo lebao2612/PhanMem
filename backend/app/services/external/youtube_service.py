@@ -105,7 +105,10 @@ class YoutubeService:
                     stat[4],  # shares
                 ])
 
-            return result
+            return {
+            "success": True,
+            "data": result
+            }
 
         except Exception as e:
             raise HandledException(code=500, message=f"Failed to get total stats: {e}") from e
