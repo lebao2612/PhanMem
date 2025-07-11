@@ -52,17 +52,19 @@ class GeminiClient:
         topic: str,
         language: str = "vi",
         model_name: str = "gemini-1.5-flash",
-        scene_count: int = 5
+        scene_count: int = 5,
+        personality: list[str] = []
     ) -> list[dict]:
         prompt = "\n".join([
-            f"Viết kịch bản video ngắn bằng ngôn ngữ [{language}], chủ đề: [{topic}]. Yêu cầu:",
-             "- Không tiêu đề, đánh đầu dòng, chú thích, markdown hay kí tự đặc biệt",
-            f"- Gồm [{scene_count}] cảnh, các cảnh phải có liên kết với nhau",
-             "- mô tả ảnh sẽ được AI sinh ảnh",
+            f"Viết kịch bản video ngắn bằng ngôn ngữ [{language}], chủ đề: [{topic}].",
+             "Không tiêu đề, đánh đầu dòng, chú thích, markdown hay kí tự đặc biệt",
+            f"Gồm [{scene_count}] cảnh, các cảnh phải có liên kết với nhau",
+             "Mỗi cảnh 1 dòng duy nhất, định dạng: mô tả ảnh ## lời thoại/phụ đề thật sinh động, tự nhiên",
              "- lời thoại/phụ đề sẽ được AI sinh voice",
-             "- mỗi cảnh 1 dòng duy nhất, định dạng:",
-             "mô tả ảnh ## lời thoại/phụ đề thật sinh động, tự nhiên",
+             "- mô tả ảnh sẽ được AI sinh ảnh",
         ])
+        if personality:
+            prompt += "\nPhong cách cá nhân hóa: " + ",".join(personality)
 
         raw_text = await self._generate_content_async(prompt, model_name)
         scene_count = []

@@ -26,13 +26,13 @@ class GeneratorService:
         gemini_client: GeminiClient,
         google_tts_client: GoogleTTSClient,
         cloudinary_client: CloudinaryClient,
-        stable_diffusion_client: StabilityClient
+        stability_client: StabilityClient
     ):
         self.video_repo = video_repo
         self.gemini_client = gemini_client
         self.google_tts_client = google_tts_client
         self.cloudinary_client = cloudinary_client
-        self.stable_diffusion_client = stable_diffusion_client
+        self.stability_client = stability_client
 
     async def get_suggested_topics(
         self,
@@ -97,7 +97,8 @@ class GeneratorService:
                 topic=topic,
                 model_name=model_name,
                 language=language,
-                scene_count=scene_count
+                scene_count=scene_count,
+                personality=creator.settings.personality if creator.settings else []
             )
             return [VideoSceneDTO(label=scene["label"], subtitle=scene["subtitle"]) for scene in scenes]
         except Exception as e:
@@ -158,7 +159,7 @@ class GeneratorService:
         async def process_image(index: int, label: str) -> MediaDTO:
             try:
                 # 1. Generate image từ label
-                image_url = await self.stable_diffusion_client.generate_image(label=label)
+                image_url = await self.stability_client.generate_image(label=label)
 
                 # 2. Upload image từ URL lên Cloudinary
                 upload_result = self.cloudinary_client.upload_from_url(

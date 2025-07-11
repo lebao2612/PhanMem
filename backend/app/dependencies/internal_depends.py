@@ -60,5 +60,5 @@ generator_service = GeneratorService(
     gemini_client=gemini_client,
     google_tts_client=google_tts_client,
     cloudinary_client=cloudinary_client,
-    stable_diffusion_client=stable_diffusion_client
+    stability_client=stable_diffusion_client
 )
