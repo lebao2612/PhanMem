@@ -31,7 +31,13 @@ google_oauth_client = GoogleOAuthClient(
     auth_uri=constants.GOOGLE_OAUTH_ENDPOINTS["AUTH_URI"],
     token_uri=constants.GOOGLE_OAUTH_ENDPOINTS["TOKEN_URI"],
     userinfo_uri=constants.GOOGLE_OAUTH_ENDPOINTS["USERINFO_URI"],
-    youtube_scope=constants.YOUTUBE_SCOPES["YOUTUBE"]
+    youtube_scope=[
+        constants.YOUTUBE_SCOPES["YOUTUBE"],
+        constants.YOUTUBE_SCOPES["YOUTUBE_UPLOAD"],
+        constants.YOUTUBE_SCOPES["YOUTUBE_ANALYTICS"],
+        # constants.YOUTUBE_SCOPES["YOUTUBE_READONLY"],
+        # constants.YOUTUBE_SCOPES["YOUTUBE_FORCE_SSL"],
+    ]
 )
 
 # ==== Init Google OAuth & YouTube ====
@@ -40,6 +46,10 @@ youtube_auth = YouTubeAuth(
     client_secret=settings.GOOGLE_CLIENT_SECRET,
     token_uri=constants.GOOGLE_OAUTH_ENDPOINTS["TOKEN_URI"],
     api_key=settings.GOOGLE_API_KEY,
-    scopes=[constants.YOUTUBE_SCOPES["YOUTUBE"]],
+    scopes=[
+        constants.YOUTUBE_SCOPES["YOUTUBE"],
+        constants.YOUTUBE_SCOPES["YOUTUBE_ANALYTICS"],
+        constants.YOUTUBE_SCOPES["YOUTUBE_FORCE_SSL"],
+    ],
 )
 youtube_client = YouTubeClient(auth=youtube_auth)

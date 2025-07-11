@@ -61,8 +61,12 @@ const Header = () => {
             </svg>
             <span>Logout</span>
           </button>
-          <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex items-center justify-center">
-            {getDisplayInitial() || <i className="fa-solid fa-user"></i>}
+          <div className="h-8 w-8 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex items-center justify-center text-white text-sm font-semibold">
+            {user?.picture ? (
+              <img src={user.picture} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              getDisplayInitial() || <i className="fa-solid fa-user" />
+            )}
           </div>
         </div>
       </div>

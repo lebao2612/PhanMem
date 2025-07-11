@@ -24,7 +24,7 @@ class YoutubeService:
             raise HandledException(message="Video not found", code=404)
         if video.youtube:
             raise HandledException(message="Video has already been uploaded", code=409)
-        if video.status != "done" or not video.video_file:
+        if video.status != "done" or not video.sources:
             raise HandledException(message="Video has not been fully created yet", code=400)
         if not creator.google or not creator.google.refresh_token:
             raise HandledException(message="User has not logged in with Google", code=400)
@@ -37,7 +37,7 @@ class YoutubeService:
             video_detail = await self.youtube_client.upload_video_url(
                 refresh_token=creator.google.refresh_token,
                 access_token=creator.google.access_token,
-                video_url=video.get_video_url(),
+                video_url=video.sources.url,
                 **kwargs
             )
 

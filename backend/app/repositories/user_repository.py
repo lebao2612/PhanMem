@@ -100,9 +100,9 @@ class UserRepository:
             user.save(using=self.conn.alias)
             return user
         except ValidationError as e:
-            raise ValueError("Dữ liệu Google OAuth không hợp lệ.") from e
+            raise ValueError(f"Dữ liệu Google OAuth không hợp lệ: {e}") from e
         except Exception as e:
-            raise RuntimeError("Lỗi khi cập nhật thông tin Google.") from e
+            raise RuntimeError(f"Lỗi khi cập nhật thông tin Google: {e}") from e
 
     def update_fields(self, user: User, **kwargs) -> User:
         try:

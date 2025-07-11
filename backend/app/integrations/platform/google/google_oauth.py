@@ -12,7 +12,7 @@ class GoogleOAuthClient:
         auth_uri: str,
         token_uri: str,
         userinfo_uri: str,
-        youtube_scope: str,
+        youtube_scope: list[str],
     ):
         self.client_id = client_id
         self.client_secret = client_secret
@@ -25,7 +25,7 @@ class GoogleOAuthClient:
             "openid",
             "email",
             "profile",
-            youtube_scope,
+            *youtube_scope,
         ]
 
     def get_oauth_url(
