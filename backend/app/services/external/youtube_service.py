@@ -80,7 +80,15 @@ class YoutubeService:
     def get_video_stats_list(self, creator: User, video_ids: list[str], start_date: str, end_date: str) -> list[list]:
         try:
             # Truy vấn MongoDB để lấy title theo video_id
-            videos = self.video_repo.query(youtube_id__in=video_ids)
+            videos = self.video_repo.query(
+                creator_id=str(creator.id)
+            )
+
+            # Lọc lại theo video_ids
+            videos = [
+                v for v in videos
+                if v.youtube and v.youtube.id in video_ids
+            ]
 
             # In log kiểm tra từng video
             for v in videos:
@@ -101,6 +109,7 @@ class YoutubeService:
                 access_token=creator.google.access_token,
                 refresh_token=creator.google.refresh_token
             )
+            print("📊 Raw stats trả về từ YouTube:", raw_stats)
 
             result = []
             for stat in raw_stats:

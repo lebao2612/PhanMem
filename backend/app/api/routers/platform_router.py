@@ -40,7 +40,7 @@ def get_video_stats_summary(
         creator_id = str(current_user.id)
         today = datetime.today().date()
         end_date = end_date or today.isoformat()
-        start_date = start_date or (today - timedelta(days=7)).isoformat()
+        start_date = "1970-01-01"
 
         video_ids = video_service.get_youtube_ids_by_creator(creator_id)
 
