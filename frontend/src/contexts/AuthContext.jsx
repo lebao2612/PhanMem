@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
     const headers = {
       ...(options.headers || {}),
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     };
 
     if (!(options.body instanceof FormData)) {
@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
     // Xử lý 204 No Content
     if (res.status === 204) return null;
 
-    const {success, data, error} = await res.json();
+    const { success, data, error } = await res.json();
     if (!res.ok || !success) {
       if (res.status === 401) {
         sessionStorage.removeItem("token");
@@ -47,7 +47,6 @@ export const AuthProvider = ({ children }) => {
 
       throw new Error(error?.message || `Lỗi hệ thống (${res.status})`);
     }
-
     return data;
   };
 
