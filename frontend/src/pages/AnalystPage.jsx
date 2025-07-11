@@ -2,7 +2,8 @@
 
 import Header from "../components/Header"
 import LeftSideBar from "../components/LeftSideBar"
-import { useState } from "react"
+import { useState, useEffect, useContext } from "react"
+import { AuthContext } from "../contexts/AuthContext";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -21,6 +22,22 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 
 const AnalystPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("7days")
+
+  const { authFetch } = useContext(AuthContext);
+  const [videos, setVideos] = useState([]);
+
+  useEffect(() => {
+      const fetchVideos = async () => {
+          try {
+              const res = await authFetch("/api/videos/youtube/video_stats");
+              setVideos(res);
+              //setFilteredVideo(res);
+          } catch (err) {
+              console.error("Lỗi khi gọi API:", err.message);
+          }
+      };
+      fetchVideos();
+  }, [authFetch]);
 
   // Mock data for YouTube video analytics
   const viewsData = [
