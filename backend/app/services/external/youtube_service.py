@@ -74,3 +74,15 @@ class YoutubeService:
             raise
         except Exception as e:
             raise HandledException(code=500, message=f": {e}") from e
+        
+    def get_video_stats_list(self, creator: User, video_ids: list[str], start_date: str, end_date: str) -> dict:
+        try:
+            return self.youtube_client.get_video_stats_list(
+                video_ids=video_ids,
+                start_date=start_date,
+                end_date=end_date,
+                access_token=creator.google.access_token,
+                refresh_token=creator.google.refresh_token
+            )
+        except Exception as e:
+            raise HandledException(code=500, message=f"Failed to get total stats: {e}") from e

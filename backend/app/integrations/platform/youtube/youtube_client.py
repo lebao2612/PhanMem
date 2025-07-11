@@ -154,3 +154,42 @@ class YouTubeClient:
             "like_count": int(stats.get("likeCount", 0)) if stats else 0,
             "comment_count": int(stats.get("commentCount", 0)) if stats else 0,
         }
+    
+    def get_video_stats_list(self, video_ids: list[str], start_date: str, end_date: str, access_token: str, refresh_token: Optional[str] = None) -> list[list]:
+        try:
+            youtube = self.auth.get_analytics_service(
+                access_token=access_token,
+                refresh_token=refresh_token
+            )
+            result = []
+            for video_id in video_ids:  
+                try:
+                    response = youtube.reports().query(
+                        ids="channel==MINE",
+                        startDate=start_date,
+                        endDate=end_date,
+                        metrics="views,likes,comments,shares",
+                        dimensions="video",
+                        filters=f"video=={video_id}"
+                    ).execute()
+                    rows = response.get("rows", [])
+                    if rows:
+                        row = rows[0]
+                        result.append([
+                            video_id,
+                            int(row[1]),
+                            int(row[2]),
+                            int(row[3]),
+                            float(row[4])
+                        ])
+
+                except HttpError as ve:
+                    print(f"[WARN] Không lấy được thống kê cho video {video_id}: {ve}")
+                    continue
+
+            return result
+
+        except HttpError as e:
+            raise RuntimeError(f"Không thể gọi Analytics API: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"Lỗi không xác định: {e}") from e

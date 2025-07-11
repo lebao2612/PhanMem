@@ -23,3 +23,10 @@ class VideoService:
             raise HandledException("Video không tồn tại", 404)
         self.video_repo.delete_video(video)
         return True
+    
+    def get_youtube_ids_by_creator(self, creator_id: str) -> list[str]:
+        result = self.video_repo.find(
+            {"creator": creator_id, "youtube.id": {"$exists": True}},
+            {"youtube.id": 1, "_id": 0}
+        )
+        return [doc["youtube"]["id"] for doc in result]

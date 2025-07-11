@@ -1,8 +1,9 @@
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Query
 from app.schemas.requests import YouTubeUploadRequest
 from app.schemas.responses import SuccessResponse
 from app.api.middlewares import token_required
-from app.dependencies import youtube_service
+from app.dependencies import youtube_service, video_service
 from app.models import User
 from app.dtos import VideoDTO
 
@@ -28,5 +29,28 @@ def refresh_youtube_video(
 ):
     video = youtube_service.refresh_video(current_user, video_id)
     return SuccessResponse(data=video)
+
+@router.get("/youtube/video_stats")
+def get_video_stats_summary(
+    current_user: User = Depends(token_required),
+    start_date: str = Query(None),
+    end_date: str = Query(None)
+):
+    creator_id = str(current_user.id)
+
+    today = datetime.today().date()
+    end_date = end_date or today.isoformat()
+    start_date = start_date or (today - timedelta(days=7)).isoformat()
+
+    # B1: lấy video_ids
+    video_ids = video_service.get_youtube_ids_by_creator(creator_id)
+
+    if not video_ids:
+        return {"message": "Không có video nào"}
+
+    # B2: gọi API Analytics
+    stats = youtube_service.get_video_stats_list(creator=current_user, video_ids=video_ids, start_date=start_date, end_date=end_date)
+
+    return stats
 
 # @router.get("/youtube/refresh", response_model=SuccessResponse[VideoDTO])
