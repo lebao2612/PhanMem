@@ -25,7 +25,7 @@ class YoutubeService:
             raise HandledException(message="Video not found", code=404)
         if video.youtube:
             raise HandledException(message="Video has already been uploaded", code=409)
-        if video.status != "done" or not video.video_file:
+        if video.status != "done" or not video.sources:
             raise HandledException(message="Video has not been fully created yet", code=400)
         if not creator.google or not creator.google.refresh_token:
             raise HandledException(message="User has not logged in with Google", code=400)

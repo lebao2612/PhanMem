@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import Header from "../components/Header";
 import LeftSideBar from "../components/LeftSideBar";
-import { FaYoutube, FaFacebook, FaTiktok, FaFilm, FaCamera, FaEye } from 'react-icons/fa';
+import { FaYoutube, FaUpload, FaFilm, FaCamera, FaEye } from 'react-icons/fa';
 import { X, Calendar, Tag, Download, Upload } from 'lucide-react'
 import images from "../assets/images";
 import { AuthContext } from "../contexts/AuthContext";
@@ -51,6 +51,10 @@ const Dashboard = () => {
         setSelectedVideo(null)
         setSelectUpload(false)
     }
+
+    const countYoutubeUploaded = (videos) => {
+        return videos.filter(video => video.youtube).length;
+    };
 
     const downloadVideo = async (url, videoName) => {
         try {
@@ -114,7 +118,7 @@ const Dashboard = () => {
             {/* Main Content */}
             <div className={"flex-1 flex flex-col transition-all duration-300"}>
                 <Header />
-                <div className="grid grid-cols-4 gap-4 px-5 py-10">
+                <div className="grid grid-cols-2 gap-4 px-5 py-10">
                     <div className="border border-zinc-700 bg-zinc-900 p-4 shadow-lg rounded-lg hover:bg-zinc-800 transition-colors">
                         <div className="flex items-center gap-2 mb-1">
                             <FaFilm className="text-purple-600 text-5xl p-1 bg-amber-50 rounded-3xl"/>
@@ -132,34 +136,10 @@ const Dashboard = () => {
                             <FaYoutube className="text-red-600 text-5xl p-1 bg-amber-50 rounded-3xl" />
                             <h3 className="font-bold text-xl">Youtube</h3>
                         </div>
-                        <p className="text-neutral-500">Số lượng lượt xem trên Youtube</p>
+                        <p className="text-neutral-500">Số lượng video upload lên Youtube</p>
                         <div className="flex items-center gap-2 mt-2">
-                            <FaEye className="text-xl"/>
-                            <p className="text-2xl font-bold">6</p>
-                        </div>
-                    </div>
-
-                    <div className="border border-zinc-700 bg-zinc-900 p-4 shadow-lg rounded-lg hover:bg-zinc-800 transition-colors">
-                        <div className="flex items-center gap-2 mb-1">
-                            <FaFacebook className="text-blue-600 text-5xl p-1 bg-amber-50 rounded-3xl" />
-                            <h3 className="font-bold text-xl">Facebook</h3>
-                        </div>
-                        <p className="text-neutral-500">Số lượng lượt xem trên Facebook</p>
-                        <div className="flex items-center gap-2 mt-2">
-                            <FaEye className="text-xl"/>
-                            <p className="text-2xl font-bold">1</p>
-                        </div>
-                    </div>
-
-                    <div className="border border-zinc-700 bg-zinc-900 p-4 shadow-lg rounded-lg hover:bg-zinc-800 transition-colors">
-                        <div className="flex items-center gap-2 mb-1">
-                            <FaTiktok className="text-black text-5xl p-1 bg-amber-50 rounded-3xl" />
-                            <h3 className="font-bold text-xl">Tiktok</h3>
-                        </div>
-                        <p className="text-neutral-500">Số lượng lượt xem trên Tiktok</p>
-                        <div className="flex items-center gap-2 mt-2">
-                            <FaEye className="text-xl"/>
-                            <p className="text-2xl font-bold">2</p>
+                            <FaUpload className="text-xl"/>
+                            <p className="text-2xl font-bold">{countYoutubeUploaded(videos)}</p>
                         </div>
                     </div>
                 </div>
@@ -244,9 +224,9 @@ const Dashboard = () => {
                                     className="w-full aspect-video rounded-lg"
                                     poster="/placeholder.svg?height=400&width=600"
                                 >
-                                    <source src={selectedVideo.videoUrl || selectedVideo.videoID} type="video/mp4" />
-                                    <source src={selectedVideo.videoUrl || selectedVideo.videoID} type="video/webm" />
-                                    <source src={selectedVideo.videoUrl || selectedVideo.videoID} type="video/ogg" />
+                                    <source src={selectedVideo.url || selectedVideo.videoID} type="video/mp4" />
+                                    <source src={selectedVideo.url || selectedVideo.videoID} type="video/webm" />
+                                    <source src={selectedVideo.url || selectedVideo.videoID} type="video/ogg" />
                                     Trình duyệt của bạn không hỗ trợ thẻ video.
                                 </video>
                             </div>
