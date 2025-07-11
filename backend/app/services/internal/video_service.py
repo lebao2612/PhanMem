@@ -25,8 +25,13 @@ class VideoService:
         return True
     
     def get_youtube_ids_by_creator(self, creator_id: str) -> list[str]:
-        result = self.video_repo.find(
-            {"creator": creator_id, "youtube.id": {"$exists": True}},
-            {"youtube.id": 1, "_id": 0}
+        videos = self.video_repo.query(
+            creator_id=creator_id,
+            youtube_uploaded_only=True,
+            limit=1000
         )
-        return [doc["youtube"]["id"] for doc in result]
+        youtube_ids = []
+        for video in videos:
+            if hasattr(video, "youtube") and video.youtube and video.youtube.get("id"):
+                youtube_ids.append(video.youtube["id"])
+        return youtube_ids

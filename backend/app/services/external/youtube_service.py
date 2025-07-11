@@ -75,14 +75,37 @@ class YoutubeService:
         except Exception as e:
             raise HandledException(code=500, message=f": {e}") from e
         
-    def get_video_stats_list(self, creator: User, video_ids: list[str], start_date: str, end_date: str) -> dict:
+    def get_video_stats_list(self, creator: User, video_ids: list[str], start_date: str, end_date: str) -> list[list]:
         try:
-            return self.youtube_client.get_video_stats_list(
+            # Truy vấn MongoDB để lấy title theo video_id
+            videos = self.video_repo.query(youtube_id__in=video_ids)
+            video_titles = {
+                v.youtube.id: v.youtube.title if v.youtube and v.youtube.title else "" for v in videos
+            }
+
+            # Lấy thống kê từ YouTube Analytics API
+            raw_stats = self.youtube_client.get_video_stats_list(
                 video_ids=video_ids,
                 start_date=start_date,
                 end_date=end_date,
                 access_token=creator.google.access_token,
                 refresh_token=creator.google.refresh_token
             )
+
+            # Gộp title vào thống kê
+            result = []
+            for stat in raw_stats:
+                video_id = stat[0]
+                result.append([
+                    video_id,
+                    video_titles.get(video_id, ""),  # Thêm tiêu đề video
+                    stat[1],  # views
+                    stat[2],  # likes
+                    stat[3],  # comments
+                    stat[4],  # shares
+                ])
+
+            return result
+
         except Exception as e:
             raise HandledException(code=500, message=f"Failed to get total stats: {e}") from e

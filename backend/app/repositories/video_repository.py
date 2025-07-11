@@ -62,6 +62,8 @@ class VideoRepository:
                 filter_kwargs["title__icontains"] = title
             if topic := filters.get("topic"):
                 filter_kwargs["topic__icontains"] = topic
+            if filters.get("youtube_uploaded_only"):
+                filter_kwargs["youtube__id__exists"] = True
 
             if filter_kwargs:
                 query = query.filter(**filter_kwargs)
