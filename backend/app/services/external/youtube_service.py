@@ -3,6 +3,7 @@ from app.dtos import VideoDTO
 from app.exceptions import HandledException
 from app.repositories import VideoRepository, UserRepository
 from app.integrations import YouTubeClient, GoogleOAuthClient
+import traceback
 
 
 class YoutubeService:
@@ -74,16 +75,25 @@ class YoutubeService:
             raise
         except Exception as e:
             raise HandledException(code=500, message=f": {e}") from e
-        
+
+
     def get_video_stats_list(self, creator: User, video_ids: list[str], start_date: str, end_date: str) -> list[list]:
         try:
             # Truy vấn MongoDB để lấy title theo video_id
             videos = self.video_repo.query(youtube_id__in=video_ids)
+
+            # In log kiểm tra từng video
+            for v in videos:
+                print(f"📹 video_id: {v.youtube.id if v.youtube else 'None'}")
+
             video_titles = {
-                v.youtube.id: v.youtube.title if v.youtube and v.youtube.title else "" for v in videos
+                # v.youtube.id: v.youtube.title if v.youtube and v.youtube.title else "" for v in videos
+                v.youtube.id: v.youtube.title if v.youtube.title else ""
+                for v in videos
+                if v.youtube and v.youtube.id
             }
 
-            # Lấy thống kê từ YouTube Analytics API
+            # Gọi API YouTube Analytics
             raw_stats = self.youtube_client.get_video_stats_list(
                 video_ids=video_ids,
                 start_date=start_date,
@@ -92,13 +102,12 @@ class YoutubeService:
                 refresh_token=creator.google.refresh_token
             )
 
-            # Gộp title vào thống kê
             result = []
             for stat in raw_stats:
                 video_id = stat[0]
                 result.append([
                     video_id,
-                    video_titles.get(video_id, ""),  # Thêm tiêu đề video
+                    video_titles.get(video_id, ""),  # title
                     stat[1],  # views
                     stat[2],  # likes
                     stat[3],  # comments
@@ -106,9 +115,12 @@ class YoutubeService:
                 ])
 
             return {
-            "success": True,
-            "data": result
+                "success": True,
+                "data": result
             }
 
         except Exception as e:
+            print("❌ Traceback:")
+            traceback.print_exc()  # In đầy đủ lỗi gốc
             raise HandledException(code=500, message=f"Failed to get total stats: {e}") from e
+

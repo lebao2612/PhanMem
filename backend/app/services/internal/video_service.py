@@ -32,6 +32,8 @@ class VideoService:
         )
         youtube_ids = []
         for video in videos:
-            if hasattr(video, "youtube") and video.youtube and video.youtube.get("id"):
-                youtube_ids.append(video.youtube["id"])
+            if video.youtube and video.youtube.id:
+                youtube_ids.append(video.youtube.id)
+            else:
+                print(f"⚠️ Video thiếu metadata Youtube hoặc thiếu ID: {video}")
         return youtube_ids

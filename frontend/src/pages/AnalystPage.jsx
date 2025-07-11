@@ -38,6 +38,8 @@ const AnalystPage = () => {
       };
       fetchVideos();
   }, [authFetch]);
+  
+  console.log(videos)
 
   // Mock data for YouTube video analytics
   const viewsData = [

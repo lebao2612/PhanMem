@@ -31,4 +31,4 @@ class Video(Document):
     # tiktok, facebook...
 
 
-    meta = {"collection": "videos"}
+    meta = {"collection": "videos", "strict": False}
