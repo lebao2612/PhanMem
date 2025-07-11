@@ -1,29 +1,27 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 
-function Review({ onClose, exportData }) {
-  const [platform, setPlatform] = useState("YouTube");
+function Review({ onClose, exportData, onConfirmUpload }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const descriptionRef = useRef(null);
 
   useEffect(() => {
     if (exportData) {
-      const clipCount = exportData.clips.length;
-      const duration = Math.round(exportData.timeline.totalDuration);
+      const clipCount = exportData.clips ? exportData.clips.length : 0;
+      const duration = exportData.timeline
+        ? exportData.timeline.totalDuration
+        : 0;
       const autoTitle = `Edited video - ${clipCount} clips (${Math.floor(
         duration / 60
-      )}:${(duration % 60).toString().padStart(2, "0")})`;
+      )}:${Math.floor(duration % 60)
+        .toString()
+        .padStart(2, "0")})`;
       setTitle(autoTitle);
 
       const autoDescription = `This video was created from ${clipCount} clips with a total duration of ${Math.floor(
         duration / 60
-      )} minutes and ${duration % 60} seconds.${
-        exportData.stickers.length > 0
-          ? ` Includes ${exportData.stickers.length} sticker(s).`
-          : ""
-      }`;
+      )} minutes and ${Math.floor(duration % 60)} seconds.`;
       setDescription(autoDescription);
     }
   }, [exportData]);
@@ -40,44 +38,39 @@ function Review({ onClose, exportData }) {
 
   function handleAutoCaption() {
     if (!exportData) return;
-
     const clipInfo = exportData.clips
-      .map((clip, index) => `Clip ${index + 1}: ${Math.round(clip.duration)}s`)
-      .join(", ");
+      ? exportData.clips
+          .map((clip, index) => {
+            const duration = clip.end - clip.start;
+            return `Clip ${index + 1}: ${Math.round(duration)}s`;
+          })
+          .join(", ")
+      : "";
 
-    const stickerInfo =
-      exportData.stickers.length > 0
-        ? ` Stickers: ${exportData.stickers.map((s) => s.emoji).join("")}`
-        : "";
-
+    const totalDuration = exportData.timeline
+      ? exportData.timeline.totalDuration
+      : 0;
     const autoCaption = `🎬 Professionally edited video
-📊 ${clipInfo}${stickerInfo}
-⏱️ Total duration: ${Math.floor(
-      exportData.timeline.totalDuration / 60
-    )}:${Math.round(exportData.timeline.totalDuration % 60)
+📊 ${clipInfo}
+⏱️ Total duration: ${Math.floor(totalDuration / 60)}:${Math.round(
+      totalDuration % 60
+    )
       .toString()
       .padStart(2, "0")}
 ✨ Created with Video Editor`;
-
     setDescription(autoCaption);
   }
 
-  const shareLabel = {
-    YouTube: "Export for YouTube",
-    TikTok: "Export for TikTok",
-    Facebook: "Export for Facebook",
+  const handleUploadToYoutube = () => {
+    if (onConfirmUpload) {
+      onConfirmUpload({
+        title,
+        description,
+        exportData, // Pass the real export data
+      });
+      onClose(); // Đóng Review modal sau khi xác nhận upload
+    }
   };
-
-  const shareButtonColor = {
-    YouTube: "bg-red-600 hover:bg-red-700",
-    TikTok: "bg-black hover:bg-gray-900",
-    Facebook: "bg-blue-600 hover:bg-blue-700",
-  };
-
-  const platformButtonClass = (name) =>
-    platform === name
-      ? "text-blue-400 border-b-2 border-blue-400 font-medium"
-      : "text-zinc-400 hover:text-white";
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -96,7 +89,7 @@ function Review({ onClose, exportData }) {
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Export Video Info</h2>
+          <h2 className="text-xl font-semibold">Export Video to YouTube</h2>
           <button
             onClick={onClose}
             className="text-zinc-400 hover:text-white text-2xl font-bold"
@@ -113,25 +106,27 @@ function Review({ onClose, exportData }) {
               <div>
                 <span className="text-zinc-500">Clips:</span>
                 <div className="font-medium text-blue-400">
-                  {exportData.clips.length} clips
+                  {exportData.clips ? exportData.clips.length : 0} clips
                 </div>
               </div>
               <div>
                 <span className="text-zinc-500">Duration:</span>
                 <div className="font-medium text-blue-400">
-                  {formatTime(exportData.timeline.totalDuration)}
+                  {formatTime(
+                    exportData.timeline ? exportData.timeline.totalDuration : 0
+                  )}
                 </div>
               </div>
               <div>
-                <span className="text-zinc-500">Stickers:</span>
-                <div className="font-medium text-blue-400">
-                  {exportData.stickers.length} sticker(s)
+                <span className="text-zinc-500">Original Video:</span>
+                <div className="font-medium text-blue-400 truncate">
+                  {exportData.originalVideoUrl}
                 </div>
               </div>
               <div>
                 <span className="text-zinc-500">Status:</span>
                 <div className="font-medium text-green-400">
-                  Ready to export
+                  Ready to upload
                 </div>
               </div>
             </div>
@@ -140,30 +135,23 @@ function Review({ onClose, exportData }) {
 
         {/* Body */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left */}
+          {/* Left - Video Details */}
           <div className="space-y-4">
-            <div className="bg-zinc-800 p-4 rounded-lg">
-              <h4 className="font-medium mb-3">Original Video</h4>
-              <div className="space-y-2 text-sm text-zinc-400">
-                <div className="flex justify-between">
-                  <span>URL:</span>
-                  <span className="text-blue-400 truncate max-w-48">
-                    {exportData?.originalVideoUrl}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {exportData?.clips.length > 0 && (
+            {exportData?.clips && exportData.clips.length > 0 && (
               <div className="bg-zinc-800 p-3 rounded-lg">
-                <h4 className="font-medium mb-2">Clips</h4>
+                <h4 className="font-medium mb-2">
+                  Clips ({exportData.clips.length})
+                </h4>
                 <div className="space-y-1 max-h-32 overflow-y-auto text-sm text-zinc-300">
                   {exportData.clips.map((clip, index) => (
-                    <div key={clip.id} className="flex justify-between">
+                    <div
+                      key={clip.id || index}
+                      className="flex justify-between"
+                    >
                       <span>Clip {index + 1}</span>
                       <span className="text-zinc-500">
-                        {formatTime(clip.startTime)} -{" "}
-                        {formatTime(clip.endTime)} ({formatTime(clip.duration)})
+                        {formatTime(clip.start)} - {formatTime(clip.end)} (
+                        {formatTime(clip.end - clip.start)})
                       </span>
                     </div>
                   ))}
@@ -171,104 +159,74 @@ function Review({ onClose, exportData }) {
               </div>
             )}
 
-            {exportData?.stickers.length > 0 && (
-              <div className="bg-zinc-800 p-3 rounded-lg">
-                <h4 className="font-medium mb-2">Stickers</h4>
-                <div className="flex flex-wrap gap-2">
-                  {exportData.stickers.map((sticker) => (
-                    <div
-                      key={sticker.id}
-                      className="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded text-sm border-l-2 border-blue-500 text-zinc-300"
-                    >
-                      <span className="text-lg">{sticker.emoji}</span>
-                      <span className="text-zinc-500">
-                        {formatTime(sticker.startTime)} -{" "}
-                        {formatTime(sticker.endTime)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="bg-zinc-800 p-4 rounded-lg">
+              <h4 className="font-medium mb-3">Video Preview</h4>
+              {exportData?.originalVideoUrl && (
+                <video
+                  src={exportData.originalVideoUrl}
+                  controls
+                  className="w-full max-h-48 rounded bg-black"
+                >
+                  Your browser does not support video playback.
+                </video>
+              )}
+            </div>
           </div>
 
           {/* Right - Form */}
           <div>
-            <div className="flex space-x-6 mb-4">
-              {["YouTube", "TikTok", "Facebook"].map((name) => (
-                <button
-                  key={name}
-                  onClick={() => setPlatform(name)}
-                  className={platformButtonClass(name)}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-zinc-400">
-                  Channel
+                  YouTube Channel
                 </label>
                 <div className="mt-1 p-2 bg-zinc-800 rounded text-white">
                   Video Editor User
                 </div>
               </div>
-
               <div>
                 <label className="text-sm font-medium text-zinc-400">
-                  Video Title
+                  Video Title *
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter title..."
-                  className="w-full p-2 bg-zinc-800 text-white border border-zinc-600 rounded"
+                  placeholder="Enter video title..."
+                  className="w-full p-2 bg-zinc-800 text-white border border-zinc-600 rounded focus:border-blue-500 focus:outline-none"
+                  required
                 />
               </div>
-
               <div>
                 <label className="text-sm font-medium text-zinc-400">
-                  Description
+                  Description *
                 </label>
                 <textarea
                   ref={descriptionRef}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter description..."
-                  className="w-full p-2 bg-zinc-800 text-white border border-zinc-600 rounded resize-none overflow-hidden"
+                  placeholder="Enter video description..."
+                  className="w-full p-2 bg-zinc-800 text-white border border-zinc-600 rounded resize-none overflow-hidden focus:border-blue-500 focus:outline-none"
+                  required
                 />
               </div>
             </div>
-
             <div className="mt-6 flex gap-3">
               <button
-                onClick={() => {
-                  console.log("Export data:", {
-                    platform,
-                    title,
-                    description,
-                    exportData,
-                  });
-                  alert(
-                    `Exporting to ${platform}:\n\nTitle: ${title}\n\nDescription: ${description}`
-                  );
-                }}
-                className={`flex-1 py-2 rounded font-medium flex items-center justify-center text-white ${shareButtonColor[platform]}`}
+                onClick={handleUploadToYoutube}
+                disabled={!title.trim() || !description.trim()}
+                className="flex-1 py-2 rounded font-medium flex items-center justify-center text-white bg-red-600 hover:bg-red-700 disabled:bg-zinc-600 disabled:cursor-not-allowed transition-colors"
               >
-                {shareLabel[platform]}
+                Upload to YouTube
               </button>
-
               <button
                 onClick={() => {
-                  console.log("Export data logged to console");
+                  console.log("Export data:", exportData);
                   alert("Export data has been logged to the console.");
                 }}
-                className="flex-1 py-2 rounded font-medium flex items-center justify-center bg-zinc-800 border border-zinc-600 text-white hover:bg-zinc-700"
+                className="flex-1 py-2 rounded font-medium flex items-center justify-center bg-zinc-800 border border-zinc-600 text-white hover:bg-zinc-700 transition-colors"
               >
-                View Info
+                View Data
               </button>
             </div>
           </div>
@@ -277,14 +235,14 @@ function Review({ onClose, exportData }) {
         {/* Footer */}
         <div className="mt-6 flex justify-between items-center">
           <div className="text-sm text-zinc-500">
-            Edited video is ready for export
+            Video is ready for YouTube upload
           </div>
           <button
             onClick={handleAutoCaption}
             disabled={!exportData}
-            className="px-4 py-2 bg-zinc-800 border border-zinc-600 text-sm rounded hover:bg-zinc-700 text-white disabled:opacity-50"
+            className="px-4 py-2 bg-zinc-800 border border-zinc-600 text-sm rounded hover:bg-zinc-700 text-white disabled:opacity-50 transition-colors"
           >
-            Generate Auto Desciption
+            Generate Auto Description
           </button>
         </div>
       </div>

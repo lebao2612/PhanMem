@@ -10,7 +10,7 @@ import {
   FiPlay,
   FiPause,
   FiLoader,
-} from "react-icons/fi"; // Import FiPause
+} from "react-icons/fi";
 import { BsVolumeUpFill } from "react-icons/bs";
 import { MdLightbulbOutline } from "react-icons/md";
 import SuggestedTopicsPopup from "../components/SuggestedTopicsPopup";
@@ -21,6 +21,7 @@ import {
   handleFetchSuggestedTopics,
   handleGenerateScript,
   handleGenerateVoice,
+  handleGenerateImages,
   handleGenerateVideo,
 } from "../scripts/home";
 
@@ -28,8 +29,8 @@ import {
 const SceneVoiceCard = ({
   script,
   index,
-  voiceUrl,
-  imageUrl,
+  voice, // Changed from voiceUrl
+  image, // Changed from imageUrl
   isVoicePlaying,
   setIsVoicePlaying,
 }) => {
@@ -43,20 +44,17 @@ const SceneVoiceCard = ({
 
     const handlePlay = () => {
       setIsCurrentPlaying(true);
-      setIsVoicePlaying(true);
+      setIsVoicePlaying(true); // Notify parent that an audio is playing
     };
-
     const handlePause = () => {
       setIsCurrentPlaying(false);
-      setIsVoicePlaying(false);
+      setIsVoicePlaying(false); // Notify parent that this audio paused
     };
-
     const handleEnded = () => {
       setIsCurrentPlaying(false);
-      setIsVoicePlaying(false);
+      setIsVoicePlaying(false); // Notify parent that this audio ended
       setAudioProgress(0);
     };
-
     const handleTimeUpdate = () => {
       if (audio.duration) {
         const progress = (audio.currentTime / audio.duration) * 100;
@@ -75,7 +73,7 @@ const SceneVoiceCard = ({
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [setIsVoicePlaying]);
+  }, [setIsVoicePlaying]); // Depend on setIsVoicePlaying to ensure effect re-runs if it changes
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -103,9 +101,9 @@ const SceneVoiceCard = ({
             : "border-zinc-600"
         }`}
       >
-        {imageUrl ? (
+        {image && image.url ? ( // Access image.url
           <img
-            src={imageUrl || "/placeholder.svg"}
+            src={image.url || "/placeholder.svg"}
             alt={`Scene ${index + 1}`}
             className="w-full h-full object-cover"
           />
@@ -117,14 +115,12 @@ const SceneVoiceCard = ({
             </div>
           </div>
         )}
-
         {/* Audio Progress Overlay */}
         {isCurrentPlaying && (
           <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center">
             <div className="w-16 h-16 rounded-full border-4 border-blue-400 border-t-transparent animate-spin"></div>
           </div>
         )}
-
         {/* Progress Bar */}
         {audioProgress > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-700">
@@ -134,7 +130,6 @@ const SceneVoiceCard = ({
             ></div>
           </div>
         )}
-
         {/* Playing Indicator */}
         {isCurrentPlaying && (
           <div className="absolute top-2 right-2">
@@ -142,12 +137,11 @@ const SceneVoiceCard = ({
           </div>
         )}
       </div>
-
       {/* Control Button (Play/Pause) */}
       <div className="flex gap-2 justify-center">
         <button
           onClick={togglePlayPause}
-          disabled={isVoicePlaying && !isCurrentPlaying}
+          disabled={isVoicePlaying && !isCurrentPlaying} // Disable if another audio is playing
           className={`flex-1 px-3 py-2 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1 ${
             isCurrentPlaying
               ? "bg-blue-600 text-white"
@@ -164,9 +158,8 @@ const SceneVoiceCard = ({
           {isCurrentPlaying ? "Pause" : "Play"}
         </button>
       </div>
-
       {/* Hidden Audio Element */}
-      <audio ref={audioRef} src={voiceUrl} />
+      <audio ref={audioRef} src={voice?.url} /> {/* Access voice.url */}
     </div>
   );
 };
@@ -185,21 +178,21 @@ const Home = () => {
   const suggestedBtnRef = useRef(null);
   const popupRef = useRef(null);
   const [isLoadingSuggested, setIsLoadingSuggested] = useState(false);
-
   // Changed to handle array of script sections
   const [generatedScripts, setGeneratedScripts] = useState([]);
   const [showScriptArea, setShowScriptArea] = useState(false);
   const [scriptError, setScriptError] = useState(false);
-  const [voiceUrl, setVoiceUrl] = useState("");
+  // Changed to an array of objects for multiple voice data
+  const [generatedVoices, setGeneratedVoices] = useState([]); // Renamed from voiceUrls
   const [isLoadingVoice, setIsLoadingVoice] = useState(false);
   const [videoId, setVideoId] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [isLoadingVideo, setIsLoadingVideo] = useState(false);
-  // New state for generated images
+  // New state for generated images (array of objects)
   const [generatedImages, setGeneratedImages] = useState([]);
-
-  const audioRef = useRef(null);
-  const [isVoicePlaying, setIsVoicePlaying] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(false); // New state for image loading
+  // Removed audioRef from Home as SceneVoiceCard manages its own
+  const [isVoicePlaying, setIsVoicePlaying] = useState(false); // Global state to track if any voice is playing
   const [isLoadingScript, setIsLoadingScript] = useState(false);
   const navigate = useNavigate();
 
@@ -231,26 +224,12 @@ const Home = () => {
         setShowTrendingPopup(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const handlePlay = () => setIsVoicePlaying(true);
-    const handlePauseOrEnd = () => setIsVoicePlaying(false);
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePauseOrEnd);
-    audio.addEventListener("ended", handlePauseOrEnd);
-    return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePauseOrEnd);
-      audio.removeEventListener("ended", handlePauseOrEnd);
-    };
-  }, [voiceUrl]);
 
   const LoadingSpinner = () => <FiLoader className="w-4 h-4 animate-spin" />;
 
@@ -307,11 +286,6 @@ const Home = () => {
     setScriptError(value.trim() === "");
   };
 
-  // Generate combined script text for voice generation
-  const getCombinedScriptText = () => {
-    return generatedScripts.map((script) => script.subtitle).join(" ");
-  };
-
   return (
     <div className="relative flex h-screen bg-black text-white">
       <LeftSideBar />
@@ -334,7 +308,6 @@ const Home = () => {
               What can I help you build?
             </p>
           </div>
-
           <div className="w-full max-w-3xl bg-zinc-900 rounded-xl border border-zinc-800 flex flex-col sm:flex-row justify-between items-stretch sm:items-start gap-4 p-4">
             <div className="w-full">
               <textarea
@@ -364,7 +337,6 @@ const Home = () => {
               </button>
             </div>
           </div>
-
           <div className="flex flex-wrap justify-center gap-3 mt-8 w-full px-2 max-w-3xl relative">
             <button
               ref={suggestedBtnRef}
@@ -411,7 +383,6 @@ const Home = () => {
               )}
             </button>
           </div>
-
           {showSuggestedPopup && (
             <SuggestedTopicsPopup
               isLoading={isLoadingSuggested}
@@ -424,7 +395,6 @@ const Home = () => {
               popupRef={popupRef}
             />
           )}
-
           {showTrendingPopup && (
             <TrendingTopicsPopup
               isLoading={isLoadingTrending}
@@ -437,13 +407,11 @@ const Home = () => {
               popupRef={trendingPopupRef}
             />
           )}
-
           {showScriptArea && generatedScripts.length > 0 && (
             <div className="w-full max-w-3xl mt-6 space-y-6">
               <div className="text-zinc-400 text-lg sm:text-xl font-semibold mb-4">
                 Script Sections
               </div>
-
               {/* Multiple Script Sections */}
               {generatedScripts.map((script, index) => (
                 <div
@@ -455,7 +423,6 @@ const Home = () => {
                       Scene {index + 1}
                     </div>
                   </div>
-
                   {/* Scene Description */}
                   <div className="text-sm text-zinc-300 bg-zinc-800 rounded p-3 border-l-4 border-blue-500">
                     <span className="font-medium text-zinc-200">
@@ -463,7 +430,6 @@ const Home = () => {
                     </span>
                     {script.label}
                   </div>
-
                   {/* Editable Script Content */}
                   <div>
                     <label className="text-xs text-zinc-400 mb-2 block">
@@ -480,21 +446,20 @@ const Home = () => {
                   </div>
                 </div>
               ))}
-
-              {/* Text to Speech Button - Moved to Bottom */}
+              {/* Text to Speech Button */}
               <div className="flex justify-center pt-4">
                 <button
-                  disabled={!!voiceUrl || isLoadingVoice}
+                  disabled={generatedVoices.length > 0 || isLoadingVoice} // Use generatedVoices
                   onClick={() =>
                     handleGenerateVoice(
                       generatedScripts,
-                      setVoiceUrl,
+                      setGeneratedVoices,
                       setIsLoadingVoice,
                       videoId
                     )
-                  }
+                  } // Use setGeneratedVoices
                   className={`text-sm font-medium text-white rounded-md px-6 py-3 transition-all flex items-center gap-2 min-w-[160px] justify-center ${
-                    voiceUrl || isLoadingVoice
+                    generatedVoices.length > 0 || isLoadingVoice
                       ? "bg-gray-600 cursor-not-allowed"
                       : "bg-blue-600 hover:bg-blue-700"
                   }`}
@@ -502,21 +467,19 @@ const Home = () => {
                   {isLoadingVoice ? (
                     <>
                       <LoadingSpinner />
-                      <span>Generating...</span>
+                      <span>Generating Voice...</span>
                     </>
                   ) : (
                     "Generate Text to Speech"
                   )}
                 </button>
               </div>
-
               {scriptError && (
                 <div className="text-red-500 text-sm mt-1">
                   Script cannot be empty.
                 </div>
               )}
-
-              {voiceUrl && (
+              {generatedVoices.length > 0 && ( // Use generatedVoices
                 <div className="w-full max-w-5xl mt-6 space-y-6">
                   <div className="flex items-center gap-2 text-zinc-400 sm:text-xl font-semibold text-zinc-300">
                     <span>Generated Voice Preview</span>
@@ -528,57 +491,86 @@ const Home = () => {
                       }`}
                     />
                   </div>
-
-                  {/* Scene Voice Preview Grid - Updated to show 5 columns on XL screens */}
+                  {/* Scene Voice Preview Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {generatedScripts.map((script, index) => (
                       <SceneVoiceCard
                         key={index}
                         script={script}
                         index={index}
-                        voiceUrl={voiceUrl}
-                        imageUrl={generatedImages[index]} // Pass the image URL
+                        voice={generatedVoices[index]} // Pass voice object
+                        image={generatedImages[index]} // Pass image object
                         isVoicePlaying={isVoicePlaying}
                         setIsVoicePlaying={setIsVoicePlaying}
                       />
                     ))}
                   </div>
-
-                  {/* Generate Video Button */}
-                  <div className="flex justify-center pt-6">
-                    <button
-                      disabled={!!videoUrl || isLoadingVideo}
-                      onClick={() =>
-                        handleGenerateVideo(
-                          videoId,
-                          authFetch,
-                          setVideoUrl,
-                          setIsLoadingVideo,
-                          generatedScripts, // Pass generatedScripts
-                          setGeneratedImages // Pass setGeneratedImages
-                        )
-                      }
-                      className={`text-white text-sm font-medium px-6 py-3 rounded-md transition-all flex items-center gap-2 min-w-[160px] justify-center ${
-                        videoUrl || isLoadingVideo
-                          ? "bg-gray-600 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700"
-                      }`}
-                    >
-                      {isLoadingVideo ? (
-                        <>
-                          <LoadingSpinner />
-                          <span>Generating...</span>
-                        </>
-                      ) : (
-                        "Generate Video"
-                      )}
-                    </button>
-                  </div>
-
-                  <audio ref={audioRef} src={voiceUrl} />
                 </div>
               )}
-
+              {/* Generate Images Button - Moved here */}
+              {generatedVoices.length > 0 && ( // Only show if voice is generated
+                <div className="flex justify-center pt-4">
+                  <button
+                    disabled={generatedImages.length > 0 || isLoadingImages}
+                    onClick={() =>
+                      handleGenerateImages(
+                        generatedScripts,
+                        authFetch,
+                        setGeneratedImages,
+                        setIsLoadingImages
+                      )
+                    }
+                    className={`text-sm font-medium text-white rounded-md px-6 py-3 transition-all flex items-center gap-2 min-w-[160px] justify-center ${
+                      generatedImages.length > 0 || isLoadingImages
+                        ? "bg-gray-600 cursor-not-allowed"
+                        : "bg-purple-600 hover:bg-purple-700"
+                    }`}
+                  >
+                    {isLoadingImages ? (
+                      <>
+                        <LoadingSpinner />
+                        <span>Generating Images...</span>
+                      </>
+                    ) : (
+                      "Generate Images"
+                    )}
+                  </button>
+                </div>
+              )}
+              {/* Generate Video Button - Moved here and depends on images */}
+              {generatedImages.length > 0 && ( // Only show if images are generated
+                <div className="flex justify-center pt-6">
+                  <button
+                    disabled={!!videoUrl || isLoadingVideo}
+                    onClick={() =>
+                      handleGenerateVideo(
+                        text, // Pass text for title/topic
+                        authFetch,
+                        setVideoUrl,
+                        setIsLoadingVideo,
+                        generatedScripts,
+                        generatedVoices, // Pass generatedVoices
+                        generatedImages,
+                        navigate // Pass navigate function
+                      )
+                    }
+                    className={`text-white text-sm font-medium px-6 py-3 rounded-md transition-all flex items-center gap-2 min-w-[160px] justify-center ${
+                      videoUrl || isLoadingVideo
+                        ? "bg-gray-600 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                  >
+                    {isLoadingVideo ? (
+                      <>
+                        <LoadingSpinner />
+                        <span>Generating Video...</span>
+                      </>
+                    ) : (
+                      "Generate Video"
+                    )}
+                  </button>
+                </div>
+              )}
               {videoUrl && (
                 <div className="w-full max-w-3xl mt-10">
                   <div className="flex items-center justify-between mb-2">
@@ -587,7 +579,14 @@ const Home = () => {
                     </div>
                     <button
                       onClick={() =>
-                        navigate("/edit-video", { state: { videoUrl } })
+                        navigate("/edit-video", {
+                          state: {
+                            videoUrl,
+                            generatedScripts,
+                            generatedVoices,
+                            generatedImages,
+                          },
+                        })
                       }
                       className="text-white text-sm font-medium px-3 py-1.5 rounded-md transition-all bg-blue-600 hover:bg-blue-700"
                     >
@@ -605,7 +604,6 @@ const Home = () => {
               )}
             </div>
           )}
-
           <div className="mt-auto py-4 text-xs text-zinc-500 text-center">
             AIGen can make mistakes. Check important info.
           </div>

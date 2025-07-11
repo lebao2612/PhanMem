@@ -166,7 +166,6 @@ class GeneratorService:
                     resource_type="image",
                     folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/images",
                 )
-
                 return MediaDTO(
                     url=upload_result["url"],
                     public_id=upload_result["public_id"]

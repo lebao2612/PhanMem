@@ -1,3 +1,4 @@
+// scripts/home.js
 export const handlePressMenu = (menuOpen, setMenuOpen) => () => {
   setMenuOpen(!menuOpen);
 };
@@ -65,7 +66,7 @@ export const handleFetchSuggestedTopics = async (
 export const handleGenerateScript = async (
   text,
   authFetch,
-  setGeneratedScripts, // Changed from setGeneratedScript
+  setGeneratedScripts,
   setShowScriptArea,
   setScriptError,
   setVideoId
@@ -75,26 +76,19 @@ export const handleGenerateScript = async (
     return false;
   }
   try {
-    // Call API to generate script from topic
     const scriptRes = await authFetch("/api/generators/script", {
       method: "POST",
       body: JSON.stringify({ topic: text }),
     });
-
     console.log("📥 Script API response:", scriptRes);
-
-    // Handle the response - assuming it returns an object with a script array
     let scriptArray = [];
     if (Array.isArray(scriptRes)) {
       scriptArray = scriptRes;
     } else if (scriptRes.script && Array.isArray(scriptRes.script)) {
       scriptArray = scriptRes.script;
     } else if (typeof scriptRes === "string") {
-      // If it's a string, create a single script object
       scriptArray = [{ label: "Scene 1", subtitle: scriptRes }];
     }
-
-    // Update UI with script array
     setGeneratedScripts(scriptArray);
     setShowScriptArea(true);
     setScriptError(false);
@@ -106,141 +100,275 @@ export const handleGenerateScript = async (
   }
 };
 
-// This function will call API to generate voice from created script
 export const handleGenerateVoice = async (
-  generatedScripts, // Changed to accept the full scripts array instead of combined text
-  setVoiceUrl,
+  generatedScripts,
+  setGeneratedVoices, // Renamed from setVoiceUrls
   setIsLoadingVoice,
-  videoId = "", // Add videoId parameter
-  voiceGender = "female" // Add voiceGender parameter with default
+  videoId = "",
+  voiceGender = "female"
 ) => {
   const token = sessionStorage.getItem("token");
   if (!token) {
     alert("Token không tồn tại. Vui lòng đăng nhập lại.");
     return;
   }
-
   setIsLoadingVoice(true);
-  setVoiceUrl("");
-  console.log("📤 Gửi script đến API voice:", generatedScripts);
+  setGeneratedVoices([]); // Clear previous voices
+  try {
+    const subtitles = generatedScripts
+      .map((script) =>
+        typeof script === "string"
+          ? script
+          : script.subtitle || script.text || ""
+      )
+      .filter((text) => text.trim() !== "");
 
-  // Mock voice URL from backend
-  const mockVoiceUrl = "https://res.cloudinary.com/demo/video/upload/dog.mp3";
-  setVoiceUrl(mockVoiceUrl);
-  setIsLoadingVoice(false);
+    const requestBody = {
+      subtitles: subtitles,
+      voiceGender: voiceGender,
+      voiceLanguage: "vi",
+    };
 
-  // try {
-  //   const requestBody = {
-  //     videoId: videoId,
-  //     script: generatedScripts, // Send the full script array
-  //     voiceGender: voiceGender,
-  //   }
+    console.log("📤 Request body:", JSON.stringify(requestBody, null, 2));
 
-  //   console.log("📤 Request body:", JSON.stringify(requestBody, null, 2))
-  //   console.log("📤 Request URL: /api/generators/voice")
-  //   console.log("📤 Token:", token ? "Present" : "Missing")
+    const res = await fetch("/api/generators/voices", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-  //   const res = await fetch("/api/generators/voice", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${token}`,
-  //     },
-  //     body: JSON.stringify(requestBody),
-  //   })
+    if (!res.ok) {
+      if (res.status === 422) {
+        console.error("❌ Request body validation failed");
+        alert("Dữ liệu gửi lên không đúng format. Vui lòng kiểm tra lại.");
+        return;
+      }
+      let errorMessage = "Unknown error";
+      try {
+        const err = await res.json();
+        errorMessage = err?.error || err?.message || `HTTP ${res.status}`;
+      } catch (parseError) {
+        errorMessage = `HTTP ${res.status} - ${res.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
 
-  //   console.log("📥 Response status:", res.status)
-  //   console.log("📥 Response headers:", Object.fromEntries(res.headers.entries()))
+    const response = await res.json();
+    console.log("📥 Voice API response:", response);
 
-  //   if (!res.ok) {
-  //     if (res.status === 404) {
-  //       console.error("❌ API endpoint not found. Check if:")
-  //       console.error("1. Backend server is running")
-  //       console.error("2. Endpoint URL is correct: /api/generators/voice")
-  //       console.error("3. Route is implemented in backend")
-  //       alert("API endpoint không tồn tại. Vui lòng kiểm tra backend server.")
-  //       return
-  //     }
+    let parsedVoiceData = [];
+    if (response.success && response.data) {
+      if (Array.isArray(response.data)) {
+        if (response.data.length > 0) {
+          // Ensure we store both publicId and url
+          if (
+            typeof response.data[0] === "object" &&
+            typeof response.data[0].url === "string" &&
+            typeof response.data[0].publicId === "string"
+          ) {
+            parsedVoiceData = response.data.map((item) => ({
+              publicId: item.publicId,
+              url: item.url,
+            }));
+          } else if (typeof response.data[0] === "string") {
+            // Fallback for direct URL strings, publicId will be empty
+            parsedVoiceData = response.data.map((url) => ({
+              publicId: "",
+              url: url.trim(),
+            }));
+          }
+        }
+      } else if (typeof response.data === "string") {
+        // Fallback for single URL string, publicId will be empty
+        parsedVoiceData = [{ publicId: "", url: response.data.trim() }];
+      }
+    }
 
-  //     let errorMessage = "Unknown error"
-  //     try {
-  //       const err = await res.json()
-  //       errorMessage = err?.error || err?.message || `HTTP ${res.status}`
-  //     } catch (parseError) {
-  //       errorMessage = `HTTP ${res.status} - ${res.statusText}`
-  //     }
-
-  //     throw new Error(errorMessage)
-  //   }
-
-  //   const response = await res.json()
-  //   console.log("📥 Voice API response:", response)
-
-  //   // Handle the new response structure
-  //   if (response.success && response.data && response.data.voiceUrl) {
-  //     setVoiceUrl(response.data.voiceUrl)
-  //     console.log("✅ Voice URL set successfully:", response.data.voiceUrl)
-  //   } else {
-  //     console.warn("⚠️ Không có voiceUrl trong response:", response)
-  //     alert("Không tìm thấy voiceUrl trong phản hồi.")
-  //   }
-  // } catch (error) {
-  //   console.error("❌ Voice generation error:", error.message)
-
-  //   // More specific error messages
-  //   if (error.message.includes("fetch")) {
-  //     alert("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.")
-  //   } else if (error.message.includes("404")) {
-  //     alert("API endpoint không tồn tại. Vui lòng liên hệ admin.")
-  //   } else {
-  //     alert(`Lỗi khi tạo voice: ${error.message}`)
-  //   }
-  // } finally {
-  //   setIsLoadingVoice(false)
-  // }
+    if (parsedVoiceData.length > 0) {
+      setGeneratedVoices(parsedVoiceData); // Use setGeneratedVoices
+      console.log("✅ Voice data set successfully:", parsedVoiceData);
+    } else {
+      console.warn("⚠️ Không có voice URLs hợp lệ trong response:", response);
+      alert("Không tìm thấy voice URLs hợp lệ trong phản hồi.");
+    }
+  } catch (error) {
+    console.error("❌ Voice generation error:", error.message);
+    alert(`Lỗi khi tạo voice: ${error.message}`);
+  } finally {
+    setIsLoadingVoice(false);
+  }
 };
 
-// This function will call API to generate video from created voice
+export const handleGenerateImages = async (
+  generatedScripts,
+  authFetch,
+  setGeneratedImages,
+  setIsLoadingImages
+) => {
+  if (generatedScripts.length === 0) {
+    alert("Please generate a script first before generating images.");
+    return;
+  }
+
+  setIsLoadingImages(true);
+  setGeneratedImages([]); // Clear previous images
+
+  try {
+    const labels = generatedScripts.map((script) => script.label); // Extract labels from scripts
+    const requestBody = {
+      labels: labels,
+    };
+
+    const responseData = await authFetch("/api/generators/images", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("📥 Image API response:", responseData);
+
+    let parsedImageData = [];
+    if (responseData) {
+      if (Array.isArray(responseData)) {
+        if (responseData.length > 0) {
+          // Map over the array and extract 'url' and 'publicId' from each object
+          parsedImageData = responseData
+            .map((item) =>
+              typeof item === "object" &&
+              typeof item.url === "string" &&
+              typeof item.publicId === "string"
+                ? { publicId: item.publicId, url: item.url }
+                : null
+            )
+            .filter(Boolean); // Remove any nulls (items without valid data)
+        }
+      }
+      // This case is less likely for multiple images but kept for robustness
+      else if (typeof responseData === "string") {
+        parsedImageData = [{ publicId: "", url: responseData.trim() }]; // PublicId will be empty
+      }
+    }
+
+    if (parsedImageData.length > 0) {
+      setGeneratedImages(parsedImageData);
+      console.log("✅ Image data set successfully:", parsedImageData);
+    } else {
+      console.warn(
+        "⚠️ Không có image URLs hợp lệ trong response:",
+        responseData
+      );
+      alert("Không tìm thấy image URLs hợp lệ trong phản hồi.");
+    }
+  } catch (error) {
+    console.error("❌ Image generation error:", error.message);
+    alert(`Lỗi khi tạo hình ảnh: ${error.message}`);
+  } finally {
+    setIsLoadingImages(false);
+  }
+};
+
 export const handleGenerateVideo = async (
-  videoId,
+  text, // Added text for title/topic
   authFetch,
   setVideoUrl,
   setIsLoadingVideo,
-  generatedScripts, // Added to get script count for images
-  setGeneratedImages // Added to set image URLs
+  generatedScripts,
+  generatedVoices, // Changed from voiceUrls
+  generatedImages,
+  navigate // Added navigate function
 ) => {
   setIsLoadingVideo(true);
   setVideoUrl("");
-  setGeneratedImages([]); // Clear previous images
+  try {
+    if (
+      generatedScripts.length === 0 ||
+      generatedVoices.length === 0 ||
+      generatedImages.length === 0
+    ) {
+      alert("Please generate script, voice, and images first.");
+      setIsLoadingVideo(false);
+      return;
+    }
 
-  // Mock video URLs from backend
-  const videoUrl =
-    "https://res.cloudinary.com/dznocieoi/video/upload/v1751044595/video_utej9c.mp4";
-  const videoUrl2 =
-    "https://res.cloudinary.com/dznocieoi/video/upload/v1751080891/videoplayback_rgkq72.mp4";
-  console.log("Url video:", videoUrl, videoUrl2);
-  setVideoUrl(videoUrl2);
+    const scenes = generatedScripts.map((script, index) => {
+      const voiceData = generatedVoices[index] || { publicId: "", url: "" };
+      const imageData = generatedImages[index] || { publicId: "", url: "" };
+      return {
+        label: script.label,
+        subtitle: script.subtitle,
+        voice: {
+          publicId: voiceData.publicId,
+          url: voiceData.url,
+        },
+        image: {
+          publicId: imageData.publicId,
+          url: imageData.url,
+        },
+        effect: {
+          zoom: "in", // Default effect, can be made dynamic
+          pan: "left", // Default effect, can be made dynamic
+        },
+      };
+    });
 
-  // Generate mock image URLs based on the number of scripts
-  const singleMockImageUrl =
-    "https://res.cloudinary.com/dznocieoi/image/upload/v1752220874/Screenshot_2025-07-11_145645_kirjqe.png";
-  const mockImageUrls = generatedScripts.map(() => singleMockImageUrl);
-  setGeneratedImages(mockImageUrls);
+    const requestBody = {
+      title: text, // Using the input text as the video title
+      topic: text, // Using the input text as the video topic
+      scenes: scenes,
+    };
 
-  setIsLoadingVideo(false);
-  // API call when ready (uncomment when backend is ready)
-  // try {
-  //   const response = await authFetch("/api/generators/video", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ video_id: videoId }),
-  //   });
-  //   if (!response.ok) throw new Error("Video generation failed");
-  //   const data = await response.json();
-  //   // setVideoUrl(data.video_url);
-  // } catch (err) {
-  //   console.error("Video generation error:", err);
-  // } finally {
-  //   setIsLoadingVideo(false);
-  // }
+    console.log(
+      "📤 Request body for video generation:",
+      JSON.stringify(requestBody, null, 2)
+    );
+
+    // Mock API call for video generation
+    const videoMockUrl =
+      "https://res.cloudinary.com/prod/video/upload/w_400/me/tx-cards/trim-video.mp4";
+    setVideoUrl(videoMockUrl); // Set mock video URL for testing
+
+    // Navigate to edit-video page with all generated data
+    navigate("/edit-video", {
+      state: {
+        videoUrl: videoMockUrl, // Use the mock URL for navigation
+        generatedScripts,
+        generatedVoices,
+        generatedImages,
+      },
+    });
+
+    // const response = await authFetch("/api/generators/video", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify(requestBody),
+    // });
+    // console.log("📥 Video API response:", response);
+
+    // if (response) {
+    //   setVideoUrl(response.url);
+    //   console.log("✅ Video URL set successfully:", response.url);
+    //   // Navigate to edit-video page with all generated data
+    //   navigate("/edit-video", {
+    //     state: {
+    //       videoUrl: response.url,
+    //       generatedScripts,
+    //       generatedVoices,
+    //       generatedImages,
+    //     },
+    //   });
+    // } else {
+    //   console.warn("⚠️ Không có video URL hợp lệ trong response:", response);
+    //   alert("Không tìm thấy video URL hợp lệ trong phản hồi.");
+    // }
+  } catch (error) {
+    console.error("❌ Video generation error:", error.message);
+    alert(`Lỗi khi tạo video: ${error.message}`);
+  } finally {
+    setIsLoadingVideo(false);
+  }
 };

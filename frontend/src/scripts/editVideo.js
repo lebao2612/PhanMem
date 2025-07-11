@@ -1,5 +1,3 @@
-// scripts/editVideo.js
-
 export const formatTime = (milliseconds) => {
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -13,7 +11,6 @@ export const formatTime = (milliseconds) => {
 export const updateEffectiveTimeline = (clips, setEffectiveTimeline) => {
   let totalEffectiveDuration = 0;
   const segments = [];
-
   clips.forEach((clip) => {
     const clipDuration = clip.end - clip.start;
     totalEffectiveDuration += clipDuration;
@@ -26,7 +23,6 @@ export const updateEffectiveTimeline = (clips, setEffectiveTimeline) => {
       originalEnd: clip.end,
     });
   });
-
   setEffectiveTimeline({
     duration: totalEffectiveDuration,
     segments: segments,
@@ -60,7 +56,6 @@ export const handleSplitVideo = (
 
   const newClips = [];
   let splitPerformed = false;
-
   clips.forEach((clip, index) => {
     if (originalSplitTime > clip.start && originalSplitTime < clip.end) {
       // Split this clip
@@ -100,7 +95,6 @@ export const handleDeleteClip = (
   if (selectedClipIndex === null) return;
 
   setHistory((prev) => [...prev, clips]); // Save current state for undo
-
   const newClips = clips.filter((_, index) => index !== selectedClipIndex);
   setClips(newClips);
   setSelectedClipIndex(null); // Deselect after deletion
@@ -122,14 +116,8 @@ export const handleUndo = (
   setSelectionRange(null);
 };
 
-export const togglePlay = (
-  videoElement,
-  isPlaying,
-  setIsPlaying,
-  currentTime
-) => {
+export const togglePlay = (videoElement, isPlaying, setIsPlaying) => {
   if (!videoElement) return;
-
   if (isPlaying) {
     videoElement.pause();
   } else {
@@ -153,7 +141,6 @@ export const handleTimelineClick = (
   const rect = timelineRef.current.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
   const timelineWidth = rect.width;
-
   const clickedEffectiveTime =
     (clickX / timelineWidth) * totalEffectiveDuration;
 
@@ -184,22 +171,26 @@ export const handleTimelineClick = (
       clickedEffectiveTime >= clip.start && clickedEffectiveTime <= clip.end
   );
   setSelectedClipIndex(clickedClipIndex !== -1 ? clickedClipIndex : null);
-
   setSelectionRange(null);
 };
 
 export const processVideoForExport = (videoUrl, clips, effectiveTimeline) => {
   const exportSummary = {
     originalVideoUrl: videoUrl,
-    clipsToExport: clips.map((clip) => ({
-      start: formatTime(clip.start * 1000), // Sửa lỗi
-      end: formatTime(clip.end * 1000), // Sửa lỗi
-      duration: formatTime((clip.end - clip.start) * 1000), // Sửa lỗi
+    clips: clips.map((clip) => ({
+      // Changed from clipsToExport to clips
+      id: clip.id,
+      startTime: clip.start, // Raw seconds
+      endTime: clip.end, // Raw seconds
+      duration: clip.end - clip.start, // Raw seconds
     })),
-    totalExportDuration: formatTime(effectiveTimeline.duration * 1000), // Sửa lỗi
+    timeline: {
+      // Added timeline object
+      totalDuration: effectiveTimeline.duration, // Raw seconds
+    },
+    stickers: [], // Added stickers array to prevent undefined errors
     previewUrl: videoUrl,
   };
-
   console.log("Export Data:", exportSummary);
   return exportSummary;
 };
