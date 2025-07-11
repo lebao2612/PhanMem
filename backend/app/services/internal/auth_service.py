@@ -2,7 +2,7 @@ from app.dtos import AuthDTO
 from app.repositories import UserRepository
 from app.integrations.platform import GoogleOAuthClient
 from app.services.internal.jwt_service import JWTService
-
+from app.exceptions import HandledException
 
 class AuthService:
     def __init__(
@@ -19,10 +19,16 @@ class AuthService:
         return self.oauth_client.get_oauth_url(prompt="select_account",include_granted_scopes=False)
 
     def get_google_oauth_extend_url(self) -> str:
-        return self.oauth_client.get_oauth_url(prompt="consent",include_granted_scopes=True)
+        return self.oauth_client.get_oauth_url(prompt="consent",include_granted_scopes=True, state="retry")
 
-    def handle_google_oauth_callback(self, code: str) -> AuthDTO:
+    def handle_google_oauth_callback(self, code: str, retry: bool=False)  -> AuthDTO|None:
         google_tokens = self.oauth_client.exchange_code_for_tokens(code)
+        # if not google_tokens.get("refresh_token"):
+        #     if retry:
+        #         return None
+        #     else:
+        #         raise HandledException(message="Missing refresh_token on first attempt", code=400)
+        
         user_info = self.oauth_client.get_user_info(google_tokens["access_token"])
 
         user = self.user_repo.find_by_email(email=user_info["email"])

@@ -24,7 +24,7 @@ class GeminiClient:
         ) + "\n".join([
             "- Nội dung phù hợp TikTok, YouTube Shorts",
             "- không tiêu đề, đánh đầu dòng, chú thích, markdown hay ký tự đặc biệt",
-            "- Mỗi dòng là một chủ đề ngắn gọn (tối đa 10 từ)"
+            "- Mỗi dòng là một chủ đề ngắn gọn (tối đa 20 từ)"
         ])
 
         raw_text = await self._generate_content_async(prompt, model_name)
@@ -58,8 +58,10 @@ class GeminiClient:
             f"Viết kịch bản video ngắn bằng ngôn ngữ [{language}], chủ đề: [{topic}]. Yêu cầu:",
              "- Không tiêu đề, đánh đầu dòng, chú thích, markdown hay kí tự đặc biệt",
             f"- Gồm [{scene_count}] cảnh, các cảnh phải có liên kết với nhau",
+             "- mô tả ảnh sẽ được AI sinh ảnh",
+             "- lời thoại/phụ đề sẽ được AI sinh voice",
              "- mỗi cảnh 1 dòng duy nhất, định dạng:",
-             "mô tả ảnh ## lời thoại/phụ đề sinh động, tự nhiên",
+             "mô tả ảnh ## lời thoại/phụ đề thật sinh động, tự nhiên",
         ])
 
         raw_text = await self._generate_content_async(prompt, model_name)

@@ -32,6 +32,7 @@ class GoogleOAuthClient:
         self,
         prompt: str = "select_account",
         include_granted_scopes: bool = False,
+        state: str|None = None
     ) -> str:
         params = {
             "client_id": self.client_id,
@@ -43,6 +44,8 @@ class GoogleOAuthClient:
         }
         if include_granted_scopes:
             params["include_granted_scopes"] = "true"
+        if state:
+            params["state"] = state
         return f"{self.auth_uri}?{urlencode(params)}"
 
     def exchange_code_for_tokens(self, code: str) -> dict:

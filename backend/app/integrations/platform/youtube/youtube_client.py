@@ -93,8 +93,6 @@ class YouTubeClient:
             while response is None:
                 _, response = request.next_chunk()
 
-            print(">>> YouTube upload response:", response)
-
             return self.normalize_youtube_video_data(response)
 
         except HttpError as e:
@@ -149,7 +147,7 @@ class YouTubeClient:
             "id": raw.get("id"),
             "title": snippet.get("title", "Untitled"),
             "description": snippet.get("description", ""),
-            "tags": [],
+            "tags":  snippet.get("description", []),
             "view_count": int(stats.get("viewCount", 0)) if stats else 0,
             "like_count": int(stats.get("likeCount", 0)) if stats else 0,
             "comment_count": int(stats.get("commentCount", 0)) if stats else 0,

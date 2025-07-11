@@ -20,6 +20,7 @@ function Login() {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
     const error = urlParams.get("error");
+    const state = urlParams.get("state");
 
     if (error === "access_denied") {
       alert("Bạn đã từ chối đăng nhập bằng Google");
@@ -34,7 +35,8 @@ function Login() {
       hasHandledCodeRef.current = true;
       const doGoogleLogin = async () => {
         try {
-          const res = await fetch(`/api/auth/google/callback?code=${code}`);
+          // const res = await fetch(`/api/auth/google/callback?code=${code}`);
+          const res = await fetch(`/api/auth/google/callback?code=${code}${state ? `&state=${state}` : ""}`);
           const { success, data, error } = await res.json();
 
           if (!res.ok || !success)

@@ -2,7 +2,7 @@ from config import settings, constants
 from app.integrations import (
     GoogleOAuthClient, YouTubeAuth, YouTubeClient,
     CloudinaryClient, RedisClient,
-    GeminiClient, GoogleTTSClient, StableDiffusionClient
+    GeminiClient, GoogleTTSClient, StabilityClient
 )
 
 # ==== Init Cloud Client ====
@@ -18,7 +18,7 @@ redis_client = RedisClient(
 # ==== Init AI Clients ====
 gemini_client = GeminiClient(api_key=settings.GOOGLE_API_KEY)
 google_tts_client = GoogleTTSClient(credentials_path=settings.GOOGLE_TTS_CREDENTIALS_PATH)
-stable_diffusion_client = StableDiffusionClient(
+stable_diffusion_client = StabilityClient(
     model_id=settings.STABILITY_MODEL_ID,
     api_token=settings.REPLICATE_API_TOKEN
 )

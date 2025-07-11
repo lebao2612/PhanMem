@@ -25,7 +25,12 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
         effect = scene.get("effect", {})
         zoom_effect = effect.get("zoom")
         pan_effect = effect.get("pan")
-        assert not (zoom_effect and pan_effect), "Cannot specify both zoom and pan effects at the same time"
+        # assert not (zoom_effect and pan_effect), "Cannot specify both zoom and pan effects at the same time"
+        if not zoom_effect and not pan_effect:
+            zoom_effect = "in"
+        elif zoom_effect:
+            pan_effect = None
+        
         effect_duration = effect.get("duration", video_duration)
         effect_frames = int(min(effect_duration, video_duration) * fps)
 
@@ -35,7 +40,6 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
             output_size=output_size,
             buffer_ratio=0.1
         )
-
         (
             ffmpeg
             .input(image_path, loop=1, framerate=fps, t=video_duration)
@@ -56,12 +60,12 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
         )
 
         # 7. Burn phụ đề
-        # burn_subtitle(
-        #     video_path=output_path,
-        #     subtitle=scene["subtitle"],
-        #     start_time=0.0,
-        #     duration=video_duration
-        # )
+        burn_subtitle(
+            video_path=output_path,
+            subtitle=scene["subtitle"],
+            start_time=0.0,
+            duration=video_duration
+        )
 
         # 8. Ghép audio
         combine_video_audio(
@@ -125,17 +129,7 @@ async def render_video(scenes: list[dict], output_path: str, suffix=".mkv"):
 
 
 
-
-
-
-
-# async def download_file(url: str, output_path: str) -> None:
-#     async with httpx.AsyncClient() as client:
-#         response = await client.get(url)
-#         response.raise_for_status()
-#         with open(output_path, "wb") as f:
-#             f.write(response.content)
-
+########
 def get_zoom_expr(zoom: str | None, effect_frames: int) -> str:
     if not zoom:
         return "zoom"
@@ -160,8 +154,7 @@ def get_pan_y_expr(pan: str | None, effect_frames: int) -> str:
         "down": f"if(lte(on,{effect_frames}),y+1.1,y)"
     }[pan]
 
-
-
+######
 def combine_video_audio(video_path: str, audio_path: str):
     """
     Ghép audio vào video (sử dụng file tạm), giữ nguyên định dạng .mp4.
@@ -181,7 +174,7 @@ def combine_video_audio(video_path: str, audio_path: str):
 
     os.replace(tmp_path, video_path)
 
-
+######
 def compute_buffered_dimensions(
     pan: str | None,
     output_size: tuple[int, int],
@@ -224,36 +217,52 @@ def prepare_pan_safe_image(
     crop_y = (scale_h - target_h) // 2
     crop_image(image_path, crop_x, crop_y, target_w, target_h)
 
+######
+TEMPLATE_ASS_PATH = "assets/template/template.ass"
+
 def burn_subtitle(video_path: str, subtitle: str, duration: float, start_time: float = 0) -> str:
-    srt_path = tempfile.mktemp(suffix=".srt")
+    ass_path = generate_ass_from_template(subtitle, start_time, start_time + duration)
     tmp_output = tempfile.mktemp(suffix=os.path.splitext(video_path)[1] or ".mp4")
 
     try:
-        start = format_srt_time(start_time)
-        end = format_srt_time(start_time + duration)
-        with open(srt_path, "w", encoding="utf-8") as f:
-            f.write(f"1\n{start} --> {end}\n{subtitle}\n")
-
-        srt_path_clean = srt_path.replace("\\", "/").replace(":", "\\:")
-
+        ass_path_clean = ass_path.replace("\\", "/").replace(":", "\\:")
         (
             ffmpeg
             .input(video_path)
-            .filter("subtitles", srt_path_clean)
-            .output(tmp_output,filter_complex=f'subtitles={srt_path_clean}', vcodec="libx264", acodec="copy")
+            .output(tmp_output, vf=f"ass='{ass_path_clean}'", vcodec="libx264", acodec="copy")
             .overwrite_output()
-            .run()
+            .run(quiet=True)
         )
-
         os.replace(tmp_output, video_path)
         return video_path
     finally:
-        if os.path.exists(srt_path):
-            os.remove(srt_path)
+        if os.path.exists(ass_path):
+            os.remove(ass_path)
 
-def format_srt_time(seconds: float) -> str:
+def generate_ass_from_template(subtitle: str, start: float, end: float) -> str:
+    ass_path = tempfile.mktemp(suffix=".ass")
+    with open(TEMPLATE_ASS_PATH, "r", encoding="utf-8") as f:
+        template = f.read()
+
+    start_str = format_ass_time(start)
+    end_str = format_ass_time(end)
+    dialogue_line = f"Dialogue: 0,{start_str},{end_str},Default,,0,0,0,,{subtitle}"
+
+    # Ghép template + dialogue
+    if "[Events]" in template:
+        header, body = template.split("[Events]", 1)
+        result = f"{header}[Events]\n{body.strip()}\n{dialogue_line}\n"
+    else:
+        result = f"{template.strip()}\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n{dialogue_line}\n"
+
+    with open(ass_path, "w", encoding="utf-8") as f:
+        f.write(result)
+
+    return ass_path
+
+def format_ass_time(seconds: float) -> str:
     hrs = int(seconds // 3600)
     mins = int((seconds % 3600) // 60)
     secs = int(seconds % 60)
-    millis = int((seconds - int(seconds)) * 1000)
-    return f"{hrs:02d}:{mins:02d}:{secs:02d},{millis:03d}"
+    cs = int((seconds - int(seconds)) * 100)
+    return f"{hrs}:{mins:02d}:{secs:02d}.{cs:02d}"

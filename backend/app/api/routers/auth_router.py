@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.responses import RedirectResponse
 from app.dtos import AuthDTO
 from app.schemas.responses import SuccessResponse
@@ -21,6 +21,10 @@ def redirect_to_google_oauth_extended():
 # BUỘC PHẢI GET THEO GOOGLE OAuth2
 # This endpoint handles the callback from Google OAuth after user authorization
 @router.get("/google/callback", response_model=SuccessResponse[AuthDTO])
-def google_oauth_callback(code: str):
-    auth_dto = auth_service.handle_google_oauth_callback(code)
-    return SuccessResponse(data=auth_dto)
+def google_oauth_callback(code: str, state: str = Query(None, description="Google OAuth state, e.g., retry")):
+    retry = (state == "retry")
+    auth_dto = auth_service.handle_google_oauth_callback(code=code, retry=retry)
+    if auth_dto:
+        return SuccessResponse(data=auth_dto)
+    extend_url = auth_service.get_google_oauth_extend_url()
+    return RedirectResponse(url=extend_url)

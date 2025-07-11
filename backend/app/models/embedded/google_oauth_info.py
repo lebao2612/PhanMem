@@ -8,7 +8,7 @@ class GoogleOAuthInfo(EmbeddedDocument):
     sub = StringField(required=True)
     
     token_type = StringField(default="Bearer")
-    refresh_token = StringField(required=True)
+    refresh_token = StringField()
     access_token = StringField()
     expires_at = DateTimeField()
 

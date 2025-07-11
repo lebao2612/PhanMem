@@ -22,9 +22,9 @@ class YoutubeService:
         video = self.video_repo.find_by_id(video_id)
         if not video:
             raise HandledException(message="Video not found", code=404)
-        if video.youtube:
-            raise HandledException(message="Video has already been uploaded", code=409)
-        if video.status != "done" or not video.sources:
+        # if video.youtube:
+        #     raise HandledException(message="Video has already been uploaded", code=409)
+        if not video.sources:
             raise HandledException(message="Video has not been fully created yet", code=400)
         if not creator.google or not creator.google.refresh_token:
             raise HandledException(message="User has not logged in with Google", code=400)
@@ -34,6 +34,9 @@ class YoutubeService:
             creator = self.user_repo.update_google(user=creator, **tokens)
 
         try:
+            if video.sources.thumbnail:
+                kwargs["thumbnail"] = video.sources.thumbnail
+
             video_detail = await self.youtube_client.upload_video_url(
                 refresh_token=creator.google.refresh_token,
                 access_token=creator.google.access_token,

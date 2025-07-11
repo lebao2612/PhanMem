@@ -20,7 +20,8 @@ class VideoRepository:
         topic: str,
         scenes: list[dict],
         src: dict,
-        title: str="Untitled"
+        title: str="Untitled",
+        status: str="draft"
     ) -> Video:
         try:
             filtered_src = {k: v for k, v in src.items() if hasattr(VideoMedia, k)}
@@ -34,7 +35,8 @@ class VideoRepository:
                 topic=topic,
                 creator=creator,
                 sources=VideoMedia(**filtered_src),
-                scenes=[VideoScene(**scene) for scene in filtered_scenes]
+                scenes=[VideoScene(**scene) for scene in filtered_scenes],
+                status=status
             )
             video.save(using=self.conn.alias)
             return video
@@ -91,10 +93,6 @@ class VideoRepository:
     def update_youtube(self, video: Video, **kwargs) -> Video:
         try:
             if video.youtube:
-                id = kwargs.pop("id", None)
-                if id and video.youtube.id != id:
-                    raise ValueError("Video ID không trùng khớp.")
-
                 for k, v in kwargs.items():
                     if hasattr(video.youtube, k):
                         setattr(video.youtube, k, v)

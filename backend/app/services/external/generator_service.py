@@ -14,7 +14,7 @@ from app.integrations import (
     CloudinaryClient,
     GeminiClient,
     GoogleTTSClient,
-    StableDiffusionClient
+    StabilityClient
 )
 from app.utils import time_util
 from app.module import render_video
@@ -26,7 +26,7 @@ class GeneratorService:
         gemini_client: GeminiClient,
         google_tts_client: GoogleTTSClient,
         cloudinary_client: CloudinaryClient,
-        stable_diffusion_client: StableDiffusionClient
+        stable_diffusion_client: StabilityClient
     ):
         self.video_repo = video_repo
         self.gemini_client = gemini_client
@@ -177,6 +177,8 @@ class GeneratorService:
         try:
             tasks = [process_image(i, label) for i, label in enumerate(labels)]
             return await asyncio.gather(*tasks)
+        except HandledException:
+            raise
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo hoặc tải ảnh: {e}", 400) from e
 
@@ -213,7 +215,8 @@ class GeneratorService:
                 topic=topic,
                 scenes=scenes,
                 src=upload_result,
-                title=title
+                title=title,
+                status="done"
             )
         except Exception as e:
             raise HandledException(f"Lỗi khi lưu video xuống database: {e}", 500) from e
