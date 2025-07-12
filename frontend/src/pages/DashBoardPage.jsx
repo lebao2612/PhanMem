@@ -10,15 +10,7 @@ import UploadVideo from "../components/UploadVideo";
 const Dashboard = () => {
     const options = ["Tất cả", "Youtube", "Facebook", "Tiktok"]
     const { authFetch } = useContext(AuthContext);
-    const [videos, setVideos] = useState([
-        // {_id: 1, title: "test1", createAt: "26-12-2004", tag: "Youtube", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
-        // {_id: 2, title: "test2", createAt: "26-12-2004", tag: "Youtube", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        // {_id: 3, title: "test3 asf asjfh fasfj", createAt: "26-12-2004", tag: "Facebook", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        // {_id: 4, title: "test4", createAt: "26-12-2004", tag: "Facebook", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        // {_id: 5, title: "test5", createAt: "26-12-2004", tag: "Tiktok", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        // {_id: 6, title: "test6", createAt: "26-12-2004", tag: "Tiktok", url: "https://www.w3schools.com/html/mov_bbb.mp4"},
-        // {_id: '686e9754d84a337ef62721d4', title: "test7", createAt: "26-12-2004", tag: "", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"},
-    ]);
+    const [videos, setVideos] = useState([]);
     const [filteredVideo, setFilteredVideo] = useState([]);
 
     console.log(videos)    
@@ -244,9 +236,9 @@ const Dashboard = () => {
                                     className="w-full aspect-video rounded-lg"
                                     poster="/placeholder.svg?height=400&width=600"
                                 >
-                                    <source src={selectedVideo.videoUrl || selectedVideo.videoID} type="video/mp4" />
-                                    <source src={selectedVideo.videoUrl || selectedVideo.videoID} type="video/webm" />
-                                    <source src={selectedVideo.videoUrl || selectedVideo.videoID} type="video/ogg" />
+                                    <source src={selectedVideo.url} type="video/mp4" />
+                                    <source src={selectedVideo.url} type="video/webm" />
+                                    <source src={selectedVideo.url} type="video/ogg" />
                                     Trình duyệt của bạn không hỗ trợ thẻ video.
                                 </video>
                             </div>
