@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import LeftSideBar from "../components/LeftSideBar";
 import Review from "../components/Review";
@@ -19,9 +19,11 @@ import { Lock, Eye, Volume2, MoreHorizontal, Play, Pause } from "lucide-react";
 
 const EditVideo = () => {
   const location = useLocation();
-  const videoUrl = location.state?.videoUrl || "/placeholder-video.mp4"; // Default video URL for testing
+  const videoId = location.state.videoId;
+  const videoUrl = location.state.videoUrl;
   const initialGeneratedScripts = location.state?.generatedScripts || [];
   const initialGeneratedImages = location.state?.generatedImages || [];
+  const navigate = useNavigate();
 
   const videoRef = useRef(null);
   const timelineRef = useRef(null);
@@ -53,16 +55,6 @@ const EditVideo = () => {
   const [textOverlays, setTextOverlays] = useState([]); // Array to store text objects
   const [draggingTextId, setDraggingTextId] = useState(null); // ID of the text being dragged
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 }); // Offset for dragging
-
-  // Mock authFetch function (replace with your actual AuthContext.authFetch)
-  const authFetch = async (url, options) => {
-    console.log("Mock API call from EditVideo:", url, options);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    return {
-      ok: true,
-      json: async () => ({ success: true }),
-    };
-  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -200,7 +192,7 @@ const EditVideo = () => {
   // Function to open UploadVideo modal from Review
   const handleConfirmUploadFromReview = (data) => {
     setUploadVideoData({
-      id: `video_${Date.now()}`, // Generate or use a real video ID
+      id: videoId, // Generate or use a real video ID
       title: data.title,
       description: data.description,
       createdAt: new Date().toISOString(),
@@ -749,7 +741,7 @@ const EditVideo = () => {
               setIsUploadOpen(false);
               setIsReviewOpen(true); // Go back to Review modal
             }}
-            authFetch={authFetch} // Pass authFetch
+            onSuccess={() => navigate("/home")} 
           />
         )}
       <style>{`

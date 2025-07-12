@@ -37,6 +37,7 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
             start=0.0,
             end=video_duration
         )
+        
         ass_path_clean = ass_path.replace("\\", "/").replace(":", "\\:")
 
         # 5. Build filter chain
@@ -74,8 +75,7 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
     finally:
         file_util.delete_file(audio_path)
         file_util.delete_file(image_path)
-        if os.path.exists(ass_path):
-            os.remove(ass_path)
+        file_util.delete_file(ass_path)
 
 
 async def render_video(scenes: list[dict], suffix=".mp4") -> str:
@@ -97,10 +97,7 @@ async def render_video(scenes: list[dict], suffix=".mp4") -> str:
 
         return video_path
     except Exception as e:
-        # import traceback
-        # print("Full traceback:")
-        # print(traceback.format_exc())
-        raise RuntimeError(f"Có lỗi xảy ra khi render video: {e}") from e
+        raise RuntimeError(str(e)) from e
     finally:
         for path in temp_video_paths:
             file_util.delete_file(path=path)

@@ -11,7 +11,7 @@ class ReplicateClient:
 
     async def generate_image(self, label: str) -> str:
         try:
-            return "https://picsum.photos/640/360"
+            # return "https://picsum.photos/640/360"
             output = await asyncio.to_thread(
                 self.client.run,
                 self.model_id,

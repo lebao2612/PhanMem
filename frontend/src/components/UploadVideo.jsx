@@ -1,13 +1,16 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
+import { AuthContext } from "../contexts/AuthContext";
 
-function UploadVideo({ selectedVideo, onClose, onBack, authFetch }) {
+function UploadVideo({ selectedVideo, onClose, onBack, onSuccess }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("22");
   const [privacy, setPrivacy] = useState("private");
   const [loading, setLoading] = useState(false);
+  const { authFetch } = useContext(AuthContext);
+  
 
   useEffect(() => {
     console.log("selectedVideo for upload:", selectedVideo);
@@ -33,34 +36,22 @@ function UploadVideo({ selectedVideo, onClose, onBack, authFetch }) {
     }
 
     try {
-      // In a real app, you'd send the actual video file here,
-      // along with title, description, etc.
-      // For this example, we're just sending metadata.
-      const response = await authFetch(
-        `/api/videos/youtube/upload/${selectedVideo.id}`,
-        {
+      const responseData = await authFetch(`/api/videos/youtube/upload/${selectedVideo.id}`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             title,
             description,
             category,
             privacy,
-            exportData: selectedVideo.exportData, // Pass the full export data
+            exportData: selectedVideo.exportData,
           }),
         }
       );
 
-      if (response.ok) {
-        alert("Video uploaded successfully!");
-        onClose(); // Close the modal on success
-      } else {
-        const result = await response.json();
-        alert(
-          `Upload failed: ${result.detail || result.error || "Unknown error"}`
-        );
+      alert("🎉 Upload thành công!");
+      onClose();
+      if (onSuccess) {
+        onSuccess();
       }
     } catch (error) {
       console.error("Error uploading video:", error);

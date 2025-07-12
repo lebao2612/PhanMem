@@ -425,9 +425,6 @@ const Home = () => {
                   </div>
                   {/* Scene Description */}
                   <div className="text-sm text-zinc-300 bg-zinc-800 rounded p-3 border-l-4 border-blue-500">
-                    <span className="font-medium text-zinc-200">
-                      Description:{" "}
-                    </span>
                     {script.label}
                   </div>
                   {/* Editable Script Content */}

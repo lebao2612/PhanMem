@@ -284,91 +284,71 @@ export const handleGenerateVideo = async (
 ) => {
   setIsLoadingVideo(true);
   setVideoUrl("");
-  try {
-    if (
-      generatedScripts.length === 0 ||
-      generatedVoices.length === 0 ||
-      generatedImages.length === 0
-    ) {
-      alert("Please generate script, voice, and images first.");
-      setIsLoadingVideo(false);
-      return;
-    }
-
-    const scenes = generatedScripts.map((script, index) => {
-      const voiceData = generatedVoices[index] || { publicId: "", url: "" };
-      const imageData = generatedImages[index] || { publicId: "", url: "" };
-      return {
-        label: script.label,
-        subtitle: script.subtitle,
-        voice: {
-          publicId: voiceData.publicId,
-          url: voiceData.url,
-        },
-        image: {
-          publicId: imageData.publicId,
-          url: imageData.url,
-        },
-        effect: {
-          zoom: "in", // Default effect, can be made dynamic
-          pan: "left", // Default effect, can be made dynamic
-        },
-      };
-    });
-
-    const requestBody = {
-      title: text, // Using the input text as the video title
-      topic: text, // Using the input text as the video topic
-      scenes: scenes,
-    };
-
-    console.log(
-      "📤 Request body for video generation:",
-      JSON.stringify(requestBody, null, 2)
-    );
-
-    // Mock API call for video generation
-    const videoMockUrl =
-      "https://res.cloudinary.com/prod/video/upload/w_400/me/tx-cards/trim-video.mp4";
-    setVideoUrl(videoMockUrl); // Set mock video URL for testing
-
-    // Navigate to edit-video page with all generated data
-    navigate("/edit-video", {
-      state: {
-        videoUrl: videoMockUrl, // Use the mock URL for navigation
-        generatedScripts,
-        generatedVoices,
-        generatedImages,
-      },
-    });
-
-    // const response = await authFetch("/api/generators/video", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(requestBody),
-    // });
-    // console.log("📥 Video API response:", response);
-
-    // if (response) {
-    //   setVideoUrl(response.url);
-    //   console.log("✅ Video URL set successfully:", response.url);
-    //   // Navigate to edit-video page with all generated data
-    //   navigate("/edit-video", {
-    //     state: {
-    //       videoUrl: response.url,
-    //       generatedScripts,
-    //       generatedVoices,
-    //       generatedImages,
-    //     },
-    //   });
-    // } else {
-    //   console.warn("⚠️ Không có video URL hợp lệ trong response:", response);
-    //   alert("Không tìm thấy video URL hợp lệ trong phản hồi.");
-    // }
-  } catch (error) {
-    console.error("❌ Video generation error:", error.message);
-    alert(`Lỗi khi tạo video: ${error.message}`);
-  } finally {
+try {
+  // Kiểm tra dữ liệu đầu vào
+  if (
+    generatedScripts.length === 0 ||
+    generatedVoices.length === 0 ||
+    generatedImages.length === 0
+  ) {
+    alert("Vui lòng tạo đầy đủ kịch bản, giọng đọc và hình ảnh trước khi tạo video.");
     setIsLoadingVideo(false);
+    return;
   }
+
+  // Ghép scenes từ scripts, voices và images
+  const scenes = generatedScripts.map((script, index) => ({
+    label: script.label,
+    subtitle: script.subtitle,
+    voice: {
+      publicId: generatedVoices[index]?.publicId || "",
+      url: generatedVoices[index]?.url || "",
+    },
+    image: {
+      publicId: generatedImages[index]?.publicId || "",
+      url: generatedImages[index]?.url || "",
+    },
+    effect: {
+      zoom: "in",
+      pan: "left",
+    },
+  }));
+
+  const requestBody = {
+    title: text || "Untitled", // bạn có thể để mặc định hoặc truyền vào
+    topic: text,
+    scenes: scenes,
+  };
+
+  console.log("📤 Gửi request tạo video:", JSON.stringify(requestBody, null, 2));
+
+  const response = await authFetch("/api/generators/video", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response || !response.url || !response.id) {
+    alert("Không tìm thấy video hợp lệ trong phản hồi.");
+    return;
+  }
+
+  // Gán video URL và chuyển trang
+  setVideoUrl(response.url);
+  navigate("/edit-video", {
+    state: {
+      videoId: response.id,
+      videoUrl: response.url,
+      generatedScripts,
+      generatedVoices,
+      generatedImages,
+    },
+  });
+} catch (error) {
+  console.error("❌ Lỗi khi tạo video:", error.message);
+  alert(`Lỗi khi tạo video: ${error.message}`);
+} finally {
+  setIsLoadingVideo(false);
+}
+
 };

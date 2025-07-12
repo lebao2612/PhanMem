@@ -106,9 +106,9 @@ class VideoRepository:
             video.save(using=self.conn.alias)
             return video
         except ValidationError as e:
-            raise ValueError("Dữ liệu YouTube không hợp lệ.") from e
+            raise ValueError(f"Dữ liệu YouTube không hợp lệ: {e}") from e
         except Exception as e:
-            raise RuntimeError("Lỗi khi cập nhật thông tin YouTube.") from e
+            raise RuntimeError(f"Lỗi khi cập nhật thông tin YouTube: {e}") from e
 
     def update_fields(self, video: Video, **kwargs) -> Video:
         try:

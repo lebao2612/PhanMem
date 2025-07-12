@@ -1,5 +1,4 @@
-import tempfile
-from typing import Optional
+import asyncio
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
 from app.utils import file_util
@@ -42,28 +41,28 @@ class YouTubeClient:
         self,
         access_token: str,
         video_url: str,
-        refresh_token: Optional[str] = None,
+        refresh_token: str | None = None,
         **meta_kwargs
     ) -> dict:
-        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_file:
-            temp_path = tmp_file.name
 
         try:
-            await file_util.download_to_file(video_url, temp_path)
-            return self.upload_video_file(
+            temp_path = await file_util.download_to_tempfile(video_url)
+            return await asyncio.to_thread(
+                self.upload_video_file,
                 access_token=access_token,
                 refresh_token=refresh_token,
                 file_path=temp_path,
                 **meta_kwargs
             )
         finally:
-            file_util.delete_file(temp_path)
+            pass
+            # file_util.delete_file(temp_path)
 
     def upload_video_file(
         self,
         access_token: str,
         file_path: str,
-        refresh_token: Optional[str] = None,
+        refresh_token: str | None = None,
         **meta_kwargs
     ) -> dict:
         metadata = {
@@ -78,12 +77,10 @@ class YouTubeClient:
                 "privacyStatus": meta_kwargs.get("privacy", "private")
             }
         }
-
+        media = None
         try:
             youtube = self.auth.get_auth_service(access_token=access_token, refresh_token=refresh_token)
-
             media = MediaFileUpload(file_path, chunksize=-1, resumable=True)
-
             request = youtube.videos().insert(
                 part="snippet,status",
                 body=metadata,
@@ -92,19 +89,17 @@ class YouTubeClient:
             response = None
             while response is None:
                 _, response = request.next_chunk()
-
             return self.normalize_youtube_video_data(response)
-
         except HttpError as e:
             if e.resp.status == 403:
                 raise PermissionError("Không đủ quyền để upload video.") from e
             elif e.resp.status == 401:
-                raise PermissionError("Token không hợp lệ hoặc đã hết hạn.") from e
-            raise RuntimeError("Lỗi khi upload video lên YouTube.") from e
+                raise PermissionError("Token không hợp lệ hoặc đã hết hạn") from e
+            raise RuntimeError(f"Lỗi khi upload video lên YouTube: {e}") from e
         except Exception as e:
-            raise RuntimeError("Lỗi không xác định khi upload video.") from e
+            raise RuntimeError(f"Lỗi không xác định khi upload video{e}") from e
 
-    def get_video_details(self, video_id: str, access_token: str, refresh_token: Optional[str] = None) -> dict:
+    def get_video_details(self, video_id: str, access_token: str, refresh_token: str|None = None) -> dict:
         try:
             youtube = self.auth.get_auth_service(access_token=access_token, refresh_token=refresh_token)
             request = youtube.videos().list(
@@ -121,7 +116,7 @@ class YouTubeClient:
         except Exception as e:
             raise RuntimeError("Lỗi không xác định khi lấy video detail.") from e
 
-    def get_channel_detail(self, access_token: str, refresh_token: Optional[str] = None) -> dict:
+    def get_channel_detail(self, access_token: str, refresh_token: str|None = None) -> dict:
         try:
             youtube = self.auth.get_auth_service(access_token=access_token, refresh_token=refresh_token)
             request = youtube.channels().list(
@@ -147,13 +142,13 @@ class YouTubeClient:
             "id": raw.get("id"),
             "title": snippet.get("title", "Untitled"),
             "description": snippet.get("description", ""),
-            "tags":  snippet.get("description", []),
+            "tags":  snippet.get("tags", []),
             "view_count": int(stats.get("viewCount", 0)) if stats else 0,
             "like_count": int(stats.get("likeCount", 0)) if stats else 0,
             "comment_count": int(stats.get("commentCount", 0)) if stats else 0,
         }
-    
-    def get_video_stats_list(self, video_ids: list[str], start_date: str, end_date: str, access_token: str, refresh_token: Optional[str] = None) -> list[list]:
+
+    def get_video_stats_list(self, video_ids: list[str], start_date: str, end_date: str, access_token: str, refresh_token: str|None = None) -> list[list]:
         try:
             youtube = self.auth.get_analytics_service(
                 access_token=access_token,
