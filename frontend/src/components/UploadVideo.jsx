@@ -33,6 +33,7 @@ function UploadVideo({ selectedVideo, onClose, onBack, authFetch }) {
     }
 
     try {
+      console.log(1);
       // In a real app, you'd send the actual video file here,
       // along with title, description, etc.
       // For this example, we're just sending metadata.
@@ -52,7 +53,7 @@ function UploadVideo({ selectedVideo, onClose, onBack, authFetch }) {
           }),
         }
       );
-
+      console.log(2);
       if (response.ok) {
         alert("Video uploaded successfully!");
         onClose(); // Close the modal on success
