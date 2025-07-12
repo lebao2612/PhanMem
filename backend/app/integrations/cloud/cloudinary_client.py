@@ -1,8 +1,8 @@
 from io import BytesIO
 import uuid
+import asyncio
 import cloudinary
 import cloudinary.uploader
-
 
 class CloudinaryClient:
     def __init__(self, cloud_name: str, api_key: str, api_secret: str):
@@ -15,18 +15,17 @@ class CloudinaryClient:
         except Exception as e:
             raise RuntimeError("Cloudinary configuration error.") from e
 
-    def upload_from_bytes(
+    async def upload_from_bytes(
         self,
         data: bytes,
         resource_type: str = "auto",
-        folder: str = "uploads",
         filename: str = None
     ) -> dict:
         try:
-            result = cloudinary.uploader.upload(
+            result = await asyncio.to_thread(
+                cloudinary.uploader.upload,
                 BytesIO(data),
                 resource_type=resource_type,
-                folder=folder,
                 public_id=filename or uuid.uuid4().hex
             )
             return {
@@ -38,18 +37,17 @@ class CloudinaryClient:
         except Exception as e:
             raise RuntimeError("Error uploading bytes to Cloudinary.") from e
 
-    def upload_from_path(
+    async def upload_from_path(
         self,
         file_path: str,
         resource_type: str = "auto",
-        folder: str = "uploads",
         filename: str = None
     ) -> dict:
         try:
-            result = cloudinary.uploader.upload(
+            result = await asyncio.to_thread(
+                cloudinary.uploader.upload,
                 file_path,
                 resource_type=resource_type,
-                folder=folder,
                 public_id=filename or uuid.uuid4().hex
             )
             return {
@@ -61,18 +59,17 @@ class CloudinaryClient:
         except Exception as e:
             raise RuntimeError(f"Error uploading file from path: {file_path}") from e
 
-    def upload_from_url(
+    async def upload_from_url(
         self,
         url: str,
         resource_type: str = "auto",
-        folder: str = "uploads",
         filename: str = None
     ) -> dict:
         try:
-            result = cloudinary.uploader.upload(
+            result = await asyncio.to_thread(
+                cloudinary.uploader.upload,
                 url,
                 resource_type=resource_type,
-                folder=folder,
                 public_id=filename or uuid.uuid4().hex
             )
             return {

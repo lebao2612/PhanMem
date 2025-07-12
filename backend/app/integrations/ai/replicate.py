@@ -11,13 +11,13 @@ class ReplicateClient:
 
     async def generate_image(self, label: str) -> str:
         try:
-            # return "https://picsum.photos/640/360"
+            return "https://picsum.photos/360/640"
             output = await asyncio.to_thread(
                 self.client.run,
                 self.model_id,
                 input={
                     "prompt": label,
-                    "aspect_ratio": "3:2"
+                    "aspect_ratio": "9:16"
                 }
             )
         except ReadTimeout as e:

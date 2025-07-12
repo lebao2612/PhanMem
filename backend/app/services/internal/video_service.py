@@ -1,12 +1,15 @@
-from app.repositories import VideoRepository
-from app.dtos import VideoDTO
-from app.exceptions import HandledException
 from app.models import User
+from app.dtos import VideoDTO
+from app.utils import file_util
 from app.modules import mediax
+from app.exceptions import HandledException
+from app.repositories import VideoRepository
+from app.integrations import CloudinaryClient
 
 class VideoService:
-    def __init__(self, video_repo: VideoRepository):
+    def __init__(self, video_repo: VideoRepository, cloudinary_client: CloudinaryClient):
         self.video_repo = video_repo
+        self.cloudinary_client = cloudinary_client
 
     def get_video_by_id(self, video_id: str) -> VideoDTO:
         video = self.video_repo.find_by_id(video_id)
@@ -25,11 +28,23 @@ class VideoService:
         self.video_repo.delete_video(video)
         return True
     
-    def edit_video(self, creator: User, video_id: str, **kwargs):
+    async def edit_video(self, creator: User, video_id: str, **kwargs):
         video = self.video_repo.find_by_id(video_id)
         if not video:
             raise HandledException(message="Video not found", code=404)
         if not video.sources:
             raise HandledException(message="Video has not been fully created yet", code=400)
         
-        pass
+        try:
+            tmp_path = await mediax.edit.edit_video(video.sources.url)
+
+            upload_res = await self.cloudinary_client.upload_from_path(
+                file_path=tmp_path,
+                resource_type="video",
+                filename=video.sources.public_id
+            )
+
+        except Exception as e:
+            raise HandledException(message=f"Error edit video: {e}", code=400)
+        finally:
+            file_util.delete_file(tmp_path)

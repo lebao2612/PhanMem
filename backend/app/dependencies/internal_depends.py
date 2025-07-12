@@ -44,7 +44,8 @@ user_service = UserService(
 )
 
 video_service = VideoService(
-    video_repo=video_repository
+    video_repo=video_repository,
+    cloudinary_client=cloudinary_client
 )
 
 # ==== external service ====

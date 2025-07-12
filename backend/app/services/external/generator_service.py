@@ -1,7 +1,5 @@
-import asyncio
-import os
 import uuid
-import tempfile
+import asyncio
 from app.models import User, Video, ImageMedia, VoiceMedia
 from app.exceptions import HandledException
 from app.repositories import VideoRepository
@@ -16,7 +14,7 @@ from app.integrations import (
     GoogleTTSClient,
     ReplicateClient
 )
-from app.utils import time_util, file_util
+from app.utils import file_util
 from app.modules import render_video
 
 class GeneratorService:
@@ -126,10 +124,10 @@ class GeneratorService:
                 )
 
                 # 2. Upload voice
-                upload_result = self.cloudinary_client.upload_from_bytes(
+                upload_result = await self.cloudinary_client.upload_from_bytes(
                     data=audio_data,
                     resource_type="video",  # Cloudinary accepts mp3 as video
-                    folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/voices",
+                    filename=f"{creator.id}/voices/{uuid.uuid4().hex}",
                 )
 
                 return MediaDTO(
@@ -162,10 +160,10 @@ class GeneratorService:
                 image_url = await self.stability_client.generate_image(label=label)
 
                 # 2. Upload image từ URL lên Cloudinary
-                upload_result = self.cloudinary_client.upload_from_url(
+                upload_result = await self.cloudinary_client.upload_from_url(
                     image_url,
                     resource_type="image",
-                    folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/images",
+                    filename=f"{creator.id}/images/{uuid.uuid4().hex}",
                 )
                 return MediaDTO(
                     url=upload_result["url"],
@@ -193,12 +191,12 @@ class GeneratorService:
             raise HandledException(f"Lỗi khi tạo video: Thiếu thông tin", 400)
         
         try:
-            video_path = await render_video(scenes=scenes, suffix=".mp4")
+            video_path = await render_video(scenes=scenes)
             
-            upload_result = self.cloudinary_client.upload_from_path(
+            upload_result = await self.cloudinary_client.upload_from_path(
                 file_path=video_path,
                 resource_type="video",
-                folder=f"{creator.id}/{time_util.datetime_to_str(dt=time_util.datetime_now())}/video",
+                filename=f"{creator.id}/videos/{uuid.uuid4().hex}",
             )
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo mới video: {e}", 500) from e
