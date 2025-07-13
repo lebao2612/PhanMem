@@ -11,7 +11,7 @@ import {
   FiPlay,
   FiPause,
   FiLoader,
-  FiRefreshCw, // Đảm bảo đã import
+  FiRefreshCw,
 } from "react-icons/fi";
 import { BsVolumeUpFill } from "react-icons/bs";
 import { MdLightbulbOutline } from "react-icons/md";
@@ -35,6 +35,7 @@ const SceneVoiceCard = ({
   image,
   isVoicePlaying,
   setIsVoicePlaying,
+  onImageReplaced,
 }) => {
   const [isCurrentPlaying, setIsCurrentPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
@@ -101,12 +102,12 @@ const SceneVoiceCard = ({
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      alert(
-        `Đã chọn tệp: ${selectedFile.name}. Chức năng tải lên sẽ được xử lý tại đây.`
-      );
-      // Ở đây bạn sẽ thêm logic để tải ảnh lên server hoặc hiển thị ảnh mới
-      // Ví dụ: set state để hiển thị ảnh mới, hoặc gọi API tải lên
+    if (selectedFile && image && image.publicId) {
+      // Call the callback function passed from parent
+      // image.publicId chính là public_id của ảnh hiện tại cần thay đổi
+      onImageReplaced(index, image.publicId, selectedFile);
+    } else if (selectedFile && !image?.publicId) {
+      alert("Không tìm thấy publicId của ảnh hiện tại để thay thế.");
     }
   };
 
@@ -325,6 +326,49 @@ const Home = () => {
     setScriptError(value.trim() === "");
   };
 
+  // New function to handle image replacement upload
+  const handleUploadAndReplaceImage = async (
+    index,
+    currentPublicId,
+    newFile
+  ) => {
+    setIsLoadingImages(true); // Set loading state for images
+    try {
+      const formData = new FormData();
+      formData.append("image", newFile); // Append the new image file
+
+      // Đây là nơi cuộc gọi PATCH được thực hiện với public_id của ảnh hiện tại
+      const responseData = await authFetch(
+        `/api/generators/images?public_id=${currentPublicId}`,
+        {
+          method: "PATCH",
+          body: formData,
+        }
+      );
+
+      console.log("📥 Image replacement API response:", responseData);
+
+      if (responseData && responseData.url && responseData.publicId) {
+        const updatedImages = [...generatedImages];
+        updatedImages[index] = {
+          publicId: responseData.publicId,
+          url: responseData.url,
+        };
+        setGeneratedImages(updatedImages);
+        alert(`Ảnh cho Scene ${index + 1} đã được thay thế thành công!`);
+      } else {
+        alert(
+          "Không tìm thấy URL hoặc Public ID hợp lệ trong phản hồi thay thế ảnh."
+        );
+      }
+    } catch (error) {
+      console.error("❌ Lỗi khi thay thế ảnh:", error.message);
+      alert(`Lỗi khi thay thế ảnh: ${error.message}`);
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
+
   return (
     <div className="relative flex h-screen bg-black text-white">
       <LeftSideBar />
@@ -538,6 +582,7 @@ const Home = () => {
                         image={generatedImages[index]} // Pass image object
                         isVoicePlaying={isVoicePlaying}
                         setIsVoicePlaying={setIsVoicePlaying}
+                        onImageReplaced={handleUploadAndReplaceImage} // Pass the new handler
                       />
                     ))}
                   </div>
