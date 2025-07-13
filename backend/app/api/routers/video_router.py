@@ -68,6 +68,6 @@ async def edit_video(video_id: str, data: EditVideoRequest , current_user: User 
     video = await video_service.edit_video(
         creator=current_user,
         video_id=video_id,
-        **data.model_dump(exclude_none=True, by_alias=True)
+        # **data.model_dump(exclude_none=True, by_alias=True)
     )
     return SuccessResponse(data=video)
