@@ -5,6 +5,8 @@ from app.api.middlewares import token_required
 from app.dependencies import youtube_service, video_service
 from app.models import User
 from app.dtos import VideoDTO
+from fastapi.responses import JSONResponse
+from fastapi import status
 
 router = APIRouter(prefix="/api/videos", tags=["youtube"])
 
@@ -27,8 +29,10 @@ async def upload_youtube_video(
 async def get_youtube_statistics(
     current_user: User = Depends(token_required),  # Authenticated user
 ):
-    return await youtube_service.get_statistics(
-        creator=current_user
+    data = await youtube_service.get_statistics(creator=current_user)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"success": True, "data": data}
     )
 
 @router.get("/youtube/analytics", response_model=list[dict])
@@ -37,10 +41,14 @@ async def get_youtube_analytics(
     start_date: str = Query(None, alias="from", description="Start date (ISO format) for statistics range, eg: 2025-05-01T00:00:00"),
     end_date: str = Query(None, alias="to", description="End date (ISO format) for statistics range, eg: 2025-10-02")
 ):
-    return await youtube_service.get_analytics(
-        creator=current_user,
-        start_date=start_date,
-        end_date=end_date
+    data = await youtube_service.get_analytics(
+            creator=current_user,
+            start_date=start_date,
+            end_date=end_date
+        )
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"success": True, "data": data}
     )
 
 """

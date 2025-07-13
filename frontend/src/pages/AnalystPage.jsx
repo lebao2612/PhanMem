@@ -2,7 +2,8 @@
 
 import Header from "../components/Header"
 import LeftSideBar from "../components/LeftSideBar"
-import { useState } from "react"
+import { AuthContext } from "../contexts/AuthContext"
+import { useState, useEffect, useContext } from "react"
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -20,7 +21,39 @@ import { Line, Bar } from "react-chartjs-2"
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler)
 
 const AnalystPage = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState("7days")
+
+  const { authFetch } = useContext(AuthContext)
+  const [statistic, setStatistic] = useState([])
+
+  useEffect(() => {
+    const fetchStatistic = async () => {
+      try {
+        const res = await authFetch("/api/videos/youtube/statistics")
+        //console.log("Dữ liệu nhận được từ API:", res)
+        setStatistic(res)
+      } catch (err) {
+        console.error("Lỗi khi gọi API:", err.message)
+      }
+    }
+    fetchStatistic()
+  }, [authFetch])
+
+  console.log(statistic)
+
+  // const [analytics, setAnalytics] = useState([])
+
+  // useEffect(() => {
+  //   const fetchAnalytics = async () => {
+  //     try {
+  //       const res = await authFetch("/api/videos/youtube/analytics")
+  //       console.log("Dữ liệu nhận được từ API:", res)
+  //       setAnalytics(res)
+  //     } catch (err) {
+  //       console.error("Lỗi khi gọi API:", err.message)
+  //     }
+  //   }
+  //   fetchAnalytics()
+  // }, [authFetch])
 
   // Mock data for YouTube video analytics
   const viewsData = [
@@ -36,20 +69,9 @@ const AnalystPage = () => {
     { date: "2024-01-10", views: 512, likes: 44, comments: 25 },
   ]
 
-  const videoComparisonData = [
-    { video: "Video 1", views: 413, likes: 12, comments: 5 },
-    { video: "Video 2", views: 28, likes: 5, comments: 2 },
-    { video: "Video 3", views: 15, likes: 3, comments: 1 },
-    { video: "Video 4", views: 1, likes: 0, comments: 0 },
-    { video: "Video 5", views: 3, likes: 1, comments: 0 },
-    { video: "Video 6", views: 249, likes: 10, comments: 7 },
-    { video: "Video 7", views: 136, likes: 7, comments: 5 },
-    { video: "Video 8", views: 79, likes: 6, comments: 5 },
-  ]
-
-  const totalViews = videoComparisonData.reduce((sum, video) => sum + video.views, 0)
-  const totalLikes = videoComparisonData.reduce((sum, video) => sum + video.likes, 0)
-  const totalComments = videoComparisonData.reduce((sum, video) => sum + video.comments, 0)
+  const totalViews = statistic.reduce((sum, video) => sum + video.views, 0)
+  const totalLikes = statistic.reduce((sum, video) => sum + video.likes, 0)
+  const totalComments = statistic.reduce((sum, video) => sum + video.comments, 0)
 
   const engagementData = [
     { metric: "Views", value: totalViews, change: "+15.2%", icon: "👁️", color: "blue" },
@@ -105,11 +127,11 @@ const AnalystPage = () => {
   }
 
   const videoComparisonChartData = {
-    labels: videoComparisonData.map((item) => item.video),
+    labels: statistic.map((item) => item.title),
     datasets: [
       {
         label: "Views",
-        data: videoComparisonData.map((item) => item.views),
+        data: statistic.map((item) => item.views),
         backgroundColor: [
           "rgba(59, 130, 246, 0.8)",
           "rgba(239, 68, 68, 0.8)",
@@ -354,33 +376,40 @@ const AnalystPage = () => {
               <p className="text-gray-400 text-sm">Your best content this month</p>
             </div>
             <div className="space-y-4">
-              {[...videoComparisonData]
+              {[...statistic]
                 .sort((a, b) => b.views - a.views)
                 .slice(0, 3)
                 .map((video, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors"
-                >
-                  <div className="w-16 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-400 text-xs">#{index + 1}</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-medium mb-1">{video.video}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span>👁️ {video.views.toLocaleString()}</span>
-                      <span>❤️ {video.likes}</span>
-                      <span>💬 {video.comments}</span>
+                  <div
+                    key={index}
+                    className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    <div className="w-16 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-400 text-xs">#{index + 1}</span>
+                    </div>
+                    <div className="flex-1">
+                      <a
+                        href={video.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white font-medium mb-1 hover:text-blue-400 transition-colors cursor-pointer block"
+                      >
+                        {video.title}
+                      </a>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <span>👁️ {video.views.toLocaleString()}</span>
+                        <span>❤️ {video.likes.toLocaleString()}</span>
+                        <span>💬 {video.comments.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-green-400 font-semibold text-sm">
+                        {(((video.likes + video.comments) / video.views) * 100).toFixed(1)}%
+                      </div>
+                      <div className="text-gray-500 text-xs">engagement</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-green-400 font-semibold text-sm">
-                      {(((video.likes + video.comments) / video.views) * 100).toFixed(1)}%
-                    </div>
-                    <div className="text-gray-500 text-xs">engagement</div>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </main>
