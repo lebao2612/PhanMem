@@ -42,10 +42,7 @@ function Login() {
           if (!res.ok || !success)
             throw new Error(error?.message || "Lỗi xác thực Google");
 
-          const userInfo = {
-            name: data.user.name || data.user.email,
-            email: data.user.email,
-          };
+          const userInfo = data.user
 
           setUser(userInfo);
           sessionStorage.setItem("token", data.token);
