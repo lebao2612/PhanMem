@@ -224,7 +224,7 @@ class GeneratorService:
                 topic=topic,
                 scenes=scenes,
                 src=video_src,
-                title=title,
+                title=title or topic,
                 status="done"
             )
         except Exception as e:

@@ -37,12 +37,12 @@ const Dashboard = () => {
     if (selectedOption === "Tất cả") {
       setFilteredVideo(videos)
     } else {
-      setFilteredVideo(videos.filter((video) => video.youtube))
+      setFilteredVideo(videos.filter((video) => video.youtubeUrl))
     }
   }, [selectedOption, videos])
 
   const countYoutubeUploaded = (videos) => {
-    return videos.filter((video) => video.youtube).length
+    return videos.filter((video) => video.youtubeUrl).length
   }
 
   const closeDetailVideo = () => {
@@ -197,7 +197,7 @@ const Dashboard = () => {
                     {video.title}
                   </h3>
 
-                  {video.youtube && (
+                  {video.youtubeUrl && (
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-full border border-red-500/30">
                         <FaYoutube className="text-red-400 text-sm" />
@@ -206,9 +206,9 @@ const Dashboard = () => {
                     </div>
                   )}
 
-                  {video.youtube && (
+                  {video.youtubeUrl && (
                     <a
-                      href={video.youtube.videoUrl}
+                      href={video.youtubeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -307,12 +307,12 @@ const Dashboard = () => {
                             <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Xuất bản</p>
                             <span
                               className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                                selectedVideo.youtube
+                                selectedVideo.youtubeUrl
                                   ? "bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-300 border-red-500/30"
                                   : "bg-gradient-to-r from-gray-500/20 to-gray-600/20 text-gray-300 border-gray-500/30"
                               }`}
                             >
-                              {selectedVideo.youtube ? "YOUTUBE" : "NONE"}
+                              {selectedVideo.youtubeUrl ? "YOUTUBE" : "NONE"}
                             </span>
                           </div>
                         </div>
@@ -336,15 +336,15 @@ const Dashboard = () => {
                         </button>
 
                         <button
-                          disabled={selectedVideo.youtube}
+                          disabled={selectedVideo.youtubeUrl}
                           className={`flex items-center justify-center gap-3 w-full border font-semibold py-4 px-6 rounded-xl transition-all duration-300 group ${
-                            selectedVideo.youtube
+                            selectedVideo.youtubeUrl
                               ? "bg-zinc-800/50 text-zinc-500 cursor-not-allowed border-zinc-700/50"
                               : "cursor-pointer text-zinc-300 hover:bg-gradient-to-r hover:from-zinc-700/50 hover:to-zinc-600/50 hover:text-white border-zinc-600/50 hover:border-zinc-500/50 hover:scale-[1.02] shadow-lg hover:shadow-xl"
                           }`}
                           onClick={() => setSelectUpload(true)}
                         >
-                          <Upload className={`w-5 h-5 ${!selectedVideo.youtube ? "group-hover:animate-bounce" : ""}`} />
+                          <Upload className={`w-5 h-5 ${!selectedVideo.youtubeUrl ? "group-hover:animate-bounce" : ""}`} />
                           Upload Video
                         </button>
                       </div>

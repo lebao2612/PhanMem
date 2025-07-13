@@ -5,5 +5,5 @@ from .embedded import (
     UserSettings,
     Media, ImageMedia, VoiceMedia, VideoMedia,
     VideoScene,
-    Metadata, YoutubeVideoMetadata,
+    Metadata, YoutubeVideoMetadata
 )

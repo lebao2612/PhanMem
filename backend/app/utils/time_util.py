@@ -7,12 +7,15 @@ def datetime_now() -> datetime:
 def datetime_delta(
     hours: float = 0,
     minutes: float = 0,
-    seconds: float = 0
+    seconds: float = 0,
+    days: int = 0
+
 ) -> datetime:
     return datetime.now(timezone.utc) + timedelta(
         hours=hours,
         minutes=minutes,
-        seconds=seconds
+        seconds=seconds,
+        days=days
     )
 
 
@@ -30,7 +33,7 @@ def datetime_to_iso(dt: datetime) -> str | None:
     return dt.astimezone(timezone.utc).isoformat()
 
 
-def datetime_to_str(dt: datetime | None = None, format: str = r"%d-%m-%Y") -> str:
+def datetime_to_str(dt: datetime | None = None, format: str = r"%Y-%m-%d") -> str:
     if dt is None:
         dt = datetime_now()
     return dt.strftime(format)

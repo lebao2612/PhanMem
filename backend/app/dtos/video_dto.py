@@ -1,30 +1,8 @@
 from pydantic import Field
-from app.models import Video, VideoScene, YoutubeVideoMetadata
+from app.models import Video, VideoScene
 from app.dtos.base_dto import BaseDTO
 from app.utils import time_util
-
-class YoutubeVideoMetadataDTO(BaseDTO):
-    video_url: str|None = Field(default=None, alias="videoUrl")
-
-    title: str|None
-    description: str|None
-    tags: list[str] = Field(default=[])
-    
-    view_count: int = Field(alias="viewCount", default=0)
-    like_count: int = Field(alias="likeCount", default=0)
-    comment_count: int = Field(alias="commentCount", default=0)
-
-    @classmethod
-    def from_model(cls, youtube: YoutubeVideoMetadata):
-        return cls(
-            video_url=youtube.get_video_url(),
-            title=youtube.title,
-            description=youtube.description,
-            tags=youtube.tags,
-            view_count=youtube.view_count,
-            like_count=youtube.like_count,
-            comment_count=youtube.comment_count
-        )
+# from .metadata_dto import YoutubeVideoMetadataDTO
 
 class VideoSceneDTO(BaseDTO):
     label: str
@@ -49,7 +27,8 @@ class VideoDTO(BaseDTO):
     status: str | None
     created_at: str | None = Field(alias="createdAt")
     updated_at: str | None = Field(alias="updatedAt")
-    youtube: YoutubeVideoMetadataDTO | None
+    # youtube: YoutubeVideoMetadataDTO | None
+    youtube_url: str | None = Field(alias="youtubeUrl")
     
     @classmethod
     def from_model(cls, video: Video):
@@ -65,5 +44,6 @@ class VideoDTO(BaseDTO):
             status=video.status,
             created_at=time_util.datetime_to_iso(video.created_at),
             updated_at=time_util.datetime_to_iso(video.updated_at),
-            youtube=YoutubeVideoMetadataDTO.from_model(video.youtube) if video.youtube else None
+            youtube_url=video.youtube.get_video_url() if video .youtube else None,
+            # youtube_url=YoutubeVideoMetadataDTO.from_model(video.youtube) if video.youtube else None
         )
