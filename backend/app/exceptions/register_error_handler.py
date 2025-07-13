@@ -1,6 +1,7 @@
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import HTTPException as FastAPIHTTPException, RequestValidationError
 from app.exceptions import HandledException
 from app.schemas.responses import ErrorResponse
@@ -37,10 +38,19 @@ def register_error_handlers(app: FastAPI):
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(request: Request, exc: RequestValidationError):
+        cleaned_errors = []
+        for err in exc.errors():
+            cleaned_error = {
+                "loc": err.get("loc"),
+                "msg": err.get("msg"),
+                "type": err.get("type"),
+            }
+            cleaned_errors.append(cleaned_error)
+
         return ErrorResponse.json_response(
-            message="Dữ liệu không hợp lệ hoặc thiếu trường bắt buộc",
+            message="Invalid request: missing or malformed required fields",
             code=422,
-            details=exc.errors()
+            details=cleaned_errors
         )
 
     @app.exception_handler(404)

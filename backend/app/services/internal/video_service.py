@@ -27,7 +27,7 @@ class VideoService:
             raise HandledException("Video không tồn tại", 404)
         self.video_repo.delete_video(video)
         return True
-    
+
     async def edit_video(self, creator: User, video_id: str, **option):
         video = self.video_repo.find_by_id(video_id)
         if not video:

@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, constr
 from app.schemas.base_schema import BaseSchema
 
 

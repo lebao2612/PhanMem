@@ -15,7 +15,7 @@ from app.integrations import (
     ReplicateClient
 )
 from app.utils import file_util
-from app.modules import render_video
+from app.modules import mediax
 
 class GeneratorService:
     def __init__(
@@ -32,24 +32,18 @@ class GeneratorService:
         self.cloudinary_client = cloudinary_client
         self.stability_client = stability_client
 
+    #### topic
     async def get_suggested_topics(
         self,
         creator: User,
         keyword: str, limit: int,
-        model_name:str = None,
-        language: str = None,
     ) -> list[str]:
-        if not model_name and creator and creator.settings:
-            model_name = creator.settings.llm_model
-        if not language and creator and creator.settings:
-            language = creator.settings.language
-        
         try:     
             return await self.gemini_client.generate_suggested_topics(
                 keyword=keyword,
                 limit=limit,
-                model_name=model_name,
-                language=language
+                model_name=creator.settings.llm_model,
+                language=creator.settings.language
             )
         except Exception as e:
             raise HandledException(f"Lỗi khi lấy suggested topics: {e}") from e
@@ -58,43 +52,30 @@ class GeneratorService:
         self,
         creator: User,
         limit: int,
-        model_name:str = None,
-        language: str = None,
     ) -> list[str]:
-        if not model_name and creator and creator.settings:
-            model_name = creator.settings.llm_model
-        if not language and creator and creator.settings:
-            language = creator.settings.language
-        
         try:
             return await self.gemini_client.generate_trending_topics(
                 limit=limit,
-                model_name=model_name,
-                language=language
+                model_name=creator.settings.llm_model,
+                language=creator.settings.language
             )
         except Exception as e:
             raise HandledException(f"Lỗi khi lấy trending topics: {e}") from e
 
+    #### script
     async def generate_script(
         self,
         creator: User,
         topic: str,
-        language: str=None,
-        model_name: str=None,
         scene_count: int=5
     ) -> list[VideoSceneDTO]:
         if not topic:
             raise HandledException("Topic must not be empty", 400)
-        if not model_name and creator and creator.settings:
-            model_name = creator.settings.llm_model
-        if not language and creator and creator.settings:
-            language = creator.settings.language
-        
         try:
             scenes = await self.gemini_client.generate_script(
                 topic=topic,
-                model_name=model_name,
-                language=language,
+                model_name=creator.settings.llm_model,
+                language=creator.settings.language,
                 scene_count=scene_count,
                 personality=creator.settings.personality if creator.settings else []
             )
@@ -102,25 +83,19 @@ class GeneratorService:
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo script: {e}") from e
 
+    #### voice
     async def generate_voices(
         self,
         creator: User,
         subtitles: list[str],
-        voice_gender: str=None,
-        voice_language: str=None,
     ) -> list[MediaDTO]:
-        if not voice_gender and creator.settings:
-            voice_gender = creator.settings.voice_gender
-        if not voice_language and creator.settings:
-            voice_language = creator.settings.language
-
         async def process_subvoice(index: int, sub: str) -> VoiceMedia:
             try:
                 # 1. Generate voice
                 audio_data = await self.google_tts_client.generate_voice(
                     subtitle=sub,
-                    voice_gender=voice_gender,
-                    language=voice_language
+                    voice_gender=creator.settings.voice_gender,
+                    language=creator.settings.language
                 )
 
                 # 2. Upload voice
@@ -146,6 +121,26 @@ class GeneratorService:
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo hoặc tải voice: {e}", 400) from e
 
+    async def replace_scene_voice(
+        self,
+        public_id: str,
+        data: bytes
+    ) -> MediaDTO:
+        try:
+            upload_result = await self.cloudinary_client.upload_from_bytes(
+                data = data,
+                resource_type="video",
+                filename=public_id
+            )
+
+            return MediaDTO(
+                url=upload_result["url"],
+                public_id=upload_result["public_id"]
+            )
+        except Exception as e:
+            raise HandledException(message="Lỗi khi thay đổi voice cho scene", code=400)
+
+    #### image
     async def generate_images(
         self,
         creator: User,
@@ -180,6 +175,26 @@ class GeneratorService:
         except Exception as e:
             raise HandledException(f"Lỗi khi tạo hoặc tải ảnh: {e}", 400) from e
 
+    async def replace_scene_image(
+        self,
+        public_id: str,
+        data: bytes
+    ) -> MediaDTO:
+        try:
+            upload_result = await self.cloudinary_client.upload_from_bytes(
+                data = data,
+                resource_type="image",
+                filename=public_id
+            )
+
+            return MediaDTO(
+                url=upload_result["url"],
+                public_id=upload_result["public_id"]
+            )
+        except Exception as e:
+            raise HandledException(message=f"Lỗi khi thay đổi ảnh cho scene: {e}", code=400) from e
+
+    #### video
     async def generate_video(
         self,
         creator: User,
@@ -191,7 +206,7 @@ class GeneratorService:
             raise HandledException(f"Lỗi khi tạo video: Thiếu thông tin", 400)
         
         try:
-            video_path = await render_video(scenes=scenes)
+            video_path = await mediax.render_video(scenes=scenes)
             
             video_src = await self.cloudinary_client.upload_from_path(
                 file_path=video_path,

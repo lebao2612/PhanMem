@@ -6,25 +6,39 @@ from app.dependencies import auth_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# This endpoint is used to redirect to Google OAuth
+
 @router.get("/google/oauth")
 def redirect_to_google_oauth():
+    """
+    Redirect user to Google OAuth authorization URL with basic scopes.
+    """
     url = auth_service.get_google_oauth_url()
     return RedirectResponse(url)
 
-# This endpoint is used to redirect to Google OAuth with extended scopes
+
 @router.get("/google/oauth/extend")
 def redirect_to_google_oauth_extended():
+    """
+    Redirect user to Google OAuth authorization URL with extended scopes (e.g. YouTube).
+    """
     url = auth_service.get_google_oauth_extend_url()
     return RedirectResponse(url)
 
-# BUỘC PHẢI GET THEO GOOGLE OAuth2
-# This endpoint handles the callback from Google OAuth after user authorization
+
 @router.get("/google/callback", response_model=SuccessResponse[AuthDTO])
-def google_oauth_callback(code: str, state: str = Query(None, description="Google OAuth state, e.g., retry")):
+def google_oauth_callback(
+    code: str = Query(..., description="Authorization code returned from Google OAuth"),
+    state: str = Query(None, description="Optional state value, e.g., 'retry' to force extended scope")
+):
+    """
+    Handle callback from Google OAuth. Exchange code for tokens and return user info.
+    If scope is insufficient and `state=retry`, redirect to extended scope OAuth URL.
+    """
     retry = (state == "retry")
     auth_dto = auth_service.handle_google_oauth_callback(code=code, retry=retry)
     if auth_dto:
         return SuccessResponse(data=auth_dto)
+
+    # If retry required (e.g., need YouTube access), redirect to extended scopes
     extend_url = auth_service.get_google_oauth_extend_url()
     return RedirectResponse(url=extend_url)
