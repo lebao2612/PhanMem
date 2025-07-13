@@ -44,7 +44,6 @@ def update_user_info(
 
 @router.patch("/settings", response_model=SuccessResponse[UserDTO])
 def update_user_settings(
-    user_id: str,
     data: UpdateUserSettingsRequest,
     current_user: User = Depends(token_required)
 ):

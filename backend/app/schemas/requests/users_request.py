@@ -52,3 +52,7 @@ class UpdateUserSettingsRequest(BaseSchema):
         None,
         description="AI personality",
     )
+
+    model_config = {
+        "populate_by_name": True
+    }

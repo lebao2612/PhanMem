@@ -77,7 +77,7 @@ export const handleGenerateScript = async (
     return false;
   }
   try {
-    const scriptRes = await authFetch("/api/generators/cript", {
+    const scriptRes = await authFetch("/api/generators/script", {
       method: "POST",
       body: JSON.stringify({ topic: text }),
     });

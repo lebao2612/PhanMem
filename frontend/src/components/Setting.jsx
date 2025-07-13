@@ -47,7 +47,7 @@ const Settings = ({ isOpen, onClose }) => {
             personality: settings.personality,
         }
 
-        console.log(allowedSettings)
+        console.log("Cai gui update: ", allowedSettings)
 
         try {
             const responseData = await authFetch(`/api/users/settings`, {
