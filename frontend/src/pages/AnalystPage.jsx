@@ -384,8 +384,12 @@ const AnalystPage = () => {
                     key={index}
                     className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors"
                   >
-                    <div className="w-16 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-400 text-xs">#{index + 1}</span>
+                    <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                      <img
+                        src={video.thumbnail || "/placeholder.svg"}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="flex-1">
                       <a

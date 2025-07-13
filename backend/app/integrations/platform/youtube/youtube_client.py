@@ -142,6 +142,7 @@ class YouTubeClient:
                 item = items[0]
                 stats = item.get("statistics", {})
                 snippet = item.get("snippet", {})
+                thumbnails = snippet.get("thumbnails", {})
 
                 result.append({
                     "id": video_id,
@@ -149,6 +150,7 @@ class YouTubeClient:
                     "title": snippet.get("title"),
                     "description": snippet.get("description"),
                     "tags": snippet.get("tags", []),
+                    "thumbnail": thumbnails.get("high", {}).get("url"),
                     "views": int(stats.get("viewCount", 0)),
                     "likes": int(stats.get("likeCount", 0)),
                     "comments": int(stats.get("commentCount", 0)),
