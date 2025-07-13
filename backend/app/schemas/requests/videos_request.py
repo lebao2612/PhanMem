@@ -12,38 +12,41 @@ class UpdateVideoRequest(BaseSchema):
         description="Thumbnail image URL"
     )
 
-####
-class Trim(BaseSchema):
-    start: float
-    end: float
 
-class Theme(BaseSchema):
+###################
+class TrimVideo(BaseSchema):
+    start: float = Field(..., description="Start time in seconds")
+    end: float = Field(..., description="End time in seconds")
+
+class ThemeVideo(BaseSchema):
     class Music(BaseSchema):
-        url: str
-        volume: float | None
-    music: Music | None
+        url: str = Field(..., description="URL of the background music")
+        volume: float | None = Field(None, description="Volume level (0.0 to 1.0)")
 
-class Overlay(BaseSchema):
+    music: Music | None = Field(None, description="Music theme applied to the video")
+
+class OverlayVideo(BaseSchema):
     class Sticker(BaseSchema):
-        url: str
-        start: float
-        end: float
-        position: tuple[float,float]
-        scale: float
+        url: str = Field(..., description="URL of the sticker image")
+        start: float = Field(..., description="Start time in seconds to show the sticker")
+        end: float = Field(..., description="End time in seconds to hide the sticker")
+        position: tuple[float, float] = Field(..., description="(x, y) position of the sticker")
+        scale: float = Field(..., description="Scale factor for the sticker size")
+
     class Text(BaseSchema):
-        text: str
-        start: float
-        position: tuple[float,float]
-        end: float
-        color: str
-    
-    stickers: list[Sticker]
-    texts: list[Text]
+        text: str = Field(..., description="Text content to overlay")
+        start: float = Field(..., description="Start time in seconds to show the text")
+        end: float = Field(..., description="End time in seconds to hide the text")
+        position: tuple[float, float] = Field(..., description="(x, y) position of the text")
+        color: str = Field(..., description="Color of the text in hex format (e.g., '#FFFFFF')")
+
+    stickers: list[Sticker] = Field(default_factory=list, description="List of stickers to overlay on the video")
+    texts: list[Text] = Field(default_factory=list, description="List of text elements to overlay on the video")
 
 class TimeLine(BaseSchema):
-    pass
+    pass  # Add fields if needed in the future
 
 class EditVideoRequest(BaseSchema):
-    trim: Trim | None
-    theme: Theme | None
-    overlay: Overlay | None
+    trim: TrimVideo | None = Field(None, description="Trimming settings for the video")
+    theme: ThemeVideo | None = Field(None, description="Theme or background music settings for the video")
+    overlay: OverlayVideo | None = Field(None, description="Stickers and text overlays for the video")

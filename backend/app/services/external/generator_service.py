@@ -193,7 +193,7 @@ class GeneratorService:
         try:
             video_path = await render_video(scenes=scenes)
             
-            upload_result = await self.cloudinary_client.upload_from_path(
+            video_src = await self.cloudinary_client.upload_from_path(
                 file_path=video_path,
                 resource_type="video",
                 filename=f"{creator.id}/videos/{uuid.uuid4().hex}",
@@ -208,7 +208,7 @@ class GeneratorService:
                 creator=creator,
                 topic=topic,
                 scenes=scenes,
-                src=upload_result,
+                src=video_src,
                 title=title,
                 status="done"
             )

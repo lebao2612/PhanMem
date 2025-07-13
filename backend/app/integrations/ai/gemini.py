@@ -24,7 +24,7 @@ class GeminiClient:
         ) + "\n".join([
             "- Nội dung phù hợp TikTok, YouTube Shorts",
             "- không tiêu đề, đánh đầu dòng, chú thích, markdown hay ký tự đặc biệt",
-            "- Mỗi dòng là một chủ đề ngắn gọn (tối đa 20 từ)"
+            "- Mỗi dòng là một chủ đề phù hợp"
         ])
 
         raw_text = await self._generate_content_async(prompt, model_name)
@@ -41,7 +41,7 @@ class GeminiClient:
         ) + "\n".join([
             "- Nội dung phù hợp TikTok, YouTube Shorts",
             "- không tiêu đề, đánh đầu dòng, chú thích, markdown hay ký tự đặc biệt",
-            "- Mỗi dòng là một chủ đề ngắn gọn (tối đa 20 từ)"
+            "- Mỗi dòng là một chủ đề phù hợp"
         ])
 
         raw_text = await self._generate_content_async(prompt, model_name)
@@ -60,8 +60,8 @@ class GeminiClient:
              "Không tiêu đề, đánh đầu dòng, chú thích, markdown hay kí tự đặc biệt",
             f"Gồm [{scene_count}] cảnh, các cảnh phải có liên kết với nhau",
              "Mỗi cảnh 1 dòng duy nhất, định dạng: mô tả ảnh ## lời thoại/phụ đề thật sinh động, tự nhiên",
-             "- lời thoại/phụ đề sẽ được AI sinh voice",
-             "- mô tả ảnh sẽ được AI sinh ảnh",
+             "- lời thoại/phụ đề: sẽ được AI (Google TTS) sinh voice, nên phải dễ đọc, không ít hơn 10 từ",
+             "- mô tả ảnh: sẽ được AI sinh ảnh, nên có chút yếu tố con người để AI dễ sinh",
         ])
         if personality:
             prompt += "\nPhong cách cá nhân hóa: " + ",".join(personality)

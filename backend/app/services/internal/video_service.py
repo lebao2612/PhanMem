@@ -28,20 +28,27 @@ class VideoService:
         self.video_repo.delete_video(video)
         return True
     
-    async def edit_video(self, creator: User, video_id: str, **kwargs):
+    async def edit_video(self, creator: User, video_id: str, **option):
         video = self.video_repo.find_by_id(video_id)
         if not video:
             raise HandledException(message="Video not found", code=404)
         if not video.sources:
             raise HandledException(message="Video has not been fully created yet", code=400)
-        
+        if not option:
+            return VideoDTO.from_model(video=video)
+
         try:
-            tmp_path = await mediax.edit.edit_video(video.sources.url)
+            tmp_path = await mediax.edit.edit_video(video.sources.url, **option)
 
             upload_res = await self.cloudinary_client.upload_from_path(
                 file_path=tmp_path,
                 resource_type="video",
                 filename=video.sources.public_id
+            )
+
+            video = self.video_repo.update_sources(
+                video=video,
+                **upload_res
             )
 
         except Exception as e:
