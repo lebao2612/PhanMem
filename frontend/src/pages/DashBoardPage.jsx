@@ -177,7 +177,7 @@ const Dashboard = () => {
                 {/* Video Thumbnail */}
                 <div className="relative overflow-hidden rounded-xl mb-4 shadow-lg">
                   <img
-                    src={images.thumbV || "/placeholder.svg"}
+                    src={video.thumbnailUrl || "/placeholder.svg"}
                     className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
                     alt="Video thumbnail"
                   />
