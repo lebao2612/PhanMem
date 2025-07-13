@@ -38,6 +38,9 @@ class VideoRepository:
                 scenes=[VideoScene(**scene) for scene in filtered_scenes],
                 status=status
             )
+            first_scene: VideoScene = video.scenes[0]
+            video.sources.thumbnail = first_scene.image.url
+
             video.save(using=self.conn.alias)
             return video
         except ValidationError as e:

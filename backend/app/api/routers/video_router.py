@@ -65,7 +65,7 @@ def delete_video(video_id: str, current_user: User = Depends(token_required)):
 
 @router.put("/{video_id}", response_model=SuccessResponse[VideoDTO])
 async def edit_video(video_id: str, data: EditVideoRequest , current_user: User = Depends(token_required)):
-    video =  await video_service.edit_video(
+    video = await video_service.edit_video(
         creator=current_user,
         video_id=video_id,
         **data.model_dump(exclude_none=True, by_alias=True)
