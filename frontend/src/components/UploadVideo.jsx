@@ -57,6 +57,7 @@ function UploadVideo({ selectedVideo, onClose, onBack, onSuccess }) {
       console.error("Error uploading video:", error);
       alert("Đã xảy ra lỗi khi upload video.");
     }
+    window.location.reload();
     setLoading(false);
   };
 

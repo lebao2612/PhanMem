@@ -63,17 +63,17 @@ const LeftSideBar = () =>{
                         className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm"
                         onClick={() => navigate("/analyst")}
                     >
-                        <i className="fa-solid fa-gears mr-2 text-2xl"></i>
+                        <i className="fa-solid fa-chart-simple mr-2 text-2xl"></i>
                         Analyst
                     </li>
 
-                    <li 
+                    {/* <li 
                         className="hover:bg-neutral-500 cursor-pointer p-2 rounded-sm"
                         onClick={() => navigate("/setting")}
                     >
                         <i className="fa-solid fa-gears mr-2 text-2xl"></i>
                         Settings
-                    </li>
+                    </li> */}
                 </ul>
                 </div>
             </div>
