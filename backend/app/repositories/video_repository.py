@@ -61,8 +61,8 @@ class VideoRepository:
             query = Video.objects.using(self.conn.alias)
             filter_kwargs = {}
 
-            if creator_id := filters.get("creator_id"):
-                filter_kwargs["creator"] = ObjectId(creator_id)
+            if creator := filters.get("creator"):
+                filter_kwargs["creator"] = creator
             if title := filters.get("title"):
                 filter_kwargs["title__icontains"] = title
             if topic := filters.get("topic"):
@@ -80,7 +80,20 @@ class VideoRepository:
 
             return list(query)
         except Exception as e:
-            raise RuntimeError("Lỗi khi truy vấn danh sách video.") from e
+            raise RuntimeError(f"Lỗi khi truy vấn danh sách video: {e}") from e
+        
+    def list_uploaded_youtube(self, creator: User) -> list[YoutubeVideoMetadata]:
+        try:
+            videos = (
+                Video.objects.using(self.conn.alias)
+                .filter(creator=creator)
+                .order_by("-created_at")
+            )
+            # Chỉ lấy những video có youtube metadata
+            return [video.youtube for video in videos if video.youtube and video.youtube.id]
+        
+        except Exception as e:
+            raise RuntimeError(f"Lỗi khi lấy video đã upload lên YouTube: {e}") from e
 
     def update_status(self, video: Video, status: str) -> Video:
         return self.update_fields(video, status=status)
@@ -93,17 +106,18 @@ class VideoRepository:
         
         return self.update_fields(video=video, sources=sources)
 
-    def update_youtube(self, video: Video, **kwargs) -> Video:
+    def update_youtube(self, video: Video, **youtube) -> Video:
         try:
             if video.youtube:
-                for k, v in kwargs.items():
+                for k, v in youtube.items():
                     if hasattr(video.youtube, k):
                         setattr(video.youtube, k, v)
+
             else:
-                if kwargs.get("id"):
-                    video.youtube = YoutubeVideoMetadata(**kwargs)
-                else:
+                if not youtube.get("id"):
                     raise ValueError("Thiếu ID video YouTube.")
+                
+                video.youtube = YoutubeVideoMetadata(**youtube)
 
             video.updated_at = time_util.datetime_now()
             video.save(using=self.conn.alias)

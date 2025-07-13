@@ -1,7 +1,8 @@
 from mongoengine import (
-    EmbeddedDocument,
+    EmbeddedDocument, DateTimeField,
     StringField, IntField, ListField,
 )
+from app.utils import time_util
 
 class Metadata(EmbeddedDocument):
     meta = {"allow_inheritance": True}
@@ -13,12 +14,16 @@ class Metadata(EmbeddedDocument):
     tags = ListField(StringField(), default=[])
 
     # statitics
-    view_count = IntField(default=0)
-    like_count = IntField(default=0)
-    comment_count = IntField(default=0)
+    views = IntField(default=0)
+    likes = IntField(default=0)
+    comments = IntField(default=0)
+    shares = IntField(default=0)
+    uploaded_at = DateTimeField(default=time_util.datetime_now)
+
 
 class YoutubeVideoMetadata(Metadata):
-    # last_synced_at = DateTimeField(default=TimeUtil.now)
+    # analys
+    analytic_date = DateTimeField()
 
     def get_video_url(self) -> str | None:
         if self.id:

@@ -4,17 +4,18 @@ from mongoengine import (
     ReferenceField, EmbeddedDocumentField, EmbeddedDocumentListField
 )
 from app.utils import time_util
-from app.models.user import User
+from .user import User
+from .embedded.metadata import YoutubeVideoMetadata
 from app.models.embedded import (
     Media, VideoMedia, VoiceMedia, ImageMedia,
-    VideoScene, YoutubeVideoMetadata
+    VideoScene
 )
 
 class Video(Document):
     title = StringField(default="Untitled")
     topic = StringField(required=True)
     scenes = EmbeddedDocumentListField(document_type=VideoScene, default=list, required=True)
-    creator = ReferenceField(document_type=User, required=True)
+    creator: User = ReferenceField(document_type=User, required=True)
 
     # Media fields
     sources: VideoMedia = EmbeddedDocumentField(document_type=VideoMedia, required=True)

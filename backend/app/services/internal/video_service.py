@@ -16,8 +16,18 @@ class VideoService:
         if not video:
             raise HandledException("Video không tồn tại", 404)
         return VideoDTO.from_model(video)
+    
+    def list_by_creator(self, creator: User) -> list[VideoDTO]:
+        videos = self.video_repo.query(creator=creator, limit=0)
+
+        if videos:
+            return [VideoDTO.from_model(video) for video in videos]
+        
+        return []
 
     def query_videos(self, **filters) -> list[VideoDTO]:
+        filters = {k: v for k, v in filters.items() if v is not None}
+
         videos = self.video_repo.query(**filters)
         return [VideoDTO.from_model(v) for v in videos]
 
@@ -27,7 +37,7 @@ class VideoService:
             raise HandledException("Video không tồn tại", 404)
         self.video_repo.delete_video(video)
         return True
-    
+
     async def edit_video(self, creator: User, video_id: str, **option):
         video = self.video_repo.find_by_id(video_id)
         if not video:

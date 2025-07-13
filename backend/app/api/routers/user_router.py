@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, Path
 from app.dependencies import user_service
 from app.models import User
 from app.dtos import UserDTO
@@ -11,19 +11,28 @@ from app.api.middlewares import token_required, role_required
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 
-
 @router.get("/", response_model=SuccessResponse[list[UserDTO]])
-def list_users(skip: int = 0, limit: int = 20, current_user: User = Depends(token_required)):
+def list_users(
+    skip: int = Query(0, ge=0, description="Number of records to skip for pagination"),
+    limit: int = Query(20, ge=1, le=100, description="Maximum number of users to return"),
+    current_user: User = Depends(token_required)  # Authenticated user
+):
     users = user_service.list_users(skip, limit)
     return SuccessResponse(data=users)
 
+
 @router.get("/{user_id}", response_model=SuccessResponse[UserDTO])
-def get_user(user_id: str, current_user: User = Depends(token_required)):
+def get_user(
+    user_id: str = Path(..., description="ID of the user to retrieve"),
+    current_user: User = Depends(token_required)
+):
     user = user_service.get_user_by_id(user_id)
     return SuccessResponse(data=user)
 
+
 @router.patch("/me", response_model=SuccessResponse[UserDTO])
 def update_user_info(
+    user_id: str,
     data: UpdateUserInfoRequest,
     current_user: User = Depends(token_required)
 ):
@@ -35,6 +44,7 @@ def update_user_info(
 
 @router.patch("/settings", response_model=SuccessResponse[UserDTO])
 def update_user_settings(
+    user_id: str,
     data: UpdateUserSettingsRequest,
     current_user: User = Depends(token_required)
 ):
@@ -44,12 +54,32 @@ def update_user_settings(
     )
     return SuccessResponse(data=updated_user)
 
-@router.put("/{user_id}/promote", response_model=SuccessResponse[dict], dependencies=[Depends(token_required), Depends(role_required(["ADMIN"]))])
-def promote_to_admin(user_id: str):
-    user_service.promote_to_admin(user_id)
-    return SuccessResponse(data={"message": "Nâng quyền admin thành công"})
 
-@router.delete("/{user_id}", response_model=SuccessResponse[dict], dependencies=[Depends(token_required), Depends(role_required(["ADMIN"]))])
-def delete_user(user_id: str):
+@router.put(
+    "/{user_id}/promote",
+    response_model=SuccessResponse[dict],
+    dependencies=[
+        Depends(token_required),
+        Depends(role_required(["ADMIN"]))
+    ]
+)
+def promote_to_admin(
+    user_id: str = Path(..., description="ID of the user to promote to admin")
+):
+    user_service.promote_to_admin(user_id)
+    return SuccessResponse(data={"message": "Promoted to admin successfully"})
+
+
+@router.delete(
+    "/{user_id}",
+    response_model=SuccessResponse[dict],
+    dependencies=[
+        Depends(token_required),
+        Depends(role_required(["ADMIN"]))
+    ]
+)
+def delete_user(
+    user_id: str = Path(..., description="ID of the user to delete")
+):
     user_service.delete_user(user_id)
-    return SuccessResponse(data={"message": "Xóa người dùng thành công"})
+    return SuccessResponse(data={"message": "User deleted successfully"})

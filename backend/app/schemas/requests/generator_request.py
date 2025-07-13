@@ -7,15 +7,6 @@ class GenerateScriptRequest(BaseSchema):
         ...,
         description="The topic for the script.",
     )
-    language: str = Field(
-        default="vi",
-        description="Language code (e.g., 'vi' for Vietnamese).",
-    )
-    model_name: str = Field(
-        default="gemini-1.5-flash",
-        description="The name of the model to use.",
-        alias="modelName"
-    )
     scene_count: int = Field(
         default=5,
         ge=5,
@@ -32,17 +23,6 @@ class GenerateVoicesRequest(BaseSchema):
         description="List of subtitles.",
         alias="subtitles"
     )
-    voice_gender: str = Field(
-        default="female",
-        description="Voice gender.",
-        alias="voiceGender"
-    )
-    voice_language: str = Field(
-        default="vi",
-        description="Voice language.",
-        alias="voiceLanguage"
-    )
-
 
 class GenerateImagesRequest(BaseSchema):
     labels: list[str] = Field(

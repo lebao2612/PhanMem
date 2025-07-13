@@ -1,5 +1,4 @@
-from datetime import date, datetime, timedelta
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Path
 from app.schemas.requests import YouTubeUploadRequest
 from app.schemas.responses import SuccessResponse
 from app.api.middlewares import token_required
@@ -12,9 +11,10 @@ router = APIRouter(prefix="/api/videos", tags=["youtube"])
 
 @router.post("/youtube/upload/{video_id}", response_model=SuccessResponse[VideoDTO])
 async def upload_youtube_video(
-    video_id: str,
-    data: YouTubeUploadRequest,
-    current_user: User = Depends(token_required)):
+    data: YouTubeUploadRequest,  # Request body with YouTube metadata
+    video_id: str = Path(..., description="ID of the video to upload to YouTube"),
+    current_user: User = Depends(token_required)  # Authenticated user
+):
     video = await youtube_service.upload_video(
         creator=current_user,
         video_id=video_id,
@@ -22,35 +22,33 @@ async def upload_youtube_video(
     )
     return SuccessResponse(data=video)
 
+
+@router.get("/youtube/statistics", response_model=list[dict])
+async def get_youtube_statistics(
+    current_user: User = Depends(token_required),  # Authenticated user
+):
+    return await youtube_service.get_statistics(
+        creator=current_user
+    )
+
+@router.get("/youtube/analytics", response_model=list[dict])
+async def get_youtube_analytics(
+    current_user: User = Depends(token_required),  # Authenticated user
+    start_date: str = Query(None, alias="from", description="Start date (ISO format) for statistics range, eg: 2025-05-01T00:00:00"),
+    end_date: str = Query(None, alias="to", description="End date (ISO format) for statistics range, eg: 2025-10-02")
+):
+    return await youtube_service.get_analytics(
+        creator=current_user,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+"""
 @router.get("/youtube/refresh/{video_id}", response_model=SuccessResponse[VideoDTO])
 def refresh_youtube_video(
-    video_id: str,
-    current_user: User = Depends(token_required)
+    video_id: str = Path(..., description="ID of the YouTube video to refresh status"),
+    current_user: User = Depends(token_required)  # Authenticated user
 ):
     video = youtube_service.refresh_video(current_user, video_id)
     return SuccessResponse(data=video)
-
-@router.get("/youtube/video_stats")
-def get_video_stats_summary(
-    current_user: User = Depends(token_required),
-    start_date: str = Query(None),
-    end_date: str = Query(None)
-):
-    raise NotImplementedError("Not implement")
-    # creator_id = str(current_user.id)
-
-    # # Mặc định 7 ngày gần nhất
-    # today = datetime.today().date()
-    # end_date = end_date or today.isoformat()
-    # start_date = start_date or (today - timedelta(days=7)).isoformat()
-
-    # # B1: lấy video_ids
-    # video_ids = video_service.get_youtube_ids_by_creator(creator_id)
-
-    # if not video_ids:
-    #     return {"message": "Không có video nào"}
-
-    # # B2: gọi API Analytics
-    # stats = youtube_service.get_video_stats_list(creator=current_user, video_ids=video_ids, start_date=start_date, end_date=end_date)
-
-    # return stats
+"""
