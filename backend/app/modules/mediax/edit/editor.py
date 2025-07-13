@@ -2,7 +2,7 @@ import os
 import ffmpeg
 import asyncio
 from app.utils import file_util
-from app.modules.mediax import os
+from app.modules.mediax import ops
 
 
 
