@@ -24,31 +24,38 @@ const AnalystPage = () => {
 
   // Mock data for YouTube video analytics
   const viewsData = [
-    { date: "2024-01-01", views: 1200, likes: 45, comments: 12 },
-    { date: "2024-01-02", views: 1800, likes: 67, comments: 18 },
-    { date: "2024-01-03", views: 2400, likes: 89, comments: 24 },
-    { date: "2024-01-04", views: 3200, likes: 112, comments: 31 },
-    { date: "2024-01-05", views: 4100, likes: 145, comments: 38 },
-    { date: "2024-01-06", views: 5200, likes: 178, comments: 47 },
-    { date: "2024-01-07", views: 6800, likes: 234, comments: 62 },
-    { date: "2024-01-08", views: 8500, likes: 298, comments: 78 },
-    { date: "2024-01-09", views: 10200, likes: 356, comments: 94 },
-    { date: "2024-01-10", views: 12100, likes: 423, comments: 112 },
+    { date: "2024-01-01", views: 69, likes: 4, comments: 2 },
+    { date: "2024-01-02", views: 100, likes: 6, comments: 4 },
+    { date: "2024-01-03", views: 137, likes: 8, comments: 5 },
+    { date: "2024-01-04", views: 203, likes: 11, comments: 7 },
+    { date: "2024-01-05", views: 248, likes: 14, comments: 9 },
+    { date: "2024-01-06", views: 299, likes: 17, comments: 10 },
+    { date: "2024-01-07", views: 324, likes: 23, comments: 13 },
+    { date: "2024-01-08", views: 372, likes: 29, comments: 17 },
+    { date: "2024-01-09", views: 487, likes: 35, comments: 19 },
+    { date: "2024-01-10", views: 512, likes: 44, comments: 25 },
   ]
 
   const videoComparisonData = [
-    { video: "Video 1", views: 12100, likes: 423, comments: 112 },
-    { video: "Video 2", views: 8900, likes: 312, comments: 89 },
-    { video: "Video 3", views: 15600, likes: 567, comments: 145 },
-    { video: "Video 4", views: 6700, likes: 234, comments: 67 },
-    { video: "Video 5", views: 11200, likes: 389, comments: 98 },
+    { video: "Video 1", views: 413, likes: 12, comments: 5 },
+    { video: "Video 2", views: 28, likes: 5, comments: 2 },
+    { video: "Video 3", views: 15, likes: 3, comments: 1 },
+    { video: "Video 4", views: 1, likes: 0, comments: 0 },
+    { video: "Video 5", views: 3, likes: 1, comments: 0 },
+    { video: "Video 6", views: 249, likes: 10, comments: 7 },
+    { video: "Video 7", views: 136, likes: 7, comments: 5 },
+    { video: "Video 8", views: 79, likes: 6, comments: 5 },
   ]
 
+  const totalViews = videoComparisonData.reduce((sum, video) => sum + video.views, 0)
+  const totalLikes = videoComparisonData.reduce((sum, video) => sum + video.likes, 0)
+  const totalComments = videoComparisonData.reduce((sum, video) => sum + video.comments, 0)
+
   const engagementData = [
-    { metric: "Views", value: 12100, change: "+15.2%", icon: "👁️", color: "blue" },
-    { metric: "Likes", value: 423, change: "+8.7%", icon: "❤️", color: "red" },
-    { metric: "Comments", value: 112, change: "+12.3%", icon: "💬", color: "green" },
-    { metric: "Shares", value: 67, change: "+5.4%", icon: "📤", color: "purple" },
+    { metric: "Views", value: totalViews, change: "+15.2%", icon: "👁️", color: "blue" },
+    { metric: "Likes", value: totalLikes, change: "+8.7%", icon: "❤️", color: "red" },
+    { metric: "Comments", value: totalComments, change: "+12.3%", icon: "💬", color: "green" },
+    { metric: "Shares", value: 0, change: "+0.0%", icon: "📤", color: "purple" }, // Hoặc bạn có thể bỏ mục này nếu chưa có data
   ]
 
   // Chart data configurations
@@ -181,7 +188,7 @@ const AnalystPage = () => {
               <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
               <p className="text-gray-400 text-sm mt-1">Track your YouTube video performance</p>
             </div>
-            <div className="flex items-center gap-4">
+            {/*<div className="flex items-center gap-4">
               <select
                 className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={selectedPeriod}
@@ -193,7 +200,7 @@ const AnalystPage = () => {
                 <option value="1year">Last Year</option>
               </select>
               
-            </div>
+            </div>*/}
           </div>
         </div>
 
@@ -287,7 +294,7 @@ const AnalystPage = () => {
           </div>
 
           {/* Additional Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
@@ -338,7 +345,7 @@ const AnalystPage = () => {
                 <span className="text-gray-500 text-xs">vs last month</span>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Top Performing Videos */}
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
@@ -347,7 +354,10 @@ const AnalystPage = () => {
               <p className="text-gray-400 text-sm">Your best content this month</p>
             </div>
             <div className="space-y-4">
-              {videoComparisonData.slice(0, 3).map((video, index) => (
+              {[...videoComparisonData]
+                .sort((a, b) => b.views - a.views)
+                .slice(0, 3)
+                .map((video, index) => (
                 <div
                   key={index}
                   className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors"

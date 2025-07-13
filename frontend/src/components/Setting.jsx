@@ -42,8 +42,8 @@ const Settings = ({ isOpen, onClose }) => {
         
         const allowedSettings = {
             language: settings.language,
-            voiceGender: settings.voiceGender,
-            LLMModel: settings.LLMModel,
+            voice_gender: settings.voiceGender,
+            llm_model: settings.LLMModel,
             personality: settings.personality,
         }
 
@@ -55,7 +55,9 @@ const Settings = ({ isOpen, onClose }) => {
                 body: JSON.stringify(allowedSettings),
             })
 
-            sessionStorage.setItem("user", JSON.stringify(responseData.data))
+            //console.log(responseData)
+
+            sessionStorage.setItem("user", JSON.stringify(responseData))
             setSaveMessage("Settings saved successfully!")
         } catch (error) {
             console.error(error)
@@ -87,7 +89,7 @@ const Settings = ({ isOpen, onClose }) => {
         ],
         },
         {
-        key: "voice_gender",
+        key: "voiceGender",
         label: "Voice Gender",
         type: "select",
         options: [
@@ -96,7 +98,7 @@ const Settings = ({ isOpen, onClose }) => {
         ],
         },
         {
-            key: "llm_model",
+            key: "LLMModel",
             label: "LLM Model",
             type: "select",
             options: [

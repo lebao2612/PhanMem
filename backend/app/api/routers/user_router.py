@@ -22,9 +22,8 @@ def get_user(user_id: str, current_user: User = Depends(token_required)):
     user = user_service.get_user_by_id(user_id)
     return SuccessResponse(data=user)
 
-@router.patch("/{user_id}", response_model=SuccessResponse[UserDTO])
+@router.patch("/me", response_model=SuccessResponse[UserDTO])
 def update_user_info(
-    user_id: str,
     data: UpdateUserInfoRequest,
     current_user: User = Depends(token_required)
 ):
