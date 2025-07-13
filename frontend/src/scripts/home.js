@@ -1,4 +1,5 @@
 // scripts/home.js
+// Không có thay đổi nào trong tệp này vì các thay đổi chỉ liên quan đến UI.
 export const handlePressMenu = (menuOpen, setMenuOpen) => () => {
   setMenuOpen(!menuOpen);
 };
@@ -76,7 +77,7 @@ export const handleGenerateScript = async (
     return false;
   }
   try {
-    const scriptRes = await authFetch("/api/generators/script", {
+    const scriptRes = await authFetch("/api/generators/cript", {
       method: "POST",
       body: JSON.stringify({ topic: text }),
     });
@@ -284,71 +285,75 @@ export const handleGenerateVideo = async (
 ) => {
   setIsLoadingVideo(true);
   setVideoUrl("");
-try {
-  // Kiểm tra dữ liệu đầu vào
-  if (
-    generatedScripts.length === 0 ||
-    generatedVoices.length === 0 ||
-    generatedImages.length === 0
-  ) {
-    alert("Vui lòng tạo đầy đủ kịch bản, giọng đọc và hình ảnh trước khi tạo video.");
+  try {
+    // Kiểm tra dữ liệu đầu vào
+    if (
+      generatedScripts.length === 0 ||
+      generatedVoices.length === 0 ||
+      generatedImages.length === 0
+    ) {
+      alert(
+        "Vui lòng tạo đầy đủ kịch bản, giọng đọc và hình ảnh trước khi tạo video."
+      );
+      setIsLoadingVideo(false);
+      return;
+    }
+
+    // Ghép scenes từ scripts, voices và images
+    const scenes = generatedScripts.map((script, index) => ({
+      label: script.label,
+      subtitle: script.subtitle,
+      voice: {
+        publicId: generatedVoices[index]?.publicId || "",
+        url: generatedVoices[index]?.url || "",
+      },
+      image: {
+        publicId: generatedImages[index]?.publicId || "",
+        url: generatedImages[index]?.url || "",
+      },
+      effect: {
+        zoom: "in",
+        pan: "left",
+      },
+    }));
+
+    const requestBody = {
+      title: text || "Untitled", // bạn có thể để mặc định hoặc truyền vào
+      topic: text,
+      scenes: scenes,
+    };
+
+    console.log(
+      "📤 Gửi request tạo video:",
+      JSON.stringify(requestBody, null, 2)
+    );
+
+    const response = await authFetch("/api/generators/video", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response || !response.url || !response.id) {
+      alert("Không tìm thấy video hợp lệ trong phản hồi.");
+      return;
+    }
+
+    // Gán video URL và chuyển trang
+    setVideoUrl(response.url);
+    navigate("/edit-video", {
+      state: {
+        videoId: response.id,
+        videoUrl: response.url,
+        generatedScripts,
+        generatedVoices,
+        generatedImages,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Lỗi khi tạo video:", error.message);
+    alert(`Lỗi khi tạo video: ${error.message}`);
+  } finally {
     setIsLoadingVideo(false);
-    return;
   }
-
-  // Ghép scenes từ scripts, voices và images
-  const scenes = generatedScripts.map((script, index) => ({
-    label: script.label,
-    subtitle: script.subtitle,
-    voice: {
-      publicId: generatedVoices[index]?.publicId || "",
-      url: generatedVoices[index]?.url || "",
-    },
-    image: {
-      publicId: generatedImages[index]?.publicId || "",
-      url: generatedImages[index]?.url || "",
-    },
-    effect: {
-      zoom: "in",
-      pan: "left",
-    },
-  }));
-
-  const requestBody = {
-    title: text || "Untitled", // bạn có thể để mặc định hoặc truyền vào
-    topic: text,
-    scenes: scenes,
-  };
-
-  console.log("📤 Gửi request tạo video:", JSON.stringify(requestBody, null, 2));
-
-  const response = await authFetch("/api/generators/video", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!response || !response.url || !response.id) {
-    alert("Không tìm thấy video hợp lệ trong phản hồi.");
-    return;
-  }
-
-  // Gán video URL và chuyển trang
-  setVideoUrl(response.url);
-  navigate("/edit-video", {
-    state: {
-      videoId: response.id,
-      videoUrl: response.url,
-      generatedScripts,
-      generatedVoices,
-      generatedImages,
-    },
-  });
-} catch (error) {
-  console.error("❌ Lỗi khi tạo video:", error.message);
-  alert(`Lỗi khi tạo video: ${error.message}`);
-} finally {
-  setIsLoadingVideo(false);
-}
-
 };

@@ -8,112 +8,44 @@ export const formatTime = (milliseconds) => {
     .padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
 };
 
-export const updateEffectiveTimeline = (clips, setEffectiveTimeline) => {
-  let totalEffectiveDuration = 0;
-  const segments = [];
-  clips.forEach((clip) => {
-    const clipDuration = clip.end - clip.start;
-    totalEffectiveDuration += clipDuration;
-    segments.push({
-      start: segments.length > 0 ? segments[segments.length - 1].end : 0,
-      end:
-        (segments.length > 0 ? segments[segments.length - 1].end : 0) +
-        clipDuration,
-      originalStart: clip.start,
-      originalEnd: clip.end,
-    });
-  });
+export const updateEffectiveTimeline = (
+  trimStart,
+  trimEnd,
+  originalDuration,
+  setEffectiveTimeline
+) => {
+  const effectiveDuration = trimEnd - trimStart;
   setEffectiveTimeline({
-    duration: totalEffectiveDuration,
-    segments: segments,
+    duration: effectiveDuration,
+    trimStart: trimStart,
+    trimEnd: trimEnd,
+    originalDuration: originalDuration,
   });
 };
 
-export const handleSplitVideo = (
-  currentTime,
-  effectiveTimeline,
-  clips,
-  setClips,
-  setHistory,
-  setSelectedClipIndex
+export const handleResetTrim = (
+  originalDuration,
+  setTrimStart,
+  setTrimEnd,
+  setHistory
 ) => {
-  setHistory((prev) => [...prev, clips]); // Save current state for undo
-
-  let originalSplitTime = 0;
-  let accumulatedEffectiveDuration = 0;
-  for (const segment of effectiveTimeline.segments) {
-    const segmentEffectiveDuration = segment.end - segment.start;
-    if (
-      currentTime >= accumulatedEffectiveDuration &&
-      currentTime < accumulatedEffectiveDuration + segmentEffectiveDuration
-    ) {
-      originalSplitTime =
-        segment.originalStart + (currentTime - accumulatedEffectiveDuration);
-      break;
-    }
-    accumulatedEffectiveDuration += segmentEffectiveDuration;
-  }
-
-  const newClips = [];
-  let splitPerformed = false;
-  clips.forEach((clip, index) => {
-    if (originalSplitTime > clip.start && originalSplitTime < clip.end) {
-      // Split this clip
-      const firstPart = {
-        ...clip,
-        end: originalSplitTime,
-        id: `clip-${Date.now()}-${index}-a`,
-      };
-      const secondPart = {
-        ...clip,
-        start: originalSplitTime,
-        id: `clip-${Date.now()}-${index}-b`,
-      };
-      newClips.push(firstPart, secondPart);
-      splitPerformed = true;
-    } else {
-      newClips.push(clip);
-    }
-  });
-
-  if (splitPerformed) {
-    setClips(newClips);
-    setSelectedClipIndex(null); // Deselect after split
-  } else {
-    // If no split occurred (e.g., current time is at a clip boundary), revert history
-    setHistory((prev) => prev.slice(0, prev.length - 1));
-  }
+  setHistory((prev) => [
+    ...prev,
+    {
+      trimStart: prev.trimStart || 0,
+      trimEnd: prev.trimEnd || originalDuration,
+    },
+  ]);
+  setTrimStart(0);
+  setTrimEnd(originalDuration);
 };
 
-export const handleDeleteClip = (
-  selectedClipIndex,
-  clips,
-  setClips,
-  setHistory,
-  setSelectedClipIndex
-) => {
-  if (selectedClipIndex === null) return;
-
-  setHistory((prev) => [...prev, clips]); // Save current state for undo
-  const newClips = clips.filter((_, index) => index !== selectedClipIndex);
-  setClips(newClips);
-  setSelectedClipIndex(null); // Deselect after deletion
-};
-
-export const handleUndo = (
-  history,
-  setClips,
-  setHistory,
-  setSelectedClipIndex,
-  setSelectionRange
-) => {
+export const handleUndo = (history, setTrimStart, setTrimEnd, setHistory) => {
   if (history.length === 0) return;
-
   const previousState = history[history.length - 1];
-  setClips(previousState);
+  setTrimStart(previousState.trimStart);
+  setTrimEnd(previousState.trimEnd);
   setHistory((prev) => prev.slice(0, prev.length - 1));
-  setSelectedClipIndex(null);
-  setSelectionRange(null);
 };
 
 export const togglePlay = (videoElement, isPlaying, setIsPlaying) => {
@@ -130,67 +62,87 @@ export const handleTimelineClick = (
   e,
   timelineRef,
   effectiveTimeline,
-  totalEffectiveDuration,
   currentTime,
   setCurrentTime,
-  setSelectionRange,
-  videoRef,
-  clips,
-  setSelectedClipIndex
+  videoRef
 ) => {
   const rect = timelineRef.current.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
   const timelineWidth = rect.width;
-  const clickedEffectiveTime =
-    (clickX / timelineWidth) * totalEffectiveDuration;
+  const clickedTime =
+    (clickX / timelineWidth) * effectiveTimeline.originalDuration;
 
-  let originalVideoTime = 0;
-  let accumulatedEffectiveDuration = 0;
-  for (const segment of effectiveTimeline.segments) {
-    const segmentEffectiveDuration = segment.end - segment.start;
-    if (
-      clickedEffectiveTime >= accumulatedEffectiveDuration &&
-      clickedEffectiveTime <
-        accumulatedEffectiveDuration + segmentEffectiveDuration
-    ) {
-      originalVideoTime =
-        segment.originalStart +
-        (clickedEffectiveTime - accumulatedEffectiveDuration);
-      break;
-    }
-    accumulatedEffectiveDuration += segmentEffectiveDuration;
-  }
-
-  setCurrentTime(clickedEffectiveTime);
-  if (videoRef.current) {
-    videoRef.current.currentTime = originalVideoTime;
-  }
-
-  const clickedClipIndex = clips.findIndex(
-    (clip) =>
-      clickedEffectiveTime >= clip.start && clickedEffectiveTime <= clip.end
+  const effectiveTime = Math.max(
+    0,
+    Math.min(
+      clickedTime - effectiveTimeline.trimStart,
+      effectiveTimeline.duration
+    )
   );
-  setSelectedClipIndex(clickedClipIndex !== -1 ? clickedClipIndex : null);
-  setSelectionRange(null);
+  setCurrentTime(effectiveTime);
+  if (videoRef.current) {
+    videoRef.current.currentTime = clickedTime;
+  }
 };
 
-export const processVideoForExport = (videoUrl, clips, effectiveTimeline) => {
-  const exportSummary = {
-    originalVideoUrl: videoUrl,
-    clips: clips.map((clip) => ({
-      // Changed from clipsToExport to clips
-      id: clip.id,
-      startTime: clip.start, // Raw seconds
-      endTime: clip.end, // Raw seconds
-      duration: clip.end - clip.start, // Raw seconds
-    })),
-    timeline: {
-      // Added timeline object
-      totalDuration: effectiveTimeline.duration, // Raw seconds
-    },
-    stickers: [], // Added stickers array to prevent undefined errors
-    previewUrl: videoUrl,
-  };
-  console.log("Export Data:", exportSummary);
-  return exportSummary;
+export const handleSave = async (
+  authFetch,
+  videoId,
+  trimStart,
+  trimEnd,
+  textOverlays,
+  setIsSaving,
+  showNotificationMessage,
+  videoDimensions,
+  onSuccessCallback
+) => {
+  if (!videoId) {
+    showNotificationMessage("Video ID is missing", "error");
+    return;
+  }
+  setIsSaving(true);
+  try {
+    const requestBody = {
+      trim: {
+        start: trimStart,
+        end: trimEnd,
+      },
+      theme: {
+        music: {
+          url: "",
+          volume: 0.5,
+        },
+      },
+      overlay: {
+        stickers: [],
+        texts: textOverlays.map((overlay) => ({
+          text: overlay.text,
+          start: overlay.startTime,
+          end: overlay.endTime,
+          position: [overlay.x, overlay.y],
+          color: "#ffffff",
+          fontSize: overlay.fontSize,
+        })),
+      },
+      videoDimensions: videoDimensions,
+    };
+    console.log("Saving video with data:", requestBody);
+    const response = await authFetch(`/api/videos/${videoId}`, {
+      method: "PUT",
+      body: JSON.stringify(requestBody),
+    });
+    console.log("Save successful:", response);
+    // showNotificationMessage("Video has been saved successfully!", "success"); // Dòng này sẽ được xử lý bởi onSuccessCallback
+    if (onSuccessCallback) {
+      onSuccessCallback(); // <-- GỌI CALLBACK KHI THÀNH CÔNG
+    }
+  } catch (error) {
+    console.error("Error saving video:", error);
+    showNotificationMessage(
+      error.message || "Lưu video thất bại. Vui lòng thử lại.",
+      "error"
+    );
+  } finally {
+    setIsSaving(false);
+  }
 };

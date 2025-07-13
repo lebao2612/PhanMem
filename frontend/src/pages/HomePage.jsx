@@ -1,4 +1,5 @@
 "use client";
+
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
@@ -10,6 +11,7 @@ import {
   FiPlay,
   FiPause,
   FiLoader,
+  FiRefreshCw, // Đảm bảo đã import
 } from "react-icons/fi";
 import { BsVolumeUpFill } from "react-icons/bs";
 import { MdLightbulbOutline } from "react-icons/md";
@@ -29,14 +31,15 @@ import {
 const SceneVoiceCard = ({
   script,
   index,
-  voice, // Changed from voiceUrl
-  image, // Changed from imageUrl
+  voice,
+  image,
   isVoicePlaying,
   setIsVoicePlaying,
 }) => {
   const [isCurrentPlaying, setIsCurrentPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const audioRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -73,7 +76,7 @@ const SceneVoiceCard = ({
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [setIsVoicePlaying]); // Depend on setIsVoicePlaying to ensure effect re-runs if it changes
+  }, [setIsVoicePlaying]);
 
   const togglePlayPause = () => {
     const audio = audioRef.current;
@@ -91,6 +94,22 @@ const SceneVoiceCard = ({
     }
   };
 
+  // Function to handle replacing image
+  const handleReplaceImage = () => {
+    fileInputRef.current.click(); // Trigger click on hidden file input
+  };
+
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      alert(
+        `Đã chọn tệp: ${selectedFile.name}. Chức năng tải lên sẽ được xử lý tại đây.`
+      );
+      // Ở đây bạn sẽ thêm logic để tải ảnh lên server hoặc hiển thị ảnh mới
+      // Ví dụ: set state để hiển thị ảnh mới, hoặc gọi API tải lên
+    }
+  };
+
   return (
     <div className="flex flex-col space-y-3">
       {/* Scene Frame */}
@@ -102,11 +121,23 @@ const SceneVoiceCard = ({
         }`}
       >
         {image && image.url ? ( // Access image.url
-          <img
-            src={image.url || "/placeholder.svg"}
-            alt={`Scene ${index + 1}`}
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img
+              src={image.url || "/placeholder.svg"}
+              alt={`Scene ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+            {/* Replace Button */}
+            <div className="absolute top-2 right-2 flex gap-2 z-10">
+              <button
+                onClick={handleReplaceImage}
+                className="p-1 bg-zinc-700/80 hover:bg-zinc-600/90 rounded-md text-zinc-300 hover:text-white transition-colors"
+                title="Replace Image"
+              >
+                <FiRefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+          </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
             <div className="text-xs text-zinc-400 mb-2">Scene {index + 1}</div>
@@ -160,6 +191,14 @@ const SceneVoiceCard = ({
       </div>
       {/* Hidden Audio Element */}
       <audio ref={audioRef} src={voice?.url} /> {/* Access voice.url */}
+      {/* Hidden File Input for Image Replacement */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*" // Chỉ chấp nhận các loại tệp hình ảnh
+        className="hidden" // Ẩn input đi
+      />
     </div>
   );
 };

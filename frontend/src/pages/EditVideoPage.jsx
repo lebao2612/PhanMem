@@ -1,21 +1,33 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+
+import { useEffect, useRef, useState, useCallback, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import LeftSideBar from "../components/LeftSideBar";
 import Review from "../components/Review";
 import UploadVideo from "../components/UploadVideo";
+import Notification from "../components/Notification"; // Đảm bảo import đúng đường dẫn
+import { AuthContext } from "../contexts/AuthContext";
 import {
   formatTime,
   updateEffectiveTimeline,
-  handleSplitVideo,
-  handleDeleteClip,
+  handleResetTrim,
   handleUndo,
   togglePlay,
   handleTimelineClick,
-  processVideoForExport,
+  handleSave,
 } from "../scripts/editVideo";
-import { Lock, Eye, Volume2, MoreHorizontal, Play, Pause } from "lucide-react";
+import {
+  Lock,
+  Eye,
+  Volume2,
+  MoreHorizontal,
+  Play,
+  Pause,
+  Save,
+  RotateCcw,
+  X,
+} from "lucide-react";
 
 const EditVideo = () => {
   const location = useLocation();
@@ -24,37 +36,42 @@ const EditVideo = () => {
   const initialGeneratedScripts = location.state?.generatedScripts || [];
   const initialGeneratedImages = location.state?.generatedImages || [];
   const navigate = useNavigate();
-
   const videoRef = useRef(null);
   const timelineRef = useRef(null);
-  const videoContainerRef = useRef(null); // Ref for the video display area
-
+  const videoContainerRef = useRef(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dragging, setDragging] = useState(null);
-  const [clips, setClips] = useState([]);
-  const [selectedClipIndex, setSelectedClipIndex] = useState(null);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
   const [history, setHistory] = useState([]);
-  const [selectionRange, setSelectionRange] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [effectiveTimeline, setEffectiveTimeline] = useState({
     duration: 0,
-    segments: [],
+    trimStart: 0,
+    trimEnd: 0,
+    originalDuration: 0,
   });
   const [rightPanelTab, setRightPanelTab] = useState("details");
-
-  // State for Review and Upload modals
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [exportData, setExportData] = useState(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [uploadVideoData, setUploadVideoData] = useState(null);
-
-  // State for text insertion and overlays
   const [textToInsert, setTextToInsert] = useState("");
-  const [textOverlays, setTextOverlays] = useState([]); // Array to store text objects
-  const [draggingTextId, setDraggingTextId] = useState(null); // ID of the text being dragged
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 }); // Offset for dragging
+  const [textOverlays, setTextOverlays] = useState([]);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [selectedOverlayId, setSelectedOverlayId] = useState(null);
+
+  // State cho notifications
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationType, setNotificationType] = useState("success");
+  const [notificationActionButton, setNotificationActionButton] =
+    useState(null); // State mới cho nội dung nút hành động
+
+  const [isSaving, setIsSaving] = useState(false);
+  const { authFetch } = useContext(AuthContext);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -62,52 +79,42 @@ const EditVideo = () => {
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
-      const initialClip = { id: "clip-0", start: 0, end: video.duration };
-      setClips([initialClip]);
+      setTrimStart(0);
+      setTrimEnd(video.duration);
       setEffectiveTimeline({
         duration: video.duration,
-        segments: [
-          {
-            start: 0,
-            end: video.duration,
-            originalStart: 0,
-            originalEnd: video.duration,
-          },
-        ],
+        trimStart: 0,
+        trimEnd: video.duration,
+        originalDuration: video.duration,
       });
     };
 
     const handleTimeUpdate = () => {
-      const newVideoCurrentTime = video.currentTime;
-      let effectiveTime = 0;
-      if (
-        clips.length > 0 &&
-        newVideoCurrentTime >= clips[clips.length - 1].end
-      ) {
+      const videoCurrentTime = video.currentTime;
+      if (videoCurrentTime >= trimEnd) {
         video.pause();
         setIsPlaying(false);
+        return;
       }
-      let accumulatedEffectiveDuration = 0;
-      for (const segment of effectiveTimeline.segments) {
-        const segmentEffectiveDuration = segment.end - segment.start;
-        if (
-          newVideoCurrentTime >= segment.originalStart &&
-          newVideoCurrentTime < segment.originalEnd
-        ) {
-          effectiveTime =
-            accumulatedEffectiveDuration +
-            (newVideoCurrentTime - segment.originalStart);
-          break;
-        }
-        accumulatedEffectiveDuration += segmentEffectiveDuration;
+      if (videoCurrentTime < trimStart) {
+        video.currentTime = trimStart;
+        return;
       }
+      const effectiveTime = videoCurrentTime - trimStart;
       setCurrentTime(effectiveTime);
     };
 
-    const handlePlay = () => setIsPlaying(true);
+    const handlePlay = () => {
+      if (video.currentTime < trimStart) {
+        video.currentTime = trimStart;
+      }
+      setIsPlaying(true);
+    };
+
     const handlePause = () => {
       setIsPlaying(false);
     };
+
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(effectiveTimeline.duration);
@@ -126,57 +133,40 @@ const EditVideo = () => {
       video.removeEventListener("pause", handlePause);
       video.removeEventListener("ended", handleEnded);
     };
-  }, [clips, effectiveTimeline]);
+  }, [trimStart, trimEnd, effectiveTimeline]);
 
   useEffect(() => {
-    updateEffectiveTimeline(clips, setEffectiveTimeline);
-  }, [clips]);
+    updateEffectiveTimeline(trimStart, trimEnd, duration, setEffectiveTimeline);
+  }, [trimStart, trimEnd, duration]);
 
-  // --- Dragging for timeline elements (existing logic) ---
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!dragging || !timelineRef.current || !effectiveTimeline.duration)
-        return;
+      if (!dragging || !timelineRef.current || !duration) return;
       const rect = timelineRef.current.getBoundingClientRect();
       const pos = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
-      const time = (pos / rect.width) * effectiveTimeline.duration;
+      const time = (pos / rect.width) * duration;
+
       if (dragging.type === "playhead") {
-        let originalVideoTime = 0;
-        let accumulatedEffectiveDuration = 0;
-        for (const segment of effectiveTimeline.segments) {
-          const segmentEffectiveDuration = segment.end - segment.start;
-          if (
-            time >= accumulatedEffectiveDuration &&
-            time < accumulatedEffectiveDuration + segmentEffectiveDuration
-          ) {
-            originalVideoTime =
-              segment.originalStart + (time - accumulatedEffectiveDuration);
-            break;
-          }
-          accumulatedEffectiveDuration += segmentEffectiveDuration;
-        }
-        setCurrentTime(time);
-        videoRef.current.currentTime = originalVideoTime;
-      } else if (dragging.type === "clip-start") {
-        setClips((prev) =>
-          prev.map((clip, index) =>
-            index === dragging.clipIndex
-              ? { ...clip, start: Math.min(time, clip.end - 0.1) }
-              : clip
-          )
-        );
-      } else if (dragging.type === "clip-end") {
-        setClips((prev) =>
-          prev.map((clip, index) =>
-            index === dragging.clipIndex
-              ? { ...clip, end: Math.max(time, clip.start + 0.1) }
-              : clip
-          )
-        );
+        const clampedTime = Math.max(trimStart, Math.min(time, trimEnd));
+        const effectiveTime = clampedTime - trimStart;
+        setCurrentTime(effectiveTime);
+        videoRef.current.currentTime = clampedTime;
+      } else if (dragging.type === "trim-start") {
+        const newTrimStart = Math.max(0, Math.min(time, trimEnd - 0.1));
+        setTrimStart(newTrimStart);
+      } else if (dragging.type === "trim-end") {
+        const newTrimEnd = Math.min(duration, Math.max(time, trimStart + 0.1));
+        setTrimEnd(newTrimEnd);
       }
     };
 
     const handleMouseUp = () => {
+      if (
+        dragging &&
+        (dragging.type === "trim-start" || dragging.type === "trim-end")
+      ) {
+        setHistory((prev) => [...prev, { trimStart, trimEnd }]);
+      }
       setDragging(null);
     };
 
@@ -187,82 +177,217 @@ const EditVideo = () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragging, effectiveTimeline.duration, effectiveTimeline.segments]);
+  }, [dragging, duration, trimStart, trimEnd]);
 
-  // Function to open UploadVideo modal from Review
+  // Function để hiển thị thông báo, nhận thêm tham số actionButton
+  const showNotificationMessage = useCallback(
+    (message, type = "success", actionButton = null) => {
+      setNotificationMessage(message);
+      setNotificationType(type);
+      setNotificationActionButton(() => actionButton); // Lưu hàm render nút
+      setShowNotification(true);
+    },
+    []
+  );
+
+  // Wrapper function để gọi handleSave đã import
+  const onSaveClick = useCallback(() => {
+    const videoElement = videoRef.current;
+    const videoWidth = videoElement ? videoElement.videoWidth : null;
+    const videoHeight = videoElement ? videoElement.videoHeight : null;
+
+    handleSave(
+      authFetch,
+      videoId,
+      trimStart,
+      trimEnd,
+      textOverlays,
+      setIsSaving,
+      showNotificationMessage,
+      { width: videoWidth, height: videoHeight },
+      () => {
+        // onSuccessCallback được gọi khi lưu thành công
+        showNotificationMessage(
+          "Video đã được lưu thành công!",
+          "success",
+          () => (
+            <button
+              onClick={() => navigate("/home")}
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded text-sm font-medium transition-colors"
+            >
+              Quay về Trang chủ
+            </button>
+          )
+        );
+      }
+    );
+  }, [
+    authFetch,
+    videoId,
+    trimStart,
+    trimEnd,
+    textOverlays,
+    showNotificationMessage,
+    navigate,
+  ]);
+
   const handleConfirmUploadFromReview = (data) => {
     setUploadVideoData({
-      id: videoId, // Generate or use a real video ID
+      id: videoId,
       title: data.title,
       description: data.description,
       createdAt: new Date().toISOString(),
-      exportData: data.exportData, // Pass the full export data
+      exportData: data.exportData,
     });
-    setIsReviewOpen(false); // Close Review modal
-    setIsUploadOpen(true); // Open UploadVideo modal
+    setIsReviewOpen(false);
+    setIsUploadOpen(true);
   };
 
-  // --- New Text Insertion Logic ---
   const handleInsertText = () => {
     if (textToInsert.trim()) {
       const newTextOverlay = {
         id: `text-${Date.now()}`,
         text: textToInsert,
-        x: 50, // Initial X position (percentage from left)
-        y: 50, // Initial Y position (percentage from top)
+        x: 50,
+        y: 50,
         startTime: currentTime,
-        endTime: currentTime + 5, // Display for 5 seconds by default
+        endTime: currentTime + 5,
+        fontSize: 48,
+        isDeleting: false,
       };
       setTextOverlays((prev) => [...prev, newTextOverlay]);
-      setTextToInsert(""); // Clear the input after insertion
+      setTextToInsert("");
+      setSelectedOverlayId(newTextOverlay.id);
       console.log("Text inserted:", newTextOverlay);
     } else {
-      alert("Please enter some text to insert.");
+      alert("Vui lòng nhập văn bản để chèn.");
     }
   };
 
-  // --- Drag and Drop for Text Overlays ---
-  const handleTextMouseDown = useCallback((e, id) => {
-    e.stopPropagation(); // Prevent dragging the video playhead
-    setDraggingTextId(id);
-    const textElement = e.target;
-    const rect = textElement.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+  const handleDeleteTextOverlay = useCallback((id) => {
+    setTextOverlays((prev) => prev.filter((overlay) => overlay.id !== id));
+    setSelectedOverlayId(null);
+    setDragging(null);
   }, []);
+
+  const handleDragStart = useCallback(
+    (e, id, type) => {
+      e.stopPropagation();
+      const textElement = e.currentTarget;
+      const rect = textElement.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+      const currentOverlay = textOverlays.find((o) => o.id === id);
+      if (currentOverlay) {
+        setDragging({
+          id,
+          type,
+          initialX: currentOverlay.x,
+          initialY: currentOverlay.y,
+          initialFontSize: currentOverlay.fontSize,
+          initialMouseX: e.clientX,
+          initialMouseY: e.clientY,
+        });
+      }
+    },
+    [textOverlays]
+  );
 
   const handleVideoContainerMouseMove = useCallback(
     (e) => {
-      if (!draggingTextId || !videoContainerRef.current) return;
+      if (!dragging || !videoContainerRef.current || !videoRef.current) return;
+      const videoElement = videoRef.current;
+      const videoRect = videoElement.getBoundingClientRect();
+      const containerRect = videoContainerRef.current.getBoundingClientRect();
+      const currentOverlay = textOverlays.find((o) => o.id === dragging.id);
+      if (!currentOverlay) return;
 
-      const videoRect = videoContainerRef.current.getBoundingClientRect();
-      const newX = e.clientX - videoRect.left - dragOffset.x;
-      const newY = e.clientY - videoRect.top - dragOffset.y;
+      let newXPercent = currentOverlay.x;
+      let newYPercent = currentOverlay.y;
+      let newFontSize = currentOverlay.fontSize;
+      let isInDeleteZone = false;
 
-      // Convert pixel coordinates to percentages relative to video container
-      const newXPercent = (newX / videoRect.width) * 100;
-      const newYPercent = (newY / videoRect.height) * 100;
+      if (dragging.type === "move") {
+        newXPercent =
+          ((e.clientX - containerRect.left - dragOffset.x) /
+            containerRect.width) *
+          100;
+        newYPercent =
+          ((e.clientY - containerRect.top - dragOffset.y) /
+            containerRect.height) *
+          100;
+        newXPercent = Math.max(0, Math.min(100, newXPercent));
+        newYPercent = Math.max(0, Math.min(100, newYPercent));
+      } else if (dragging.type === "resize-br") {
+        const deltaX = e.clientX - dragging.initialMouseX;
+        const deltaY = e.clientY - dragging.initialMouseY;
+        newFontSize = dragging.initialFontSize + (deltaX + deltaY) * 0.1;
+        newFontSize = Math.max(16, Math.min(120, newFontSize));
+      }
+
+      const textCurrentX_px_relative_to_container =
+        (newXPercent / 100) * containerRect.width;
+      const textCurrentY_px_relative_to_container =
+        (newYPercent / 100) * containerRect.height;
+
+      const textCenterX_px_relative_to_video =
+        textCurrentX_px_relative_to_container -
+        (videoRect.left - containerRect.left);
+      const textCenterY_px_relative_to_video =
+        textCurrentY_px_relative_to_container -
+        (videoRect.top - containerRect.top);
+
+      const edgeThreshold_px = 20;
+      isInDeleteZone =
+        textCenterX_px_relative_to_video < edgeThreshold_px ||
+        textCenterX_px_relative_to_video > videoRect.width - edgeThreshold_px ||
+        textCenterY_px_relative_to_video < edgeThreshold_px ||
+        textCenterY_px_relative_to_video > videoRect.height - edgeThreshold_px;
 
       setTextOverlays((prev) =>
         prev.map((overlay) =>
-          overlay.id === draggingTextId
+          overlay.id === dragging.id
             ? {
                 ...overlay,
-                x: Math.max(0, Math.min(100, newXPercent)), // Clamp between 0 and 100
-                y: Math.max(0, Math.min(100, newYPercent)), // Clamp between 0 and 100
+                x: newXPercent,
+                y: newYPercent,
+                fontSize: newFontSize,
+                isDeleting: isInDeleteZone,
               }
             : overlay
         )
       );
     },
-    [draggingTextId, dragOffset]
+    [dragging, dragOffset, textOverlays]
   );
 
   const handleVideoContainerMouseUp = useCallback(() => {
-    setDraggingTextId(null);
+    if (dragging) {
+      setTextOverlays((prev) => {
+        const updatedOverlays = prev.filter((overlay) => {
+          if (overlay.id === dragging.id) {
+            if (overlay.isDeleting) {
+              return false;
+            }
+          }
+          return true;
+        });
+        return updatedOverlays.map((overlay) => ({
+          ...overlay,
+          isDeleting: false,
+        }));
+      });
+    }
+    setDragging(null);
     setDragOffset({ x: 0, y: 0 });
+  }, [dragging]);
+
+  const handleVideoContainerClick = useCallback((e) => {
+    if (!e.target.closest(".text-overlay-wrapper")) {
+      setSelectedOverlayId(null);
+    }
   }, []);
 
   return (
@@ -276,10 +401,11 @@ const EditVideo = () => {
               {videoUrl ? (
                 <div
                   ref={videoContainerRef}
-                  className="relative w-full h-full flex items-center justify-center" // Ensure container fills space
+                  className="relative w-full h-full flex items-center justify-center overflow-hidden"
                   onMouseMove={handleVideoContainerMouseMove}
                   onMouseUp={handleVideoContainerMouseUp}
-                  onMouseLeave={handleVideoContainerMouseUp} // Stop dragging if mouse leaves container
+                  onMouseLeave={handleVideoContainerMouseUp}
+                  onClick={handleVideoContainerClick}
                 >
                   <video
                     ref={videoRef}
@@ -300,20 +426,62 @@ const EditVideo = () => {
                     .map((overlay) => (
                       <div
                         key={overlay.id}
-                        className="absolute text-white text-4xl font-bold pointer-events-auto cursor-grab active:cursor-grabbing select-none"
+                        className={`text-overlay-wrapper absolute text-white font-bold pointer-events-auto select-none transition-colors transition-opacity duration-100 ${
+                          overlay.isDeleting ? "text-red-500 opacity-50" : ""
+                        } ${
+                          selectedOverlayId === overlay.id
+                            ? "border-2 border-dashed border-white/70"
+                            : ""
+                        }`}
                         style={{
                           left: `${overlay.x}%`,
                           top: `${overlay.y}%`,
-                          transform: "translate(-50%, -50%)", // Center the text element
+                          transform: "translate(-50%, -50%)",
                           textShadow: "2px 2px 4px rgba(0,0,0,0.7)",
-                          zIndex: 10, // Ensure text is above video
+                          zIndex: 10,
+                          fontSize: `${overlay.fontSize}px`,
+                          whiteSpace: "nowrap",
+                          padding: "4px 8px",
+                          cursor:
+                            selectedOverlayId === overlay.id
+                              ? "grab"
+                              : "default",
                         }}
-                        onMouseDown={(e) => handleTextMouseDown(e, overlay.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOverlayId(overlay.id);
+                        }}
+                        onMouseDown={(e) => {
+                          if (selectedOverlayId === overlay.id) {
+                            handleDragStart(e, overlay.id, "move");
+                          }
+                        }}
                       >
                         {overlay.text}
+                        {selectedOverlayId === overlay.id && (
+                          <>
+                            {/* Delete Button */}
+                            <button
+                              className="absolute -top-3 -right-3 bg-red-600 hover:bg-red-700 rounded-full w-6 h-6 flex items-center justify-center text-white cursor-pointer z-20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTextOverlay(overlay.id);
+                              }}
+                              title="Delete text"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                            {/* Resize Handle */}
+                            <div
+                              className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-gray-700 rounded-full cursor-nwse-resize z-20"
+                              onMouseDown={(e) =>
+                                handleDragStart(e, overlay.id, "resize-br")
+                              }
+                            />
+                          </>
+                        )}
                       </div>
                     ))}
-
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-black/70 px-4 py-2 rounded-lg">
                     <button
                       onClick={() =>
@@ -341,7 +509,9 @@ const EditVideo = () => {
               ) : (
                 <div className="text-center">
                   <div className="text-6xl mb-4">🎬</div>
-                  <p className="text-gray-400 text-lg">No video loaded</p>
+                  <p className="text-gray-400 text-lg">
+                    Chưa có video nào được tải
+                  </p>
                 </div>
               )}
             </div>
@@ -350,60 +520,33 @@ const EditVideo = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() =>
-                      handleSplitVideo(
-                        currentTime,
-                        effectiveTimeline,
-                        clips,
-                        setClips,
-                        setHistory,
-                        setSelectedClipIndex
+                      handleResetTrim(
+                        duration,
+                        setTrimStart,
+                        setTrimEnd,
+                        setHistory
                       )
                     }
-                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 rounded text-sm font-medium transition-colors"
+                    className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 rounded text-sm font-medium transition-colors flex items-center gap-1"
                   >
-                    Split
+                    <RotateCcw className="w-4 h-4" />
+                    Đặt lại cắt
                   </button>
                   <button
                     onClick={() =>
-                      handleDeleteClip(
-                        selectedClipIndex,
-                        clips,
-                        setClips,
-                        setHistory,
-                        setSelectedClipIndex
-                      )
-                    }
-                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition-colors disabled:opacity-50"
-                    disabled={selectedClipIndex === null}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleUndo(
-                        history,
-                        setClips,
-                        setHistory,
-                        setSelectedClipIndex,
-                        setSelectionRange
-                      )
+                      handleUndo(history, setTrimStart, setTrimEnd, setHistory)
                     }
                     className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 rounded text-sm font-medium transition-colors disabled:opacity-50"
                     disabled={history.length === 0}
                   >
-                    Undo
+                    Hoàn tác
                   </button>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-sm text-gray-400">
-                    {selectionRange && (
-                      <span className="text-yellow-400 mr-4">
-                        Selection:{" "}
-                        {formatTime(
-                          (selectionRange.end - selectionRange.start) * 1000
-                        )}
-                      </span>
-                    )}
+                    <span className="text-orange-400 mr-4">
+                      Đã cắt: {formatTime((trimEnd - trimStart) * 1000)}
+                    </span>
                     Zoom: {Math.round(zoom * 100)}%
                   </div>
                   <input
@@ -416,31 +559,21 @@ const EditVideo = () => {
                     className="w-20"
                   />
                   <button
-                    onClick={() => {
-                      const exportData = processVideoForExport(
-                        videoUrl,
-                        clips,
-                        effectiveTimeline
-                      );
-                      setIsReviewOpen(true);
-                      setExportData(exportData);
-                    }}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium transition-colors flex items-center gap-2"
+                    onClick={onSaveClick}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                      />
-                    </svg>
-                    Export
+                    {isSaving ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Đang lưu...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        Lưu
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -463,18 +596,14 @@ const EditVideo = () => {
                   <div className="h-8 bg-[#2a2a2a] border-b border-gray-600 relative">
                     {Array.from(
                       {
-                        length: Math.ceil(effectiveTimeline.duration / 10) + 1,
+                        length: Math.ceil(duration / 10) + 1,
                       },
                       (_, i) => (
                         <div
                           key={i}
                           className="absolute top-0 h-full flex flex-col justify-center"
                           style={{
-                            left: `${
-                              ((i * 10) / effectiveTimeline.duration) *
-                              100 *
-                              zoom
-                            }%`,
+                            left: `${((i * 10) / duration) * 100 * zoom}%`,
                           }}
                         >
                           <div className="w-px h-2 bg-gray-500"></div>
@@ -485,12 +614,12 @@ const EditVideo = () => {
                       )
                     )}
                   </div>
-                  {/* Playhead moved here, spanning both video and audio tracks */}
+                  {/* Playhead */}
                   <div
-                    className="absolute top-8 w-0.5 h-16 bg-white cursor-ew-resize z-30 shadow-lg" /* h-16 (video) */
+                    className="absolute top-8 w-0.5 h-16 bg-white cursor-ew-resize z-30 shadow-lg"
                     style={{
                       left: `${
-                        (currentTime / effectiveTimeline.duration) * 100
+                        ((trimStart + currentTime) / duration) * 100 * zoom
                       }%`,
                     }}
                     onMouseDown={() => setDragging({ type: "playhead" })}
@@ -506,94 +635,75 @@ const EditVideo = () => {
                         e,
                         timelineRef,
                         effectiveTimeline,
-                        effectiveTimeline.duration,
                         currentTime,
                         setCurrentTime,
-                        setSelectionRange,
-                        videoRef,
-                        clips,
-                        setSelectedClipIndex
+                        videoRef
                       )
                     }
                     style={{
-                      width: `${
-                        (effectiveTimeline.duration / duration) * 100 * zoom
-                      }%`,
+                      width: `${100 * zoom}%`,
                     }}
                   >
-                    {selectionRange && (
+                    {/* Grayed out areas for trimmed parts */}
+                    {trimStart > 0 && (
                       <div
-                        className="absolute top-0 h-full bg-yellow-500/30 border-2 border-yellow-500"
+                        className="absolute top-1 h-14 bg-gray-800/80 border border-gray-600 rounded-l"
                         style={{
-                          left: `${
-                            (selectionRange.start /
-                              effectiveTimeline.duration) *
-                            100
-                          }%`,
-                          width: `${
-                            ((selectionRange.end - selectionRange.start) /
-                              effectiveTimeline.duration) *
-                            100
-                          }%`,
+                          left: "0%",
+                          width: `${(trimStart / duration) * 100}%`,
                         }}
-                      />
+                      >
+                        <div className="p-1 text-xs text-gray-500">Đã cắt</div>
+                      </div>
                     )}
-                    {effectiveTimeline.segments.map((segment, index) => {
-                      const clip = clips[index];
-                      if (!clip) return null;
-                      return (
-                        <div
-                          key={clip.id || index}
-                          className="absolute top-1 h-14"
-                          style={{
-                            left: `${
-                              (segment.start / effectiveTimeline.duration) * 100
-                            }%`,
-                            width: `${
-                              ((segment.end - segment.start) /
-                                effectiveTimeline.duration) *
-                              100
-                            }%`,
-                            minWidth: "40px",
-                          }}
-                        >
-                          <div
-                            className={`h-full rounded border-2 transition-all relative overflow-hidden ${
-                              selectedClipIndex === index
-                                ? "border-cyan-400 bg-cyan-600/80"
-                                : "border-cyan-500/50 bg-cyan-600/60"
-                            }`}
-                          >
-                            <div className="p-1 text-xs font-medium text-white truncate">
-                              {clip.id || `Clip ${index + 1}`}
-                            </div>
-                            <div className="absolute bottom-1 left-1 text-xs text-cyan-100 font-mono">
-                              {formatTime((clip.end - clip.start) * 1000)}
-                            </div>
-                            <div
-                              className="absolute left-0 top-0 w-2 h-full bg-cyan-300 cursor-ew-resize opacity-0 hover:opacity-100 transition-opacity"
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setDragging({
-                                  type: "clip-start",
-                                  clipIndex: index,
-                                });
-                              }}
-                            />
-                            <div
-                              className="absolute right-0 top-0 w-2 h-full bg-cyan-300 cursor-ew-resize opacity-0 hover:opacity-100 transition-opacity"
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setDragging({
-                                  type: "clip-end",
-                                  clipIndex: index,
-                                });
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {trimEnd < duration && (
+                      <div
+                        className="absolute top-1 h-14 bg-gray-800/80 border border-gray-600 rounded-r"
+                        style={{
+                          left: `${(trimEnd / duration) * 100}%`,
+                          width: `${((duration - trimEnd) / duration) * 100}%`,
+                        }}
+                      >
+                        <div className="p-1 text-xs text-gray-500">Đã cắt</div>
+                      </div>
+                    )}
+                    {/* Active video area */}
+                    <div
+                      className="absolute top-1 h-14 bg-cyan-600/60 border-2 border-cyan-500 rounded relative"
+                      style={{
+                        left: `${(trimStart / duration) * 100}%`,
+                        width: `${((trimEnd - trimStart) / duration) * 100}%`,
+                      }}
+                    >
+                      <div className="p-1 text-xs font-medium text-white">
+                        Video đang hoạt động
+                      </div>
+                      <div className="absolute bottom-1 left-1 text-xs text-cyan-100 font-mono">
+                        {formatTime((trimEnd - trimStart) * 1000)}
+                      </div>
+                      {/* Left trim handle */}
+                      <div
+                        className="absolute -left-1 top-0 w-4 h-full bg-orange-500 cursor-ew-resize hover:bg-orange-400 transition-colors rounded-l flex items-center justify-center group"
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          setDragging({ type: "trim-start" });
+                        }}
+                        title="Kéo để cắt đầu"
+                      >
+                        <div className="w-1 h-8 bg-white/60 rounded group-hover:bg-white/80"></div>
+                      </div>
+                      {/* Right trim handle */}
+                      <div
+                        className="absolute -right-1 top-0 w-4 h-full bg-orange-500 cursor-ew-resize hover:bg-orange-400 transition-colors rounded-r flex items-center justify-center group"
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          setDragging({ type: "trim-end" });
+                        }}
+                        title="Kéo để cắt cuối"
+                      >
+                        <div className="w-1 h-8 bg-white/60 rounded group-hover:bg-white/80"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -609,7 +719,7 @@ const EditVideo = () => {
                     : "text-gray-400 hover:text-white hover:bg-gray-700"
                 }`}
               >
-                Details
+                Chi tiết
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
@@ -617,62 +727,61 @@ const EditVideo = () => {
                 <div className="space-y-4">
                   <div className="space-y-3">
                     <h4 className="font-medium text-gray-300">
-                      Video Properties
+                      Thuộc tính Video
                     </h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Duration:</span>
+                        <span className="text-gray-400">Thời lượng gốc:</span>
                         <span>{formatTime(duration * 1000)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Current Time:</span>
+                        <span className="text-gray-400">
+                          Thời lượng đã cắt:
+                        </span>
+                        <span className="text-orange-400">
+                          {formatTime((trimEnd - trimStart) * 1000)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">
+                          Thời gian hiện tại:
+                        </span>
                         <span className="text-cyan-400">
                           {formatTime(currentTime * 1000)}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Clips:</span>
-                        <span>{clips.length}</span>
-                      </div>
                     </div>
                   </div>
-                  {clips.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-gray-300">Clips</h4>
-                      <div className="space-y-2">
-                        {clips.map((clip, index) => (
-                          <div
-                            key={clip.id || index}
-                            className={`p-3 rounded border cursor-pointer transition-all ${
-                              selectedClipIndex === index
-                                ? "border-cyan-400 bg-cyan-900/20"
-                                : "border-gray-600 bg-gray-700/30 hover:bg-gray-700/50"
-                            }`}
-                            onClick={() => setSelectedClipIndex(index)}
-                          >
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="font-medium text-sm">
-                                {clip.id || `Clip ${index + 1}`}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {formatTime((clip.end - clip.start) * 1000)}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {formatTime(clip.start * 1000)} →{" "}
-                              {formatTime(clip.end * 1000)}
-                            </div>
-                          </div>
-                        ))}
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-300">Cài đặt cắt</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">
+                          Thời gian bắt đầu:
+                        </span>
+                        <span className="text-orange-400">
+                          {formatTime(trimStart * 1000)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">
+                          Thời gian kết thúc:
+                        </span>
+                        <span className="text-orange-400">
+                          {formatTime(trimEnd * 1000)}
+                        </span>
                       </div>
                     </div>
-                  )}
-
+                    <div className="text-xs text-gray-500 bg-gray-800 p-2 rounded">
+                      💡 Mẹo: Kéo các tay cầm màu cam trên dòng thời gian để cắt
+                      video
+                    </div>
+                  </div>
                   {/* Text Insertion Section */}
                   <div className="space-y-3">
-                    <h4 className="font-medium text-gray-300">Insert Text</h4>
+                    <h4 className="font-medium text-gray-300">Chèn văn bản</h4>
                     <textarea
-                      placeholder="Enter text to insert..."
+                      placeholder="Nhập văn bản để chèn..."
                       value={textToInsert}
                       onChange={(e) => setTextToInsert(e.target.value)}
                       rows={3}
@@ -683,15 +792,14 @@ const EditVideo = () => {
                       disabled={!textToInsert.trim()}
                       className="w-full py-2 bg-purple-600 hover:bg-purple-700 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Insert Text
+                      Chèn văn bản
                     </button>
                   </div>
-
-                  {/* Display current text overlays (for debugging/management) */}
+                  {/* Display current text overlays */}
                   {textOverlays.length > 0 && (
                     <div className="space-y-3 mt-6">
                       <h4 className="font-medium text-gray-300">
-                        Active Text Overlays
+                        Lớp phủ văn bản đang hoạt động
                       </h4>
                       <div className="space-y-2 text-sm text-zinc-300">
                         {textOverlays.map((overlay) => (
@@ -701,12 +809,15 @@ const EditVideo = () => {
                           >
                             <p className="truncate">"{overlay.text}"</p>
                             <p className="text-xs text-zinc-500">
-                              Time: {formatTime(overlay.startTime * 1000)} -{" "}
-                              {formatTime(overlay.endTime * 1000)}
+                              Thời gian: {formatTime(overlay.startTime * 1000)}{" "}
+                              - {formatTime(overlay.endTime * 1000)}
                             </p>
                             <p className="text-xs text-zinc-500">
-                              Pos: {overlay.x.toFixed(1)}%,{" "}
+                              Vị trí: {overlay.x.toFixed(1)}%,{" "}
                               {overlay.y.toFixed(1)}%
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                              Cỡ chữ: {overlay.fontSize.toFixed(0)}px
                             </p>
                           </div>
                         ))}
@@ -719,6 +830,15 @@ const EditVideo = () => {
           </div>
         </div>
       </div>
+      {/* Notification */}
+      {showNotification && (
+        <Notification
+          message={notificationMessage}
+          type={notificationType}
+          onClose={() => setShowNotification(false)}
+          renderActionButton={notificationActionButton} // Truyền nội dung nút hành động
+        />
+      )}
       {isReviewOpen && (
         <Review
           onClose={() => {
@@ -726,27 +846,54 @@ const EditVideo = () => {
             setExportData(null);
           }}
           exportData={exportData}
-          onConfirmUpload={handleConfirmUploadFromReview} // Pass the new handler
+          onConfirmUpload={handleConfirmUploadFromReview}
         />
       )}
-      {isUploadOpen &&
-        uploadVideoData && ( // Render UploadVideo as a top-level modal
-          <UploadVideo
-            selectedVideo={uploadVideoData}
-            onClose={() => {
-              setIsUploadOpen(false);
-              setUploadVideoData(null);
-            }}
-            onBack={() => {
-              setIsUploadOpen(false);
-              setIsReviewOpen(true); // Go back to Review modal
-            }}
-            onSuccess={() => navigate("/home")} 
-          />
-        )}
+      {isUploadOpen && uploadVideoData && (
+        <UploadVideo
+          selectedVideo={uploadVideoData}
+          onClose={() => {
+            setIsUploadOpen(false);
+            setUploadVideoData(null);
+          }}
+          onBack={() => {
+            setIsUploadOpen(false);
+            setIsReviewOpen(true);
+          }}
+          onSuccess={() => navigate("/home")}
+        />
+      )}
       <style>{`
         .clip-path-triangle {
           clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+        /* Animation cho popup giữa màn hình */
+        @keyframes fade-in-scale {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+        .animate-fade-in-scale {
+          animation: fade-in-scale 0.3s ease-out forwards;
+        }
+        /* Giữ lại animation slide-in nếu bạn dùng cho các mục đích khác */
+        @keyframes slide-in {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in {
+          animation: slide-in 0.3s ease-out;
         }
       `}</style>
     </div>
