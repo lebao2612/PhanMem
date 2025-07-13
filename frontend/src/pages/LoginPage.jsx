@@ -16,47 +16,47 @@ function Login() {
   const [showOverlay, setShowOverlay] = useState(false);
   const hasHandledCodeRef = useRef(false);
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get("code");
-    const error = urlParams.get("error");
-    const state = urlParams.get("state");
+  // useEffect(() => {
+  //   const urlParams = new URLSearchParams(window.location.search);
+  //   const code = urlParams.get("code");
+  //   const error = urlParams.get("error");
+  //   const state = urlParams.get("state");
 
-    if (error === "access_denied") {
-      alert("Bạn đã từ chối đăng nhập bằng Google");
-      return;
-    }
+  //   if (error === "access_denied") {
+  //     alert("Bạn đã từ chối đăng nhập bằng Google");
+  //     return;
+  //   }
 
-    if (sessionStorage.getItem("token") || user) {
-      return;
-    }
+  //   if (sessionStorage.getItem("token") || user) {
+  //     return;
+  //   }
 
-    if (code && !hasHandledCodeRef.current) {
-      hasHandledCodeRef.current = true;
-      const doGoogleLogin = async () => {
-        try {
-          // const res = await fetch(`/api/auth/google/callback?code=${code}`);
-          const res = await fetch(`/api/auth/google/callback?code=${code}${state ? `&state=${state}` : ""}`);
-          const { success, data, error } = await res.json();
+  //   if (code && !hasHandledCodeRef.current) {
+  //     hasHandledCodeRef.current = true;
+  //     const doGoogleLogin = async () => {
+  //       try {
+  //         // const res = await fetch(`/api/auth/google/callback?code=${code}`);
+  //         const res = await fetch(`/api/auth/google/callback?code=${code}${state ? `&state=${state}` : ""}`);
+  //         const { success, data, error } = await res.json();
 
-          if (!res.ok || !success)
-            throw new Error(error?.message || "Lỗi xác thực Google");
+  //         if (!res.ok || !success)
+  //           throw new Error(error?.message || "Lỗi xác thực Google");
 
-          const userInfo = data.user
+  //         const userInfo = data.user
 
-          setUser(userInfo);
-          sessionStorage.setItem("token", data.token);
-          sessionStorage.setItem("user", JSON.stringify(userInfo));
-          navigate("/home");
-        } catch (err) {
-          alert("Đăng nhập Google thất bại");
-          console.error(err);
-          navigate("/login");
-        }
-      };
-      doGoogleLogin();
-    }
-  }, []);
+  //         setUser(userInfo);
+  //         sessionStorage.setItem("token", data.token);
+  //         sessionStorage.setItem("user", JSON.stringify(userInfo));
+  //         navigate("/home");
+  //       } catch (err) {
+  //         alert("Đăng nhập Google thất bại");
+  //         console.error(err);
+  //         navigate("/login");
+  //       }
+  //     };
+  //     doGoogleLogin();
+  //   }
+  // }, []);
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");

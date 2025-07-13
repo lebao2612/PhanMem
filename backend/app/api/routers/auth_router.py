@@ -13,6 +13,8 @@ def redirect_to_google_oauth():
     Redirect user to Google OAuth authorization URL with basic scopes.
     """
     url = auth_service.get_google_oauth_url()
+    from config import settings
+    print("REDIRECT_URI:", settings.GOOGLE_REDIRECT_URI)
     return RedirectResponse(url)
 
 
