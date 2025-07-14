@@ -335,7 +335,7 @@ const Home = () => {
     setIsLoadingImages(true); // Set loading state for images
     try {
       const formData = new FormData();
-      formData.append("image", newFile); // Append the new image file
+      formData.append("file", newFile); // Append the new image file
 
       // Đây là nơi cuộc gọi PATCH được thực hiện với public_id của ảnh hiện tại
       const responseData = await authFetch(

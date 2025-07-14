@@ -79,7 +79,7 @@ export const handleGenerateScript = async (
   try {
     const scriptRes = await authFetch("/api/generators/script", {
       method: "POST",
-      body: JSON.stringify({ topic: text }),
+      body: JSON.stringify({ topic: text }),//, sceneCount: 7
     });
     console.log("📥 Script API response:", scriptRes);
     let scriptArray = [];

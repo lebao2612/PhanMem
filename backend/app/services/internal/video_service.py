@@ -44,8 +44,8 @@ class VideoService:
             raise HandledException(message="Video not found", code=404)
         if not video.sources:
             raise HandledException(message="Video has not been fully created yet", code=400)
-        if not option:
-            return VideoDTO.from_model(video=video)
+        # if not option:
+        return VideoDTO.from_model(video=video)
 
         try:
             tmp_path = await mediax.edit.edit_video(video.sources.url, **option)

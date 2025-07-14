@@ -45,7 +45,6 @@ function UploadVideo({ selectedVideo, onClose, onBack, onSuccess }) {
           exportData: selectedVideo.exportData,
         }),
       })
-      alert("🎉 Upload thành công!")
       onClose()
       if (onSuccess) {
         onSuccess()

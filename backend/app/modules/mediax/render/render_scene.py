@@ -1,4 +1,5 @@
 import ffmpeg
+import random
 import asyncio
 from app.utils import file_util
 from app.modules.mediax import ops
@@ -24,7 +25,12 @@ async def render_scene(scene: dict, output_path: str, fps=30, output_size: tuple
         pan_effect = effect.get("pan")
 
         if not zoom_effect and not pan_effect:
-            zoom_effect = "in"
+            if random.choice([True, False]):
+                zoom_effect = random.choice(["in", "out"])
+                pan_effect = None
+            else:
+                zoom_effect = None
+                pan_effect = random.choice(["left", "right", "up", "down"])
         elif zoom_effect:
             pan_effect = None
 

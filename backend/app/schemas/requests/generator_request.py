@@ -8,7 +8,7 @@ class GenerateScriptRequest(BaseSchema):
         description="The topic for the script.",
     )
     scene_count: int = Field(
-        default=5,
+        default=7,
         ge=5,
         le=10,
         description="Number of scenes.",
